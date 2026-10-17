@@ -29,9 +29,13 @@ const features = [
   {
     icon: Map,
     title: "Day-by-day itinerary",
-    text: "Lay out each day with times, places and notes.",
+    text: "Get a complete suggested plan, then edit times, places and notes.",
   },
-  { icon: Wallet, title: "Budget tracker", text: "Log spending by category and see what's left." },
+  {
+    icon: Wallet,
+    title: "Budget tracker",
+    text: "See group and per-person daily budgets, log expenses, and track what is left.",
+  },
   {
     icon: Sparkles,
     title: "AI trip ideas",
@@ -50,7 +54,7 @@ const features = [
   {
     icon: ShoppingBag,
     title: "Shops & packing",
-    text: "Search products and nearby shops, then save your packing list.",
+    text: "Browse real mapped places and shops, find essentials, and save your packing list.",
   },
 ];
 

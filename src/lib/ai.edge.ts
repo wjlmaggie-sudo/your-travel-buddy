@@ -14,7 +14,7 @@ export async function generateTripIdeas({
 }: {
   data: TripIdeaInput;
 }): Promise<TripIdeaResult> {
-  const input = tripIdeaInput.safeParse({ ...data, days: Math.min(14, data.days) });
+  const input = tripIdeaInput.safeParse(data);
   if (!input.success)
     return { ideas: null, error: "Check your destination, budget, and travel details." };
   const { data: session, error: sessionError } = await supabase.auth.getSession();

@@ -35,7 +35,7 @@ The root Lovable application is the only maintained app. AI Travel features now 
 
 Traveler preferences and packing lists are stored in the signed-in user's Supabase Auth metadata under `travel_preferences`, keyed by trip ID. Existing trips, activities, and expenses keep their current database tables and row-level security. No database migration is needed. Historical trips default to two travelers and Balanced style until updated.
 
-Budget suggestions and example product prices are estimates, excluding flights. Style presets and product estimates are in EUR; group budgets retain the selected trip currency. AI generation uses the existing server-side `LOVABLE_API_KEY` and adds group size and budget to the prompt. It generates at most 14 days per request; templates and manual plans support up to 30 days.
+Budget suggestions and example product prices are estimates, excluding flights. Style presets and product estimates are in EUR; group budgets retain the selected trip currency. AI generation uses the existing server-side `LOVABLE_API_KEY` and adds group size and budget to the prompt. It generates up to 30 days per request; templates and manual plans support up to 30 days.
 
 ## Validation and deployment
 
@@ -87,3 +87,40 @@ Until the function and its secret are deployed, the AI tab reports a setup/unava
 Run `npm run build:pages` with the public configuration in your ignored local `.env`, then `npm run publish:pages`. The publisher commits the contents of `dist/` to `gh-pages` without rewriting deployment history. A `main` push alone does not rebuild the website in this deployment mode.
 
 The connected OAuth credential can push source code but cannot create GitHub Actions workflows without its `workflow` scope. Ready-to-use workflow templates are retained in `deployment/github-actions/`. To enable automatic builds from `main` later, add `pages.yml` through GitHub's web editor or a credential authorized to manage workflows, placing it at `.github/workflows/pages.yml`, then switch Pages Source to **GitHub Actions**. It builds from the repository secrets already configured and uploads `dist/`. Do not put private backend keys into browser variables.
+
+## Full-trip suggestions, daily budgets, and place coverage
+
+New custom trips can open straight into a full suggested itinerary. The complete
+plan supports 1–30 days, editing before saving, saving every day in one operation,
+individual-day saves, and adding/removing suggested activities. Existing saved
+activities are kept. Stable draft activity IDs make save retries idempotent.
+Every saved activity remains editable through the normal itinerary editor.
+
+Each day displays its date, the group spending limit, an approximate per-person
+amount, and a category allocation. The Budget tab lists every day against actual
+expenses recorded for that date. Splits use integer cents so all daily group
+amounts sum exactly to the total. This is a planning allocation, not live hotel,
+flight, or ticket pricing. Changing the group budget updates the daily amounts.
+
+The Places directory searches Wikipedia for destination coordinates and retrieves
+mapped attractions, shops, and food venues near the selected destination. It uses
+OpenStreetMap via the documented Private.coffee Overpass instance, with Wikipedia
+nearby entries as an independent fallback during map-provider outages. Results
+are fetched on demand, bounded to a 4 km radius, cached for 30 minutes (up to 50
+queries in memory), and attributed. Coverage, names, and opening hours need local
+verification. No product inventory or current pricing is claimed. Selected places
+can be saved as normal trip activities. AI may use up to 18 directory references
+when that option is enabled; it never treats external names as instructions.
+
+Trips, activities, and expenses remain in the existing authenticated PostgreSQL
+tables. Queries now page through all results instead of silently stopping at the
+API's first page. The optional checked-in migration adds a row-level protected
+preferences table and query indexes for growing accounts. Legacy preferences are
+read as a fallback; new table rows take precedence after migration. Storage quotas
+and backend capacity have not been verified or changed from this checkout.
+
+**AI activation and database owner steps:** see
+[`deployment/BACKEND_SETUP.md`](deployment/BACKEND_SETUP.md). The code and frontend
+can be deployed without those owner permissions, but live AI generation remains
+unavailable until the Edge Function and backend secret are deployed. The database
+upgrade has not been applied automatically.
