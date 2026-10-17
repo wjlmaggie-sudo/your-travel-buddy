@@ -39,4 +39,51 @@ Budget suggestions and example product prices are estimates, excluding flights. 
 
 ## Validation and deployment
 
-Run `npm run test`, `npx tsc --noEmit`, and `npm run build`. Keep the existing Lovable/Supabase environment configuration. Pushes to `main` sync to the connected Lovable project; use Lovable's Publish/Update flow for its live website. The old Sites preview is a separate deployment and does not automatically follow GitHub changes.
+Run `npm run test`, `npx tsc --noEmit`, and `npm run build`. Keep the existing Lovable/Supabase environment configuration. Pushes to `main` sync to the connected Lovable project. GitHub Pages publishes the built artifact from `gh-pages`, as described below. The original Lovable build is retained for editor previews.
+
+
+## GitHub Pages publishing
+
+The published website is `https://wjlmaggie-sudo.github.io/your-travel-buddy/`; login is `https://wjlmaggie-sudo.github.io/your-travel-buddy/#/auth`.
+
+In repository **Settings → Pages → Build and deployment → Source**, select **Deploy from a branch**, then branch **gh-pages** and folder **/ (root)**. That branch contains only the built `dist/` contents. Source code remains on `main`; this is one app with a separate deployment artifact. Do not publish the source repository root.
+
+The Pages build uses Vite and React with the existing routes, UI components, styles, and Supabase project. `vite.pages.config.ts` is the client-only target; the existing `vite.config.ts` remains Lovable's server target. Hash navigation (`#/auth`, `#/trips`) makes links and reloads work without server rewrites. Assets resolve relative to `/your-travel-buddy/`. If the repository is renamed, set `PAGES_BASE_PATH` to its new path when building; for custom-domain builds, set `PAGES_BASE_PATH=/`.
+
+### Environment values and repository secrets
+
+`.env` is ignored and is no longer tracked. Copy `.env.example` to `.env` for local development. Values previously committed were the Supabase URL, project identifier, and publishable key; these are public browser configuration. Their historical commits have not been rewritten.
+
+Under **Settings → Secrets and variables → Actions → Repository secrets**, the optional Pages workflow template reads:
+
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_PUBLISHABLE_KEY`
+
+The matching `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_PROJECT_ID`, and `VITE_SUPABASE_PROJECT_ID` settings are also stored as repository secrets for configuration/deployment. A publishable key is intentionally included in the browser bundle; database access is protected by authentication and existing row-level security. Private AI keys, service-role keys, and management tokens must never be named `VITE_*`, placed in `public/`, or committed.
+
+In Lovable Cloud / Supabase Auth URL configuration, allow `https://wjlmaggie-sudo.github.io/your-travel-buddy/` as a redirect URL. Pages uses PKCE email confirmation so auth tokens do not conflict with hash routes. Users retain their existing Supabase accounts and cloud data; signing in on the new origin creates a separate browser session.
+
+### AI backend deployment (requires backend owner access)
+
+Static hosting cannot execute the original TanStack server function. The Pages build substitutes `src/lib/ai.edge.ts`, which calls the authenticated `generate-trip-ideas` Supabase Edge Function. The existing Lovable server build keeps its native server function. Both use the same UI.
+
+Deploy `supabase/functions/generate-trip-ideas/index.ts` through the existing Lovable Cloud backend or Supabase CLI. Keep JWT verification enabled and set `LOVABLE_API_KEY` in the **backend's function secrets**. The handler also verifies the signed-in user, validates input, and handles CORS. No AI key is sent to the browser.
+
+For a Supabase project managed by your account, add a management token as the repository secret `SUPABASE_ACCESS_TOKEN`, then install the optional `deployment/github-actions/supabase-function.yml` workflow under `.github/workflows/` through an account with workflow permissions, and run **Actions → Deploy AI backend → Run workflow**. The function is deployed separately from the website, and the website can publish while backend setup is pending. For a Lovable-managed project, use Lovable Cloud to deploy the function and configure its secret instead.
+
+Until the function and its secret are deployed, the AI tab reports a setup/unavailable error. Sign-in, saved trips, manual itineraries, templates, budgets, product searches, and packing lists continue to work independently. AI hosting was not verified from this checkout because backend management credentials were unavailable.
+
+### Local checks
+
+- `npm run test`
+- `npx tsc --noEmit`
+- `npm run build:pages`
+- `npm run preview:pages` (open the printed URL including `/your-travel-buddy/`)
+- `npm run build` (the original Lovable server build)
+
+
+### Updating the deployed artifact
+
+Run `npm run build:pages` with the public configuration in your ignored local `.env`, then `npm run publish:pages`. The publisher commits the contents of `dist/` to `gh-pages` without rewriting deployment history. A `main` push alone does not rebuild the website in this deployment mode.
+
+The connected OAuth credential can push source code but cannot create GitHub Actions workflows without its `workflow` scope. Ready-to-use workflow templates are retained in `deployment/github-actions/`. To enable automatic builds from `main` later, add `pages.yml` through GitHub's web editor or a credential authorized to manage workflows, placing it at `.github/workflows/pages.yml`, then switch Pages Source to **GitHub Actions**. It builds from the repository secrets already configured and uploads `dist/`. Do not put private backend keys into browser variables.

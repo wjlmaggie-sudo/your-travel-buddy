@@ -1,5 +1,6 @@
 import { QueryClient } from "@tanstack/react-query";
-import { createRouter } from "@tanstack/react-router";
+import { createRouter, createHashHistory } from "@tanstack/react-router";
+import { STATIC_PAGES } from "./lib/deployment";
 import { routeTree } from "./routeTree.gen";
 
 export const getRouter = () => {
@@ -7,6 +8,7 @@ export const getRouter = () => {
 
   const router = createRouter({
     routeTree,
+    ...(STATIC_PAGES ? { history: createHashHistory() } : {}),
     context: { queryClient },
     scrollRestoration: true,
     defaultPreloadStaleTime: 0,

@@ -1,1 +1,3 @@
 project_id = "secqnjmhobdbpalktkcb"
+[functions.generate-trip-ideas]
+verify_jwt = true

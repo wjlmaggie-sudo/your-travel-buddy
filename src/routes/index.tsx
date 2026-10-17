@@ -1,3 +1,4 @@
+import { publicAsset } from "@/lib/deployment";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Compass, Map, Wallet, Sparkles, ShoppingBag, Users, LayoutTemplate } from "lucide-react";
 import hero from "@/assets/hero.jpg";
@@ -58,7 +59,7 @@ function Index() {
     <div className="min-h-screen">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
         <Link to="/" className="flex items-center gap-2 font-display text-2xl font-semibold">
-          <img src="/ai-travel-logo.svg" alt="" className="h-7 w-7" /> AI Travel
+          <img src={publicAsset("ai-travel-logo.svg")} alt="" className="h-7 w-7" /> AI Travel
         </Link>
         <Button asChild variant="outline">
           <Link to="/trips">My trips</Link>

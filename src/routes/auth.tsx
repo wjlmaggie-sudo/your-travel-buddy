@@ -1,3 +1,4 @@
+import { authRedirectUrl, publicAsset } from "@/lib/deployment";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Compass } from "lucide-react";
@@ -39,7 +40,7 @@ function AuthPage() {
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: window.location.origin + "/trips" },
+          options: { emailRedirectTo: authRedirectUrl(window.location.origin) },
         });
         if (error) throw error;
         if (data.session) navigate({ to: "/trips" });
@@ -56,7 +57,7 @@ function AuthPage() {
     <div className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-sm rounded-2xl border bg-card p-8 shadow-card">
         <Link to="/" className="flex items-center gap-2 font-display text-xl font-semibold">
-          <img src="/ai-travel-logo.svg" alt="" className="h-7 w-7" /> AI Travel
+          <img src={publicAsset("ai-travel-logo.svg")} alt="" className="h-7 w-7" /> AI Travel
         </Link>
         {sent ? (
           <p className="mt-6 text-muted-foreground">

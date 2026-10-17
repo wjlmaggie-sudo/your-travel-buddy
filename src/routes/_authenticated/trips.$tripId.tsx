@@ -1,6 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { ArrowLeft, ArrowDown, ArrowUp, Trash2, MapPin, Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -419,7 +418,7 @@ function Budget({ data, refresh }: { data: Data; refresh: () => void }) {
 }
 
 function Ideas({ data, refresh }: { data: Data; refresh: () => void }) {
-  const gen = useServerFn(generateTripIdeas);
+  const gen = generateTripIdeas;
   const preferences = useTripPreferences(data.trip.id);
   const [interests, setInterests] = useState("");
   const [loading, setLoading] = useState(false);
@@ -451,16 +450,14 @@ function Ideas({ data, refresh }: { data: Data; refresh: () => void }) {
 
   async function addDay(d: TripIdeas["days"][number]) {
     const existing = data.activities.filter((a) => a.day === d.day).length;
-    const { error } = await supabase
-      .from("activities")
-      .insert(
-        d.items.map((it, i) => ({
-          ...it,
-          trip_id: data.trip.id,
-          day: Math.min(d.day, days),
-          position: existing + i,
-        })),
-      );
+    const { error } = await supabase.from("activities").insert(
+      d.items.map((it, i) => ({
+        ...it,
+        trip_id: data.trip.id,
+        day: Math.min(d.day, days),
+        position: existing + i,
+      })),
+    );
     if (error) {
       toast.error(error.message);
       return;
