@@ -17,9 +17,11 @@ export function AppHeader() {
     <header className="border-b bg-card/60">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
         <Link to="/trips" className="flex items-center gap-2 font-display text-xl font-semibold">
-          <Compass className="h-5 w-5 text-primary" /> Wayfarer
+          <img src="/ai-travel-logo.svg" alt="" className="h-7 w-7" /> AI Travel
         </Link>
-        <Button variant="ghost" size="sm" onClick={signOut}>Sign out</Button>
+        <Button variant="ghost" size="sm" onClick={signOut}>
+          Sign out
+        </Button>
       </div>
     </header>
   );

@@ -10,9 +10,9 @@ import { Label } from "@/components/ui/label";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Sign in — Wayfarer" },
-      { name: "description", content: "Sign in or create a Wayfarer account to save your trips." },
-      { property: "og:title", content: "Sign in — Wayfarer" },
+      { title: "Sign in — AI Travel" },
+      { name: "description", content: "Sign in or create a AI Travel account to save your trips." },
+      { property: "og:title", content: "Sign in — AI Travel" },
       { property: "og:description", content: "Access your saved trips." },
     ],
   }),
@@ -56,25 +56,46 @@ function AuthPage() {
     <div className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-sm rounded-2xl border bg-card p-8 shadow-card">
         <Link to="/" className="flex items-center gap-2 font-display text-xl font-semibold">
-          <Compass className="h-5 w-5 text-primary" /> Wayfarer
+          <img src="/ai-travel-logo.svg" alt="" className="h-7 w-7" /> AI Travel
         </Link>
         {sent ? (
-          <p className="mt-6 text-muted-foreground">Check your email to confirm your account, then sign in.</p>
+          <p className="mt-6 text-muted-foreground">
+            Check your email to confirm your account, then sign in.
+          </p>
         ) : (
           <form onSubmit={submit} className="mt-6 space-y-4">
-            <h1 className="text-2xl font-semibold">{mode === "in" ? "Welcome back" : "Create your account"}</h1>
+            <h1 className="text-2xl font-semibold">
+              {mode === "in" ? "Welcome back" : "Create your account"}
+            </h1>
             <div className="space-y-1.5">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+              <Input
+                id="email"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="pw">Password</Label>
-              <Input id="pw" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
+              <Input
+                id="pw"
+                type="password"
+                required
+                minLength={6}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
             </div>
             <Button type="submit" className="w-full" disabled={busy}>
               {mode === "in" ? "Sign in" : "Sign up"}
             </Button>
-            <button type="button" className="w-full text-sm text-muted-foreground hover:text-foreground" onClick={() => setMode(mode === "in" ? "up" : "in")}>
+            <button
+              type="button"
+              className="w-full text-sm text-muted-foreground hover:text-foreground"
+              onClick={() => setMode(mode === "in" ? "up" : "in")}
+            >
               {mode === "in" ? "No account? Sign up" : "Have an account? Sign in"}
             </button>
           </form>
