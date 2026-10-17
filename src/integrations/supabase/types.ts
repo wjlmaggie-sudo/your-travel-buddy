@@ -14,7 +14,127 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      activities: {
+        Row: {
+          created_at: string
+          day: number
+          id: string
+          location: string | null
+          notes: string | null
+          position: number
+          time: string | null
+          title: string
+          trip_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          day?: number
+          id?: string
+          location?: string | null
+          notes?: string | null
+          position?: number
+          time?: string | null
+          title: string
+          trip_id: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          day?: number
+          id?: string
+          location?: string | null
+          notes?: string | null
+          position?: number
+          time?: string | null
+          title?: string
+          trip_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activities_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expenses: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          id: string
+          note: string | null
+          spent_on: string
+          trip_id: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          category?: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          spent_on?: string
+          trip_id: string
+          user_id?: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          spent_on?: string
+          trip_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trips: {
+        Row: {
+          budget: number
+          created_at: string
+          currency: string
+          destination: string
+          end_date: string
+          id: string
+          start_date: string
+          user_id: string
+        }
+        Insert: {
+          budget?: number
+          created_at?: string
+          currency?: string
+          destination: string
+          end_date: string
+          id?: string
+          start_date: string
+          user_id?: string
+        }
+        Update: {
+          budget?: number
+          created_at?: string
+          currency?: string
+          destination?: string
+          end_date?: string
+          id?: string
+          start_date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
