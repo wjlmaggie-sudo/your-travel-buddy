@@ -1,9 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
+import { useSuspenseQuery, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { ArrowLeft, Trash2, MapPin, Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { readStayChoice, stayBudget, type StayChoice } from "@/lib/stay-planning";
+import { AccommodationPlanner } from "@/components/AccommodationPlanner";
 import { AppHeader } from "@/components/AppHeader";
 import { tripQuery, tripDays, money, CATEGORIES } from "@/lib/trips";
 import { TripSuggestions } from "@/components/TripSuggestions";
@@ -58,6 +60,10 @@ function TripPage() {
     void qc.invalidateQueries({ queryKey: ["trips"] });
   };
   const { trip } = data;
+  const stay = useQuery({
+    queryKey: ["stay-choice", tripId],
+    queryFn: () => readStayChoice(tripId),
+  });
   const preferences = useTripPreferences(tripId);
   function exportTrip() {
     const p = preferences.preference;
@@ -69,6 +75,9 @@ function TripPage() {
       `Group budget: ${money(Number(trip.budget), trip.currency)}`,
       `Per person: ${money(Number(trip.budget) / p.travelers, trip.currency)}`,
       `Actual spending: ${money(spent, trip.currency)}`,
+      stay.data
+        ? `Chosen accommodation: ${stay.data.name} · amount ${stay.data.amount} ${trip.currency} / ${stay.data.unit}. Verify quote dates, guests and fees in the app.`
+        : "Accommodation not quoted yet.",
       "",
       "SUGGESTED ALLOCATION (flights excluded)",
       ...budgetAllocation(Number(trip.budget), p.style).map(
@@ -135,6 +144,18 @@ function TripPage() {
           </div>
         </div>
         <TripSettings key={trip.id} trip={trip} />
+        <AccommodationPlanner
+          tripId={trip.id}
+          brief={{
+            destination: trip.destination,
+            start: trip.start_date,
+            days: tripDays(trip.start_date, trip.end_date),
+            travelers: preferences.preference.travelers,
+            budget: Number(trip.budget),
+            currency: trip.currency,
+            style: preferences.preference.style,
+          }}
+        />
         <Tabs value={tab} onValueChange={setTab} className="mt-8">
           <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1 sm:w-fit">
             <TabsTrigger value="itinerary">Itinerary</TabsTrigger>
@@ -152,7 +173,7 @@ function TripPage() {
                 days={tripDays(trip.start_date, trip.end_date)}
               />
             </div>
-            <Itinerary data={data} refresh={refresh} />
+            <Itinerary data={data} refresh={refresh} stay={stay.data} />
           </TabsContent>
           <TabsContent value="budget">
             <DailyBudget
@@ -165,6 +186,7 @@ function TripPage() {
           <TabsContent value="ideas" forceMount className="data-[state=inactive]:hidden">
             <TripSuggestions
               key={tripId}
+              stayChoice={stay.data}
               trip={trip}
               activities={data.activities}
               autoGenerate={suggest === true && data.activities.length === 0}
@@ -198,9 +220,29 @@ function TripPage() {
   );
 }
 
-function Itinerary({ data, refresh }: { data: Data; refresh: () => void }) {
+function Itinerary({
+  data,
+  refresh,
+  stay,
+}: {
+  data: Data;
+  refresh: () => void;
+  stay?: StayChoice | null | undefined;
+}) {
   const days = tripDays(data.trip.start_date, data.trip.end_date);
   const preferences = useTripPreferences(data.trip.id);
+  const stayPlan = stayBudget(
+    {
+      destination: data.trip.destination,
+      start: data.trip.start_date,
+      days,
+      travelers: preferences.preference.travelers,
+      budget: Number(data.trip.budget),
+      currency: data.trip.currency,
+      style: preferences.preference.style,
+    },
+    stay,
+  );
   const daily = dailyBudgets(
     Number(data.trip.budget),
     days,
@@ -215,12 +257,19 @@ function Itinerary({ data, refresh }: { data: Data; refresh: () => void }) {
           <div key={day}>
             <p className="mb-2 text-sm text-muted-foreground">{daily[day - 1]?.date}</p>
             <DayBudgetSummary
+              afterStay={
+                stayPlan.quoted !== null || !stayPlan.nights
+                  ? stayPlan.daily[day - 1]?.amount
+                  : undefined
+              }
               amount={daily[day - 1]?.amount ?? 0}
               travelers={preferences.preference.travelers}
               currency={data.trip.currency}
               style={preferences.preference.style}
             />
             <DayCard
+              travelers={preferences.preference.travelers}
+              date={daily[day - 1]?.date}
               day={day}
               items={items}
               tripId={data.trip.id}

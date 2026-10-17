@@ -1,3 +1,6 @@
+import { AccommodationPlanner } from "./AccommodationPlanner";
+import { generateTripIdeas } from "@/lib/ai.functions";
+import { stayCost, stayBudget, type StayChoice } from "@/lib/stay-planning";
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Download, Plus, Trash2, Check } from "lucide-react";
@@ -22,9 +25,14 @@ export function InstantPlan({
   initialIdeas: TripIdeas;
   onEdited: () => void;
 }) {
+  const [stay, setStay] = useState<StayChoice | null>(brief.stay ?? null);
+  const [enhancing, setEnhancing] = useState(false);
+  const [aiNote, setAiNote] = useState("");
+  const [isAI, setIsAI] = useState(false);
   const [ideas, setIdeas] = useState(initialIdeas);
   const navigate = useNavigate();
   const budgets = dailyBudgets(brief.budget, brief.days, brief.travelers, brief.start);
+  const stayPlan = stayBudget(brief, stay);
   function editIdeas(change: (current: TripIdeas) => TripIdeas) {
     onEdited();
     setIdeas(change);
@@ -53,7 +61,10 @@ export function InstantPlan({
     <section id="whole-trip-plan" aria-labelledby="whole-plan-heading" className="mt-8 space-y-5">
       <div className="rounded-2xl border bg-card p-6 shadow-card">
         <span className="inline-flex items-center gap-2 rounded-full bg-secondary/10 px-3 py-1 text-xs font-medium text-secondary">
-          <Check className="h-3 w-3" /> Your whole trip is ready · editable starter plan
+          <Check className="h-3 w-3" />{" "}
+          {isAI
+            ? "Live AI itinerary · review and edit"
+            : "Your whole trip is ready · editable starter plan"}
         </span>
         <h2 id="whole-plan-heading" tabIndex={-1} className="mt-4 text-3xl font-semibold">
           {brief.days} days in {brief.destination}
@@ -71,7 +82,9 @@ export function InstantPlan({
                 toast.error("Give each activity a title before saving.");
                 return;
               }
-              if (!savePlannerDraft({ ...brief, ideas })) {
+              if (
+                !savePlannerDraft({ ...brief, ideas, ...(stay ? { stay } : { stay: undefined }) })
+              ) {
                 toast.error("Your browser could not keep this plan. Download a copy instead.");
                 return;
               }
@@ -89,6 +102,9 @@ export function InstantPlan({
                 [
                   `${brief.destination} · ${brief.days} days · ${brief.travelers} travelers`,
                   ideas.summary ?? "",
+                  stay
+                    ? `Chosen stay: ${stay.name} · ${stayCost(stay, brief) ?? "unverified"} ${brief.currency} whole group / stay; based on entered quote`
+                    : "Accommodation not quoted yet.",
                   ...ideas.days.map((day, index) =>
                     [
                       `Day ${day.day} · ${budgets[index]?.date} · ${budgets[index]?.amount.toFixed(2)} ${brief.currency} group budget`,
@@ -105,10 +121,66 @@ export function InstantPlan({
             Download without signing in
           </Button>
         </div>
+        <Button
+          className="mt-4"
+          variant="outline"
+          disabled={enhancing}
+          onClick={async () => {
+            if (
+              !window.confirm(
+                "Generate a new AI version? This replaces activity edits in this preview.",
+              )
+            )
+              return;
+            setEnhancing(true);
+            setAiNote("");
+            try {
+              const total = stay ? stayCost(stay, brief) : null;
+              const result = await generateTripIdeas({
+                data: {
+                  destination: brief.destination,
+                  days: brief.days,
+                  startDate: brief.start,
+                  travelers: brief.travelers,
+                  budget: brief.budget,
+                  currency: brief.currency,
+                  style: brief.style,
+                  interests: brief.interest,
+                  ...(total !== null ? { accommodationTotal: total } : {}),
+                },
+              });
+              if (result.ideas) {
+                editIdeas(() => result.ideas!);
+                setIsAI(true);
+              } else
+                setAiNote(result.error ?? "AI did not return a plan. Your current draft is kept.");
+            } catch {
+              setAiNote("Could not reach live AI. Your current draft is kept.");
+            } finally {
+              setEnhancing(false);
+            }
+          }}
+        >
+          {enhancing ? "Generating with AI…" : "Generate live AI version"}
+        </Button>
         <p className="mt-3 text-xs text-muted-foreground">
-          Only saving to your account needs sign-in. Live AI enhancement is not connected yet.
+          Live AI requires sign-in and a connected provider. Save your whole plan to sign in;
+          template suggestions remain free to preview.
         </p>
+        {aiNote && (
+          <p role="status" className="mt-3 text-sm text-primary">
+            {aiNote}
+          </p>
+        )}
       </div>
+      <AccommodationPlanner
+        brief={brief}
+        choice={stay}
+        onChoose={(choice) => {
+          setStay(choice);
+          onEdited();
+        }}
+      />
       <TripWeather
         key={`${brief.destination}-${brief.start}-${brief.days}`}
         destination={brief.destination}
@@ -122,6 +194,11 @@ export function InstantPlan({
             <span className="text-sm text-muted-foreground">· {budgets[dayIndex]?.date}</span>
           </h3>
           <DayBudgetSummary
+            afterStay={
+              stayPlan.quoted !== null || !stayPlan.nights
+                ? stayPlan.daily[dayIndex]?.amount
+                : undefined
+            }
             amount={budgets[dayIndex]?.amount ?? 0}
             travelers={brief.travelers}
             currency={brief.currency}
@@ -129,6 +206,8 @@ export function InstantPlan({
           />
           <div className="space-y-3">
             <DayVisuals
+              travelers={brief.travelers}
+              date={budgets[dayIndex]?.date}
               destination={brief.destination}
               day={day.day}
               style={brief.style}

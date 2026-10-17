@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const navigate = vi.hoisted(() => vi.fn());
 vi.mock("@tanstack/react-router", () => ({ useNavigate: () => navigate }));
 vi.mock("@/components/TripWeather", () => ({ TripWeather: () => <div>Destination weather</div> }));
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TravelPlanner } from "@/components/TravelPlanner";
 import { readPlannerDraft } from "@/lib/planner-draft";
 beforeEach(() => {
@@ -19,7 +20,11 @@ afterEach(() => {
 });
 describe("public instant planner", () => {
   it("shows the whole trip from a destination alone, with no sign-in navigation", () => {
-    render(<TravelPlanner />);
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <TravelPlanner />
+      </QueryClientProvider>,
+    );
     fireEvent.click(screen.getByRole("button", { name: "Lisbon" }));
     fireEvent.click(screen.getByRole("button", { name: "Suggest my whole trip" }));
     expect(screen.getByRole("heading", { name: "5 days in Lisbon, Portugal" })).toBeInTheDocument();
@@ -28,7 +33,11 @@ describe("public instant planner", () => {
     expect(screen.getByRole("button", { name: "Download without signing in" })).toBeInTheDocument();
   });
   it("rebuilds for different budgets, retains daily caps, and carries edits into sign-in", () => {
-    render(<TravelPlanner />);
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <TravelPlanner />
+      </QueryClientProvider>,
+    );
     fireEvent.click(screen.getByRole("button", { name: "Lisbon" }));
     fireEvent.change(screen.getByLabelText("How many days?"), { target: { value: "3" } });
     const presets = screen.getByLabelText("Compare budget presets");

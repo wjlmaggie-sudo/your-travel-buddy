@@ -23,6 +23,8 @@ const ideas = {
 };
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.stubEnv("VITE_AI_FUNCTIONS_URL", "");
+  vi.stubEnv("VITE_AI_GATEWAY_KEY", "");
   api.getSession.mockResolvedValue({
     data: { session: { access_token: "test-user-session" } },
     error: null,
@@ -39,6 +41,22 @@ describe("static AI client", () => {
     api.invoke.mockResolvedValue({ data: { ideas }, error: null });
     expect(await generateTripIdeas({ data: input })).toEqual({ ideas, error: null });
     expect(api.invoke).toHaveBeenCalledWith("generate-trip-ideas", { body: input });
+  });
+  it("uses the separate public AI gateway while preserving original account authentication", async () => {
+    vi.stubEnv("VITE_AI_FUNCTIONS_URL", "https://ai.example.com/functions/v1");
+    vi.stubEnv("VITE_AI_GATEWAY_KEY", "public-anon-gateway");
+    const request = vi.fn().mockResolvedValue(Response.json({ ideas, error: null }));
+    vi.stubGlobal("fetch", request);
+    try {
+      expect((await generateTripIdeas({ data: input })).ideas).toEqual(ideas);
+      expect(api.invoke).not.toHaveBeenCalled();
+      const [url, options] = request.mock.calls[0]!;
+      expect(url).toBe("https://ai.example.com/functions/v1/generate-trip-ideas");
+      expect(options.headers.Authorization).toBe("Bearer public-anon-gateway");
+      expect(options.headers["x-travel-authorization"]).toBe("Bearer test-user-session");
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
   it("reports undeployed backend setup without claiming a generated plan", async () => {
     api.invoke.mockResolvedValue({

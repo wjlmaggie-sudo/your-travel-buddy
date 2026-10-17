@@ -1,11 +1,13 @@
 import { createClient } from "@supabase/supabase-js";
 import { createOpenAI } from "@ai-sdk/openai";
 import { streamText, Output } from "ai";
+import { openAIPlan } from "../_shared/openai-plan.ts";
 import { ideaSchema, tripIdeaInput, tripIdeaPrompt } from "../_shared/trip-ideas.ts";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-travel-authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 const reply = (body: unknown, status = 200) => Response.json(body, { status, headers: cors });
@@ -13,10 +15,11 @@ const reply = (body: unknown, status = 200) => Response.json(body, { status, hea
 Deno.serve(async (request: Request) => {
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
   if (request.method !== "POST") return reply({ error: "Method not allowed." }, 405);
-  const url = Deno.env.get("SUPABASE_URL");
-  const key = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") || Deno.env.get("SUPABASE_ANON_KEY");
+  const url = Deno.env.get("TRAVEL_AUTH_URL") || Deno.env.get("SUPABASE_URL");
+  const key = Deno.env.get("TRAVEL_AUTH_ANON_KEY") || Deno.env.get("SUPABASE_ANON_KEY");
   if (!url || !key) return reply({ error: "The backend is not configured." }, 503);
-  const authorization = request.headers.get("authorization") || "";
+  const authorization =
+    request.headers.get("x-travel-authorization") || request.headers.get("authorization") || "";
   if (!authorization.startsWith("Bearer "))
     return reply({ error: "Please sign in to generate ideas." }, 401);
   try {
@@ -37,7 +40,41 @@ Deno.serve(async (request: Request) => {
     const parsed = tripIdeaInput.safeParse(body);
     if (!parsed.success)
       return reply({ error: "Check your destination, budget, and travel details." }, 400);
+    const openAIKey = Deno.env.get("OPENAI_API_KEY");
     const apiKey = Deno.env.get("LOVABLE_API_KEY");
+    if (!openAIKey && !apiKey)
+      return reply(
+        {
+          error:
+            "Live AI is not connected yet. The project owner needs to add OPENAI_API_KEY in Edge Function secrets.",
+        },
+        503,
+      );
+    const backend = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      { auth: { persistSession: false } },
+    );
+    const quota = await backend.rpc("claim_ai_request", { request_user: user.user.id });
+    if (quota.error)
+      return reply(
+        { error: "AI usage controls are not installed. Apply the AI usage migration." },
+        503,
+      );
+    if (!quota.data)
+      return reply(
+        { error: "Your daily AI limit has been reached. Please try again tomorrow." },
+        429,
+      );
+    if (openAIKey)
+      return reply({
+        ideas: await openAIPlan(
+          parsed.data,
+          openAIKey,
+          Deno.env.get("OPENAI_MODEL") || "gpt-5.4-mini",
+        ),
+        error: null,
+      });
     if (!apiKey)
       return reply(
         { error: "AI setup is pending: configure LOVABLE_API_KEY in your backend secrets." },

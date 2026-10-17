@@ -103,11 +103,13 @@ export function DayBudgetSummary({
   travelers,
   currency,
   style,
+  afterStay,
 }: {
   amount: number;
   travelers: number;
   currency: string;
   style: TravelStyle;
+  afterStay?: number | undefined;
 }) {
   return (
     <div className="my-4 rounded-lg bg-muted/60 p-4">
@@ -117,13 +119,22 @@ export function DayBudgetSummary({
           · {dailyMoney(amount / travelers, currency)} per person
         </span>
       </p>
-      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-        {budgetAllocation(amount, style).map((part) => (
-          <span key={part.label}>
-            {part.label}: {dailyMoney(part.amount, currency)}
-          </span>
-        ))}
-      </div>
+      {afterStay !== undefined && (
+        <p className="mt-2 text-sm text-secondary">
+          After accommodation: {dailyMoney(afterStay, currency)} for the group ·{" "}
+          {dailyMoney(afterStay / travelers, currency)} per person. Stay cost is already reserved in
+          the comparison above.
+        </p>
+      )}
+      {afterStay === undefined && (
+        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+          {budgetAllocation(amount, style).map((part) => (
+            <span key={part.label}>
+              {part.label}: {dailyMoney(part.amount, currency)}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

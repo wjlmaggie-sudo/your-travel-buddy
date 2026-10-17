@@ -337,7 +337,7 @@ export function TravelPlanner() {
           </Button>
           <p className="text-center text-xs text-muted-foreground">
             Just add a destination. Get every day of your trip without signing in. Template-based
-            suggestions; live AI is not connected yet.
+            suggestions here; sign in for live AI when the provider is connected.
           </p>
         </form>
         <aside

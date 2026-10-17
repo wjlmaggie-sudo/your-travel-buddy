@@ -3,6 +3,13 @@ import { Loader2, Sparkles, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 import { generateTripIdeas } from "@/lib/ai.functions";
+import {
+  readStayChoice,
+  stayCost,
+  stayBudget,
+  type StayBrief,
+  type StayChoice,
+} from "@/lib/stay-planning";
 import { createStarterIdeas } from "@/lib/starter-plan";
 import { useTripPreferences } from "@/lib/travel-preferences";
 import {
@@ -21,6 +28,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 
 type Props = {
+  stayChoice?: StayChoice | null | undefined;
   trip: Tables<"trips">;
   activities: Tables<"activities">[];
   autoGenerate?: boolean;
@@ -29,6 +37,7 @@ type Props = {
 };
 export function TripSuggestions({
   trip,
+  stayChoice,
   activities,
   autoGenerate = false,
   onSaved,
@@ -53,7 +62,19 @@ export function TripSuggestions({
     preferences.preference.travelers,
     trip.start_date,
   );
-  async function run(enhance = false) {
+  const stayPlan = stayBudget(
+    {
+      destination: trip.destination,
+      start: trip.start_date,
+      days,
+      travelers: preferences.preference.travelers,
+      budget: Number(trip.budget),
+      currency: trip.currency,
+      style: preferences.preference.style,
+    },
+    stayChoice,
+  );
+  async function run(enhance = true) {
     if (
       draft.length &&
       !window.confirm("Replace the unsaved suggestion? Your saved itinerary will stay unchanged.")
@@ -99,13 +120,36 @@ export function TripSuggestions({
         style: preferences.preference.style,
         places,
       };
+      if (enhance) {
+        try {
+          const stay = await readStayChoice(trip.id);
+          const brief: StayBrief = {
+            destination: trip.destination,
+            start: trip.start_date,
+            days,
+            travelers: input.travelers,
+            budget: input.budget,
+            currency: input.currency,
+            style: input.style,
+          };
+          const total = stay ? stayCost(stay, brief) : null;
+          Object.assign(input, {
+            startDate: trip.start_date,
+            ...(total !== null ? { accommodationTotal: total } : {}),
+          });
+        } catch {
+          setDirectoryNote(
+            "Could not load your accommodation quote. AI will use an estimated allowance.",
+          );
+        }
+      }
       const response = enhance
         ? await generateTripIdeas({ data: input })
         : { ideas: createStarterIdeas(input), error: null };
       if (response.error || !response.ideas) {
         response.ideas = createStarterIdeas(input);
         setDirectoryNote(
-          "Live AI enhancement is unavailable. This complete, editable starter itinerary uses templates instead; it is not AI-generated.",
+          `${response.error ?? "Live AI is unavailable."} This editable starter itinerary uses templates instead; it is not AI-generated.`,
         );
       }
       if (
@@ -220,10 +264,10 @@ export function TripSuggestions({
           </Button>
           <Button
             variant="outline"
-            onClick={() => run(true)}
+            onClick={() => run(false)}
             disabled={loading || saving || preferences.isPending || preferences.isError}
           >
-            Try AI enhancement
+            Use template instead
           </Button>
           {draft.length > 0 && (
             <Button
@@ -295,6 +339,11 @@ export function TripSuggestions({
                   </Button>
                 </div>
                 <DayBudgetSummary
+                  afterStay={
+                    stayPlan.quoted !== null || !stayPlan.nights
+                      ? stayPlan.daily[budget.day - 1]?.amount
+                      : undefined
+                  }
                   amount={budget.amount}
                   travelers={preferences.preference.travelers}
                   currency={trip.currency}
@@ -302,6 +351,8 @@ export function TripSuggestions({
                 />
                 <div className="space-y-4">
                   <DayVisuals
+                    travelers={preferences.preference.travelers}
+                    date={budget.date}
                     destination={trip.destination}
                     day={budget.day}
                     style={preferences.preference.style}

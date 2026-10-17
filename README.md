@@ -71,7 +71,7 @@ Deploy `supabase/functions/generate-trip-ideas/index.ts` through the existing Lo
 
 For a Supabase project managed by your account, add a management token as the repository secret `SUPABASE_ACCESS_TOKEN`, then install the optional `deployment/github-actions/supabase-function.yml` workflow under `.github/workflows/` through an account with workflow permissions, and run **Actions → Deploy AI backend → Run workflow**. The function is deployed separately from the website, and the website can publish while backend setup is pending. For a Lovable-managed project, use Lovable Cloud to deploy the function and configure its secret instead.
 
-Until the function and its secret are deployed, the AI tab reports a setup/unavailable error. Sign-in, saved trips, manual itineraries, templates, budgets, product searches, and packing lists continue to work independently. AI hosting was not verified from this checkout because backend management credentials were unavailable.
+The owner-managed AI function and daily usage migration were deployed on 17 October 2026. OpenAI generation still requires the owner’s provider secret and a successful live test. See [live AI and accommodation setup](deployment/LIVE_AI_AND_STAYS.md) for the current two-backend connection, public build variables and remaining provider access. Existing sign-in and trip data are preserved.
 
 ### Local checks
 
@@ -141,7 +141,7 @@ Users can edit every day, download without an account, or save the entire edited
 plan through sign-in. The validated itinerary travels with the brief in this
 tab's session storage. The save dialog carries existing edits into one bulk
 activity upsert and retries against the same trip and activity IDs if saving
-fails. Regular trip suggestions also provide a local starter by default. AI
+fails. Regular saved-trip suggestions try AI first and clearly fall back to a local starter on failure. AI
 enhancement is optional and falls back explicitly when unavailable; the previous
 production Edge Function endpoint was verified to return HTTP 404.
 
@@ -184,3 +184,7 @@ prepare the base trips/activities/expenses schema with owner policies, then appl
 the preferences migration, configure auth redirects and AI, and validate saving.
 The existing preferences-only migration cannot initialize an empty project.
 
+
+## Accommodation, transport and admission
+
+See [live AI and stays](deployment/LIVE_AI_AND_STAYS.md). Public and saved plans now include accommodation quote selection, nights/rooms/beds calculations and daily remaining budgets. Suggested maps include straight-line leg distances, rough walking estimates and official Lisbon admission/transport guidance. Live booking-provider API access remains unconfigured; external search links and traveler-entered quotes are labeled accordingly.

@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { MapPin, Utensils, ExternalLink, Loader2 } from "lucide-react";
 import { dayGuide, loadCityGuide, type VisualPlace } from "@/lib/city-guides";
 import type { TravelStyle } from "@/lib/travel-data";
+import { AdmissionDetails, RouteLogistics } from "./VisitLogistics";
 import { DayRouteMap } from "./DayRouteMap";
 import { fetchPlacePhoto } from "@/lib/place-photos";
 
@@ -39,7 +40,11 @@ export function DayVisuals({
   day,
   style,
   foodPerPerson,
+  travelers = 1,
+  date,
 }: {
+  travelers?: number | undefined;
+  date?: string | undefined;
   destination: string;
   day: number;
   style: TravelStyle;
@@ -116,6 +121,7 @@ export function DayVisuals({
       ) : guide?.places.length ? (
         <>
           <DayRouteMap places={guide.places} day={day} />
+          <RouteLogistics places={guide.places} destination={destination} day={day} />
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {guide.places.map((place, index) => (
               <article
@@ -133,6 +139,7 @@ export function DayVisuals({
                   <p className="mt-2 line-clamp-3 text-xs leading-relaxed text-muted-foreground">
                     {place.description}
                   </p>
+                  <AdmissionDetails place={place} travelers={travelers} date={date} />
                   <div className="mt-3 flex gap-3 text-xs">
                     <a
                       href={maps(place.name + ", " + destination)}

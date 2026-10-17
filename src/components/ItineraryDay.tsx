@@ -17,7 +17,11 @@ export function ItineraryDay({
   destination,
   style,
   foodPerPerson,
+  travelers,
+  date,
 }: {
+  travelers?: number | undefined;
+  date?: string | undefined;
   day: number;
   items: Tables<"activities">[];
   tripId: string;
@@ -70,7 +74,14 @@ export function ItineraryDay({
   return (
     <section className="rounded-xl border bg-card p-6 shadow-card">
       <h2 className="text-2xl font-semibold">Day {day}</h2>
-      <DayVisuals destination={destination} day={day} style={style} foodPerPerson={foodPerPerson} />
+      <DayVisuals
+        travelers={travelers}
+        date={date}
+        destination={destination}
+        day={day}
+        style={style}
+        foodPerPerson={foodPerPerson}
+      />
       <ul className="mt-4 divide-y">
         {items.map((a, i) => (
           <li key={a.id} className="flex flex-wrap items-start gap-3 py-3 sm:flex-nowrap">

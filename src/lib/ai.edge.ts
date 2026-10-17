@@ -8,7 +8,34 @@ import {
 } from "../../supabase/functions/_shared/trip-ideas";
 export type { TripIdeas };
 
-/** GitHub Pages uses an authenticated Edge Function instead of a server RPC. */
+/** Separate AI hosting can verify the existing travel account without moving trip data. */
+export async function invokePlannerBackend(body: TripIdeaInput, token: string) {
+  const base = import.meta.env["VITE_AI_FUNCTIONS_URL"];
+  const gateway = import.meta.env["VITE_AI_GATEWAY_KEY"];
+  if (!base) return supabase.functions.invoke("generate-trip-ideas", { body });
+  if (!gateway)
+    return {
+      data: null,
+      error: {
+        context: Response.json({ error: "The AI gateway is not configured." }, { status: 503 }),
+      },
+    };
+  const response = await fetch(`${base.replace(/\/+$/, "")}/generate-trip-ideas`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      apikey: gateway,
+      Authorization: `Bearer ${gateway}`,
+      "x-travel-authorization": `Bearer ${token}`,
+    },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(125000),
+  });
+  if (!response.ok) return { data: null, error: { context: response } };
+  return { data: await response.json(), error: null };
+}
+
+/** GitHub Pages keeps all private AI keys on the backend. */
 export async function generateTripIdeas({
   data,
 }: {
@@ -21,9 +48,10 @@ export async function generateTripIdeas({
   if (sessionError || !session.session)
     return { ideas: null, error: "Please sign in to generate ideas." };
   try {
-    const { data: response, error } = await supabase.functions.invoke("generate-trip-ideas", {
-      body: input.data,
-    });
+    const { data: response, error } = await invokePlannerBackend(
+      input.data,
+      session.session.access_token,
+    );
     if (error) {
       let message = "AI planning is unavailable. Your saved trips and manual planner still work.";
       if (error.context instanceof Response) {
