@@ -332,12 +332,12 @@ export function TravelPlanner() {
             </div>
           </details>
           <Button size="lg" className="w-full" type="submit">
-            {result ? "Rebuild my whole trip" : "Suggest my whole trip"}
+            {result ? "Rebuild my whole trip" : "Create my travel plan"}
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
           <p className="text-center text-xs text-muted-foreground">
-            Just add a destination. Get every day of your trip without signing in. Template-based
-            suggestions here; sign in for live AI when the provider is connected.
+            Just add a destination. Get every day of your trip without signing in. Free
+            template-based suggestions; no AI API key or AI charges.
           </p>
         </form>
         <aside
@@ -403,8 +403,8 @@ export function TravelPlanner() {
             <p className="text-sm leading-relaxed">
               A plan with room for you.
               <span className="block text-muted-foreground">
-                Review AI suggestions, swap activities, discover local shops, and track spending as
-                you go.
+                Review your suggested plan, swap activities, discover local shops, and track
+                spending as you go.
               </span>
             </p>
           </div>

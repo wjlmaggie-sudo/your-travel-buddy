@@ -1,4 +1,11 @@
-# Live AI and accommodation comparison
+# Optional AI backend and accommodation comparison
+
+**Current mode:** the owner removed the AI provider key and chose the free
+planner on 17 October 2026. The website generates editable template plans locally,
+with no paid AI calls, AI activation controls or billing messages. Nothing below
+is required to use the current planner. The AI setup instructions are retained
+for a future, explicit opt-in. Historical activation tests found exhausted credits;
+the current UI never calls that endpoint.
 
 GitHub Pages serves the frontend. Trips and sign-in remain in the original
 Lovable backend (`secqnjmhobdbpalktkcb`). The separate AI function is deployed in

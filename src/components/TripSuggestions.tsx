@@ -2,14 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Loader2, Sparkles, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
-import { generateTripIdeas } from "@/lib/ai.functions";
-import {
-  readStayChoice,
-  stayCost,
-  stayBudget,
-  type StayBrief,
-  type StayChoice,
-} from "@/lib/stay-planning";
+import { stayBudget, type StayChoice } from "@/lib/stay-planning";
 import { createStarterIdeas } from "@/lib/starter-plan";
 import { useTripPreferences } from "@/lib/travel-preferences";
 import {
@@ -74,7 +67,7 @@ export function TripSuggestions({
     },
     stayChoice,
   );
-  async function run(enhance = true) {
+  async function run() {
     if (
       draft.length &&
       !window.confirm("Replace the unsaved suggestion? Your saved itinerary will stay unchanged.")
@@ -86,7 +79,7 @@ export function TripSuggestions({
     setStatus("Planning your entire trip…");
     try {
       let places: { name: string; kind: string }[] = [];
-      if (useDirectory && enhance) {
+      if (useDirectory) {
         setStatus("Finding local places for your trip…");
         try {
           const locations = await searchDestinations(trip.destination);
@@ -105,7 +98,7 @@ export function TripSuggestions({
           }
         } catch {
           setDirectoryNote(
-            "The local place directory was unavailable. This suggestion uses AI knowledge; verify place names and opening hours.",
+            "The local place directory was unavailable. This suggestion uses templates; verify place names and opening hours.",
           );
         }
       }
@@ -120,52 +113,9 @@ export function TripSuggestions({
         style: preferences.preference.style,
         places,
       };
-      if (enhance) {
-        try {
-          const stay = await readStayChoice(trip.id);
-          const brief: StayBrief = {
-            destination: trip.destination,
-            start: trip.start_date,
-            days,
-            travelers: input.travelers,
-            budget: input.budget,
-            currency: input.currency,
-            style: input.style,
-          };
-          const total = stay ? stayCost(stay, brief) : null;
-          Object.assign(input, {
-            startDate: trip.start_date,
-            ...(total !== null ? { accommodationTotal: total } : {}),
-          });
-        } catch {
-          setDirectoryNote(
-            "Could not load your accommodation quote. AI will use an estimated allowance.",
-          );
-        }
-      }
-      const response = enhance
-        ? await generateTripIdeas({ data: input })
-        : { ideas: createStarterIdeas(input), error: null };
-      if (response.error || !response.ideas) {
-        response.ideas = createStarterIdeas(input);
-        setDirectoryNote(
-          `${response.error ?? "Live AI is unavailable."} This editable starter itinerary uses templates instead; it is not AI-generated.`,
-        );
-      }
-      if (
-        response.ideas.days.length !== days ||
-        response.ideas.days.some((day, index) => day.day !== index + 1)
-      ) {
-        response.ideas = createStarterIdeas(input);
-        setDirectoryNote(
-          "The AI result was incomplete. A complete template-based starter itinerary is shown instead.",
-        );
-      }
-      setDraft(prepareSuggestedPlan(trip.id, response.ideas, activities));
-      setSummary(
-        response.ideas.summary ??
-          "A full-trip suggestion based on your destination, interests, group size, and budget.",
-      );
+      const ideas = createStarterIdeas(input);
+      setDraft(prepareSuggestedPlan(trip.id, ideas, activities));
+      setSummary(ideas.summary ?? "A complete, editable template plan based on your trip details.");
       setApplied([]);
     } catch {
       setError(
@@ -223,11 +173,11 @@ export function TripSuggestions({
           <summary className="cursor-pointer text-sm font-medium">
             Personalize this plan (optional)
           </summary>
-          <Label htmlFor="ai-interests" className="mt-4 block">
+          <Label htmlFor="plan-interests" className="mt-4 block">
             What would make this trip yours?
           </Label>
           <Textarea
-            id="ai-interests"
+            id="plan-interests"
             className="mt-2"
             maxLength={500}
             placeholder={preferences.preference.interest}
@@ -256,18 +206,7 @@ export function TripSuggestions({
             ) : (
               <Sparkles className="mr-2 h-4 w-4" />
             )}
-            {loading
-              ? "Planning…"
-              : draft.length
-                ? "Suggest another plan"
-                : "Suggest my whole trip"}
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => run(false)}
-            disabled={loading || saving || preferences.isPending || preferences.isError}
-          >
-            Use template instead
+            {loading ? "Planning…" : draft.length ? "Create another plan" : "Create my travel plan"}
           </Button>
           {draft.length > 0 && (
             <Button
@@ -295,9 +234,9 @@ export function TripSuggestions({
           </p>
         )}
         <p className="mt-4 text-xs text-muted-foreground">
-          Starter suggestions work without AI. Live AI enhancement needs a configured backend.
-          Suggestions and daily spending limits are estimates, excluding flights. Existing saved
-          activities are kept. New activities are added only when you save.
+          Free template planner · no AI API key or AI charges. Suggestions and daily spending limits
+          are estimates, excluding flights. Existing saved activities are kept. New activities are
+          added only when you save.
         </p>
       </section>
       {draft.length > 0 && (

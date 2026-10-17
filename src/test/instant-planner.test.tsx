@@ -4,6 +4,8 @@ vi.mock("@/components/DayVisuals", () => ({
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const navigate = vi.hoisted(() => vi.fn());
+const paidAI = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/ai.functions", () => ({ generateTripIdeas: paidAI }));
 vi.mock("@tanstack/react-router", () => ({ useNavigate: () => navigate }));
 vi.mock("@/components/TripWeather", () => ({ TripWeather: () => <div>Destination weather</div> }));
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -26,10 +28,12 @@ describe("public instant planner", () => {
       </QueryClientProvider>,
     );
     fireEvent.click(screen.getByRole("button", { name: "Lisbon" }));
-    fireEvent.click(screen.getByRole("button", { name: "Suggest my whole trip" }));
+    fireEvent.click(screen.getByRole("button", { name: "Create my travel plan" }));
     expect(screen.getByRole("heading", { name: "5 days in Lisbon, Portugal" })).toBeInTheDocument();
     expect(screen.getAllByText(/^Breakfast and/)).toHaveLength(5);
     expect(navigate).not.toHaveBeenCalled();
+    expect(paidAI).not.toHaveBeenCalled();
+    expect(screen.queryByRole("button", { name: /live AI/i })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Download without signing in" })).toBeInTheDocument();
   });
   it("rebuilds for different budgets, retains daily caps, and carries edits into sign-in", () => {
@@ -42,7 +46,7 @@ describe("public instant planner", () => {
     fireEvent.change(screen.getByLabelText("How many days?"), { target: { value: "3" } });
     const presets = screen.getByLabelText("Compare budget presets");
     fireEvent.click(within(presets).getByRole("button", { name: /Budget/ }));
-    fireEvent.click(screen.getByRole("button", { name: "Suggest my whole trip" }));
+    fireEvent.click(screen.getByRole("button", { name: "Create my travel plan" }));
     expect(screen.getAllByText(/A picnic or market lunch/)).toHaveLength(3);
     fireEvent.click(within(presets).getByRole("button", { name: /Luxury/ }));
     fireEvent.click(screen.getByRole("button", { name: "Rebuild my whole trip" }));

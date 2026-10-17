@@ -63,11 +63,15 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 describe("whole-trip suggestion workflow", () => {
-  it("returns every day as a starter itinerary when AI enhancement fails", async () => {
+  it("creates every day without calling a paid AI service", async () => {
     api.generate.mockResolvedValue({ ideas: null, error: "AI setup is pending" });
     render(<TripSuggestions trip={trip} activities={[]} onSaved={vi.fn()} onApplied={vi.fn()} />);
-    fireEvent.click(screen.getByRole("button", { name: "Suggest my whole trip" }));
-    await screen.findByText(/AI setup is pending/);
+    fireEvent.click(screen.getByRole("button", { name: "Create my travel plan" }));
+    await screen.findByText(/This is a template-based plan/);
+    expect(api.generate).not.toHaveBeenCalled();
+    expect(
+      screen.queryByRole("button", { name: /AI enhancement|live AI/i }),
+    ).not.toBeInTheDocument();
     expect(screen.getAllByLabelText("Activity")).toHaveLength(10);
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
@@ -75,27 +79,27 @@ describe("whole-trip suggestion workflow", () => {
     const onSaved = vi.fn(),
       onApplied = vi.fn();
     render(<TripSuggestions trip={trip} activities={[]} onSaved={onSaved} onApplied={onApplied} />);
-    fireEvent.click(screen.getByRole("button", { name: "Suggest my whole trip" }));
-    await screen.findByText("A relaxed city trip.");
+    fireEvent.click(screen.getByRole("button", { name: "Create my travel plan" }));
+    await screen.findByText(/This is a template-based plan/);
     fireEvent.change(screen.getAllByLabelText("Activity")[0]!, {
       target: { value: "My custom walk" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Save whole itinerary" }));
     await waitFor(() => expect(onApplied).toHaveBeenCalledOnce());
-    expect(api.save.mock.calls[0]?.[0]).toHaveLength(2);
+    expect(api.save.mock.calls[0]?.[0]).toHaveLength(10);
     expect(api.save.mock.calls[0]?.[0][0].title).toBe("My custom walk");
     expect(onSaved).toHaveBeenCalledOnce();
   });
   it("keeps the editable draft when a cloud save fails", async () => {
     api.save.mockRejectedValueOnce(new Error("offline"));
     render(<TripSuggestions trip={trip} activities={[]} onSaved={vi.fn()} onApplied={vi.fn()} />);
-    fireEvent.click(screen.getByRole("button", { name: "Suggest my whole trip" }));
-    await screen.findByText("A relaxed city trip.");
+    fireEvent.click(screen.getByRole("button", { name: "Create my travel plan" }));
+    await screen.findByText(/This is a template-based plan/);
     fireEvent.click(screen.getByRole("button", { name: "Save whole itinerary" }));
     await waitFor(() =>
       expect(screen.getByRole("button", { name: "Save whole itinerary" })).not.toBeDisabled(),
     );
-    expect(screen.getAllByLabelText("Activity")[0]).toHaveValue("Old town");
+    expect(screen.getAllByLabelText("Activity")[0]).toHaveValue("Breakfast and an easy start");
   });
   it("starts the complete suggestion flow once for a newly created trip", async () => {
     render(
@@ -107,8 +111,8 @@ describe("whole-trip suggestion workflow", () => {
         onApplied={vi.fn()}
       />,
     );
-    await screen.findByText("A relaxed city trip.");
-    expect(api.generate).toHaveBeenCalledOnce();
-    expect(screen.getAllByLabelText("Activity")).toHaveLength(2);
+    await screen.findByText(/This is a template-based plan/);
+    expect(api.generate).not.toHaveBeenCalled();
+    expect(screen.getAllByLabelText("Activity")).toHaveLength(10);
   });
 });

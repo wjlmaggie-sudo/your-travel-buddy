@@ -1,5 +1,4 @@
 import { AccommodationPlanner } from "./AccommodationPlanner";
-import { generateTripIdeas } from "@/lib/ai.functions";
 import { stayCost, stayBudget, type StayChoice } from "@/lib/stay-planning";
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
@@ -26,9 +25,6 @@ export function InstantPlan({
   onEdited: () => void;
 }) {
   const [stay, setStay] = useState<StayChoice | null>(brief.stay ?? null);
-  const [enhancing, setEnhancing] = useState(false);
-  const [aiNote, setAiNote] = useState("");
-  const [isAI, setIsAI] = useState(false);
   const [ideas, setIdeas] = useState(initialIdeas);
   const navigate = useNavigate();
   const budgets = dailyBudgets(brief.budget, brief.days, brief.travelers, brief.start);
@@ -61,10 +57,7 @@ export function InstantPlan({
     <section id="whole-trip-plan" aria-labelledby="whole-plan-heading" className="mt-8 space-y-5">
       <div className="rounded-2xl border bg-card p-6 shadow-card">
         <span className="inline-flex items-center gap-2 rounded-full bg-secondary/10 px-3 py-1 text-xs font-medium text-secondary">
-          <Check className="h-3 w-3" />{" "}
-          {isAI
-            ? "Live AI itinerary · review and edit"
-            : "Your whole trip is ready · editable starter plan"}
+          <Check className="h-3 w-3" /> Your whole trip is ready · free template plan
         </span>
         <h2 id="whole-plan-heading" tabIndex={-1} className="mt-4 text-3xl font-semibold">
           {brief.days} days in {brief.destination}
@@ -121,57 +114,10 @@ export function InstantPlan({
             Download without signing in
           </Button>
         </div>
-        <Button
-          className="mt-4"
-          variant="outline"
-          disabled={enhancing}
-          onClick={async () => {
-            if (
-              !window.confirm(
-                "Generate a new AI version? This replaces activity edits in this preview.",
-              )
-            )
-              return;
-            setEnhancing(true);
-            setAiNote("");
-            try {
-              const total = stay ? stayCost(stay, brief) : null;
-              const result = await generateTripIdeas({
-                data: {
-                  destination: brief.destination,
-                  days: brief.days,
-                  startDate: brief.start,
-                  travelers: brief.travelers,
-                  budget: brief.budget,
-                  currency: brief.currency,
-                  style: brief.style,
-                  interests: brief.interest,
-                  ...(total !== null ? { accommodationTotal: total } : {}),
-                },
-              });
-              if (result.ideas) {
-                editIdeas(() => result.ideas!);
-                setIsAI(true);
-              } else
-                setAiNote(result.error ?? "AI did not return a plan. Your current draft is kept.");
-            } catch {
-              setAiNote("Could not reach live AI. Your current draft is kept.");
-            } finally {
-              setEnhancing(false);
-            }
-          }}
-        >
-          {enhancing ? "Generating with AI…" : "Generate live AI version"}
-        </Button>
         <p className="mt-3 text-xs text-muted-foreground">
-          Live AI requires sign-in and a connected provider. Save your whole plan to sign in;
-          template suggestions remain free to preview.
+          Free template planner · no AI API key or AI charges. Only saving to your account needs
+          sign-in.
         </p>
-        {aiNote && (
-          <p role="status" className="mt-3 text-sm text-primary">
-            {aiNote}
-          </p>
-        )}
       </div>
       <AccommodationPlanner
         brief={brief}

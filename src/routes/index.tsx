@@ -12,12 +12,12 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "A warm, simple travel planner: day-by-day itineraries, budget tracking and AI trip ideas.",
+          "A warm, simple travel planner: day-by-day itineraries, budget tracking and template trip ideas.",
       },
       { property: "og:title", content: "AI Travel — Travel Planner" },
       {
         property: "og:description",
-        content: "Day-by-day itineraries, budget tracking and AI trip ideas in one place.",
+        content: "Day-by-day itineraries, budget tracking and template trip ideas in one place.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -39,7 +39,7 @@ const features = [
   },
   {
     icon: Sparkles,
-    title: "AI trip ideas",
+    title: "Free trip suggestions",
     text: "Get ideas shaped by your interests, group size, and budget.",
   },
   {

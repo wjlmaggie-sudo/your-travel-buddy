@@ -71,7 +71,7 @@ Deploy `supabase/functions/generate-trip-ideas/index.ts` through the existing Lo
 
 For a Supabase project managed by your account, add a management token as the repository secret `SUPABASE_ACCESS_TOKEN`, then install the optional `deployment/github-actions/supabase-function.yml` workflow under `.github/workflows/` through an account with workflow permissions, and run **Actions → Deploy AI backend → Run workflow**. The function is deployed separately from the website, and the website can publish while backend setup is pending. For a Lovable-managed project, use Lovable Cloud to deploy the function and configure its secret instead.
 
-The owner-managed AI function and daily usage migration were deployed on 17 October 2026. The owner saved the provider secret; the live test reaches OpenAI but returns `credit_balance_exhausted`. The owner needs to add API credit in OpenAI billing before successful generation can be verified. See [live AI and accommodation setup](deployment/LIVE_AI_AND_STAYS.md) for the current two-backend connection, public build variables and remaining provider access. Existing sign-in and trip data are preserved.
+The owner-managed AI function and daily usage migration were deployed on 17 October 2026. The owner chose the free planner and removed the AI provider key. The website now creates editable template itineraries without calling a paid AI service, and has no AI-generation buttons or billing prompts. Optional AI backend source remains available for a future opt-in integration; it is not used by the current UI. See [live AI and accommodation setup](deployment/LIVE_AI_AND_STAYS.md) for the current two-backend connection, public build variables and remaining provider access. Existing sign-in and trip data are preserved.
 
 ### Local checks
 
@@ -188,3 +188,7 @@ The existing preferences-only migration cannot initialize an empty project.
 ## Accommodation, transport and admission
 
 See [live AI and stays](deployment/LIVE_AI_AND_STAYS.md). Public and saved plans now include accommodation quote selection, nights/rooms/beds calculations and daily remaining budgets. Suggested maps include straight-line leg distances, rough walking estimates and official Lisbon admission/transport guidance. Live booking-provider API access remains unconfigured; external search links and traveler-entered quotes are labeled accordingly.
+
+## Free planner mode
+
+As of 17 October 2026, public and saved-trip planning use local templates by default. The “Create my travel plan” action does not call an AI provider. Destination, duration, group size, budget and interests still shape the outline. Maps, weather, saved trips, accommodation quote comparison and daily budgets remain available. Hotel prices are traveler-entered quotes or checked on external booking sites. Suggestions are labeled as template-based; no live-model generation or live hotel-price API is claimed.
