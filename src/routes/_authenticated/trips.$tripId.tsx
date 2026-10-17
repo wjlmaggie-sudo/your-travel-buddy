@@ -6,14 +6,16 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AppHeader } from "@/components/AppHeader";
 import { tripQuery, tripDays, money, CATEGORIES } from "@/lib/trips";
-import { generateTripIdeas, type TripIdeas } from "@/lib/ai.functions";
+import { TripSuggestions } from "@/components/TripSuggestions";
+import { DailyBudget, DayBudgetSummary, dailyMoney } from "@/components/DailyBudget";
+import { DestinationExplorer } from "@/components/DestinationExplorer";
 import { Button } from "@/components/ui/button";
 import { TravelShop } from "@/components/TravelShop";
 import { TripSettings } from "@/components/TripSettings";
 import { EditActivity } from "@/components/EditActivity";
 import { useTripPreferences } from "@/lib/travel-preferences";
 import { PRODUCTS } from "@/lib/travel-data";
-import { downloadText, budgetAllocation } from "@/lib/planning";
+import { downloadText, budgetAllocation, dailyBudgets } from "@/lib/planning";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
@@ -35,6 +37,8 @@ export const Route = createFileRoute("/_authenticated/trips/$tripId")({
       { property: "og:description", content: "Itinerary, budget and AI ideas." },
     ],
   }),
+  validateSearch: (search: Record<string, unknown>): { suggest?: boolean } =>
+    search["suggest"] === true || search["suggest"] === "true" ? { suggest: true } : {},
   loader: ({ context, params }) => context.queryClient.ensureQueryData(tripQuery(params.tripId)),
   component: TripPage,
 });
@@ -43,6 +47,8 @@ type Data = Awaited<ReturnType<NonNullable<ReturnType<typeof tripQuery>["queryFn
 
 function TripPage() {
   const { tripId } = Route.useParams();
+  const { suggest } = Route.useSearch();
+  const [tab, setTab] = useState(suggest ? "ideas" : "itinerary");
   const { data } = useSuspenseQuery(tripQuery(tripId));
   const qc = useQueryClient();
   const navigate = useNavigate();
@@ -70,7 +76,7 @@ function TripPage() {
       "",
       ...Array.from({ length: tripDays(trip.start_date, trip.end_date) }, (_, index) =>
         [
-          `DAY ${index + 1}`,
+          `DAY ${index + 1} · ${dailyMoney(dailyBudgets(Number(trip.budget), tripDays(trip.start_date, trip.end_date), p.travelers, trip.start_date)[index]?.amount ?? 0, trip.currency)} group daily budget`,
           ...data.activities
             .filter((a) => a.day === index + 1)
             .map((a) => `${a.time ?? ""} ${a.title} — ${a.location ?? ""}\n${a.notes ?? ""}`),
@@ -128,21 +134,51 @@ function TripPage() {
           </div>
         </div>
         <TripSettings key={trip.id} trip={trip} />
-        <Tabs defaultValue="itinerary" className="mt-8">
+        <Tabs value={tab} onValueChange={setTab} className="mt-8">
           <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1 sm:w-fit">
             <TabsTrigger value="itinerary">Itinerary</TabsTrigger>
             <TabsTrigger value="budget">Budget</TabsTrigger>
-            <TabsTrigger value="ideas">AI Ideas</TabsTrigger>
+            <TabsTrigger value="ideas">Full-trip suggestions</TabsTrigger>
+            <TabsTrigger value="places">Places directory</TabsTrigger>
             <TabsTrigger value="shop">Shops & packing</TabsTrigger>
           </TabsList>
           <TabsContent value="itinerary">
             <Itinerary data={data} refresh={refresh} />
           </TabsContent>
           <TabsContent value="budget">
+            <DailyBudget
+              trip={trip}
+              travelers={preferences.preference.travelers}
+              expenses={data.expenses}
+            />
             <Budget data={data} refresh={refresh} />
           </TabsContent>
-          <TabsContent value="ideas">
-            <Ideas data={data} refresh={refresh} />
+          <TabsContent value="ideas" forceMount className="data-[state=inactive]:hidden">
+            <TripSuggestions
+              key={tripId}
+              trip={trip}
+              activities={data.activities}
+              autoGenerate={suggest === true && data.activities.length === 0}
+              onSaved={refresh}
+              onApplied={() => {
+                refresh();
+                setTab("itinerary");
+                void navigate({
+                  to: "/trips/$tripId",
+                  params: { tripId },
+                  search: {},
+                  replace: true,
+                });
+              }}
+            />
+          </TabsContent>
+          <TabsContent value="places">
+            <DestinationExplorer
+              tripId={tripId}
+              destination={trip.destination}
+              days={tripDays(trip.start_date, trip.end_date)}
+              refresh={refresh}
+            />
           </TabsContent>
           <TabsContent value="shop">
             <TravelShop tripId={tripId} destination={trip.destination} />
@@ -155,12 +191,28 @@ function TripPage() {
 
 function Itinerary({ data, refresh }: { data: Data; refresh: () => void }) {
   const days = tripDays(data.trip.start_date, data.trip.end_date);
+  const preferences = useTripPreferences(data.trip.id);
+  const daily = dailyBudgets(
+    Number(data.trip.budget),
+    days,
+    preferences.preference.travelers,
+    data.trip.start_date,
+  );
   return (
     <div className="mt-6 space-y-6">
       {Array.from({ length: days }, (_, i) => i + 1).map((day) => {
         const items = data.activities.filter((a) => a.day === day);
         return (
-          <DayCard key={day} day={day} items={items} tripId={data.trip.id} refresh={refresh} />
+          <div key={day}>
+            <p className="mb-2 text-sm text-muted-foreground">{daily[day - 1]?.date}</p>
+            <DayBudgetSummary
+              amount={daily[day - 1]?.amount ?? 0}
+              travelers={preferences.preference.travelers}
+              currency={data.trip.currency}
+              style={preferences.preference.style}
+            />
+            <DayCard day={day} items={items} tripId={data.trip.id} refresh={refresh} />
+          </div>
         );
       })}
     </div>
@@ -185,7 +237,12 @@ function DayCard({
     if (!f.title.trim()) return;
     const { error } = await supabase
       .from("activities")
-      .insert({ ...f, trip_id: tripId, day, position: items.length });
+      .insert({
+        ...f,
+        trip_id: tripId,
+        day,
+        position: Math.max(-1, ...items.map((item) => item.position)) + 1,
+      });
     if (error) {
       toast.error(error.message);
       return;
@@ -198,11 +255,8 @@ function DayCard({
       b = items[idx + dir];
     if (!a || !b) return;
     const results = await Promise.all([
-      supabase
-        .from("activities")
-        .update({ position: idx + dir })
-        .eq("id", a.id),
-      supabase.from("activities").update({ position: idx }).eq("id", b.id),
+      supabase.from("activities").update({ position: b.position }).eq("id", a.id),
+      supabase.from("activities").update({ position: a.position }).eq("id", b.id),
     ]);
     if (results.some((result) => result.error))
       toast.error("Could not reorder activities. Please try again.");
@@ -303,7 +357,7 @@ function DayCard({
 
 function Budget({ data, refresh }: { data: Data; refresh: () => void }) {
   const { trip, expenses } = data;
-  const [f, setF] = useState({ amount: "", category: "food", note: "" });
+  const [f, setF] = useState({ amount: "", category: "food", note: "", spent_on: trip.start_date });
   const total = expenses.reduce((s, e) => s + Number(e.amount), 0);
   const budget = Number(trip.budget);
   const pct = budget > 0 ? Math.min(100, (total / budget) * 100) : 0;
@@ -321,12 +375,18 @@ function Budget({ data, refresh }: { data: Data; refresh: () => void }) {
     }
     const { error } = await supabase
       .from("expenses")
-      .insert({ trip_id: trip.id, amount, category: f.category, note: f.note || null });
+      .insert({
+        trip_id: trip.id,
+        amount,
+        category: f.category,
+        note: f.note || null,
+        spent_on: f.spent_on,
+      });
     if (error) {
       toast.error(error.message);
       return;
     }
-    setF({ amount: "", category: f.category, note: "" });
+    setF({ amount: "", category: f.category, note: "", spent_on: f.spent_on });
     refresh();
   }
   async function remove(id: string) {
@@ -358,11 +418,19 @@ function Budget({ data, refresh }: { data: Data; refresh: () => void }) {
         </ul>
       </section>
       <section className="rounded-xl border bg-card p-6 shadow-card">
-        <form onSubmit={add} className="grid gap-2 sm:grid-cols-[100px_130px_1fr_auto]">
+        <form onSubmit={add} className="grid gap-2 sm:grid-cols-2">
+          <Input
+            aria-label="Expense date"
+            type="date"
+            required
+            value={f.spent_on}
+            onChange={(e) => setF({ ...f, spent_on: e.target.value })}
+          />
           <Input
             type="number"
             min="0"
             step="0.01"
+            aria-label="Expense amount"
             placeholder="Amount"
             value={f.amount}
             onChange={(e) => setF({ ...f, amount: e.target.value })}
@@ -394,6 +462,7 @@ function Budget({ data, refresh }: { data: Data; refresh: () => void }) {
               <span>
                 <span className="capitalize font-medium">{e.category}</span>
                 {e.note && <span className="text-muted-foreground"> · {e.note}</span>}
+                <span className="block text-xs text-muted-foreground">{e.spent_on}</span>
               </span>
               <span className="flex items-center gap-2">
                 {money(Number(e.amount), trip.currency)}
@@ -413,112 +482,6 @@ function Budget({ data, refresh }: { data: Data; refresh: () => void }) {
           )}
         </ul>
       </section>
-    </div>
-  );
-}
-
-function Ideas({ data, refresh }: { data: Data; refresh: () => void }) {
-  const gen = generateTripIdeas;
-  const preferences = useTripPreferences(data.trip.id);
-  const [interests, setInterests] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [ideas, setIdeas] = useState<TripIdeas | null>(null);
-  const days = tripDays(data.trip.start_date, data.trip.end_date);
-
-  async function run() {
-    setLoading(true);
-    try {
-      const res = await gen({
-        data: {
-          destination: data.trip.destination,
-          days,
-          interests: interests || preferences.preference.interest,
-          travelers: preferences.preference.travelers,
-          budget: Number(data.trip.budget),
-          currency: data.trip.currency,
-          style: preferences.preference.style,
-        },
-      });
-      if (res.error) toast.error(res.error);
-      else setIdeas(res.ideas);
-    } catch {
-      toast.error("Couldn't generate ideas right now.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function addDay(d: TripIdeas["days"][number]) {
-    const existing = data.activities.filter((a) => a.day === d.day).length;
-    const { error } = await supabase.from("activities").insert(
-      d.items.map((it, i) => ({
-        ...it,
-        trip_id: data.trip.id,
-        day: Math.min(d.day, days),
-        position: existing + i,
-      })),
-    );
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    toast.success(`Added to Day ${d.day}`);
-    refresh();
-  }
-
-  return (
-    <div className="mt-6 space-y-6">
-      <section className="rounded-xl border bg-card p-6 shadow-card">
-        <h2 className="text-2xl font-semibold">Need inspiration?</h2>
-        <p className="text-muted-foreground">
-          Tell us what you love and we'll sketch a {days}-day plan for {data.trip.destination}.
-        </p>
-        <p className="mt-2 text-xs text-muted-foreground">
-          AI plans up to 14 days per request. Review suggestions and current prices before booking.
-        </p>
-        <Textarea
-          aria-label="Your travel interests"
-          className="mt-4"
-          placeholder="e.g. street food, hiking, museums, slow mornings"
-          value={interests}
-          onChange={(e) => setInterests(e.target.value)}
-        />
-        <Button
-          className="mt-3"
-          onClick={run}
-          disabled={loading || preferences.isPending || preferences.isError}
-        >
-          {loading ? (
-            <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-          ) : (
-            <Sparkles className="mr-1 h-4 w-4" />
-          )}
-          {loading ? "Planning…" : "Generate ideas"}
-        </Button>
-      </section>
-      {ideas?.days.map((d) => (
-        <section key={d.day} className="rounded-xl border bg-card p-6 shadow-card">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xl font-semibold">Day {d.day}</h3>
-            <Button size="sm" variant="secondary" onClick={() => addDay(d)}>
-              Add to itinerary
-            </Button>
-          </div>
-          <ul className="mt-3 space-y-2">
-            {d.items.map((it, i) => (
-              <li key={i} className="flex gap-4 text-sm">
-                <span className="w-12 shrink-0 font-medium text-primary">{it.time}</span>
-                <span>
-                  <span className="font-medium">{it.title}</span>{" "}
-                  <span className="text-muted-foreground">
-                    · {it.location} — {it.notes}
-                  </span>
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ))}
     </div>
   );
 }

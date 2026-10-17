@@ -14,6 +14,13 @@ export type Database = {
   }
   public: {
     Tables: {
+      trip_preferences: {
+        Row: { trip_id: string; user_id: string; travelers: number; style: string; interest: string; packing: string[] }
+        Insert: { trip_id: string; user_id?: string; travelers?: number; style?: string; interest?: string; packing?: string[] }
+        Update: { trip_id?: string; user_id?: string; travelers?: number; style?: string; interest?: string; packing?: string[] }
+        Relationships: [{ foreignKeyName: "trip_preferences_trip_id_fkey"; columns: ["trip_id"]; isOneToOne: true; referencedRelation: "trips"; referencedColumns: ["id"] }]
+      }
+
       activities: {
         Row: {
           created_at: string

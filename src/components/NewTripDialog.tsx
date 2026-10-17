@@ -38,6 +38,7 @@ export function NewTripDialog({
     style: "Balanced" as TravelStyle,
     interest: template?.category ?? "Food & culture",
   });
+  const [requestAi, setRequestAi] = useState(!template);
   const [busy, setBusy] = useState(false);
   const qc = useQueryClient();
   const navigate = useNavigate();
@@ -83,7 +84,7 @@ export function NewTripDialog({
           "Trip created, but travel settings could not save. Update them on the trip page.",
         );
       }
-      if (template && f.destination.trim() === template.destination) {
+      if (template && f.destination.trim() === template.destination && !requestAi) {
         const { error: activityError } = await supabase
           .from("activities")
           .insert(templateActivities(template.id, f.days).map((a) => ({ ...a, trip_id: data.id })));
@@ -97,7 +98,11 @@ export function NewTripDialog({
         qc.invalidateQueries({ queryKey: ["travel-preferences"] }),
       ]);
       onOpenChange(false);
-      navigate({ to: "/trips/$tripId", params: { tripId: data.id } });
+      navigate({
+        to: "/trips/$tripId",
+        params: { tripId: data.id },
+        ...(requestAi ? { search: { suggest: true } } : {}),
+      });
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Could not create trip. Please try again.",
@@ -245,6 +250,21 @@ export function NewTripDialog({
             Budget style presets use estimated EUR costs. Edit your total and currency as needed.
             Flights are excluded.
           </p>
+          <label className="flex items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={requestAi}
+              onChange={(e) => setRequestAi(e.target.checked)}
+              disabled={busy}
+              className="mt-1"
+            />
+            <span>
+              Suggest the whole trip after creating it.
+              <span className="block text-xs text-muted-foreground">
+                You can review and edit every day before saving the suggestion.
+              </span>
+            </span>
+          </label>
           <Button className="w-full" disabled={busy}>
             {busy ? (
               "Creating…"
