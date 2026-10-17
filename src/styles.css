@@ -77,7 +77,9 @@
     color: var(--color-foreground);
     font-family: var(--font-sans);
   }
-  h1, h2, h3 {
+  h1,
+  h2,
+  h3 {
     font-family: var(--font-display);
     letter-spacing: -0.01em;
   }
@@ -85,4 +87,29 @@
 
 @utility shadow-card {
   box-shadow: var(--shadow-card);
+}
+
+.travel-map-pin {
+  display: flex;
+  width: 30px;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid white;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  background: #aa5738;
+  color: white;
+  font:
+    600 13px system-ui,
+    sans-serif;
+  box-shadow: 0 2px 5px #0004;
+}
+.travel-map-marker {
+  background: transparent;
+  border: 0;
+}
+
+.travel-map-pin b {
+  transform: rotate(45deg);
 }

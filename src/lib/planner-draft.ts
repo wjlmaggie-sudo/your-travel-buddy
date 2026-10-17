@@ -1,8 +1,9 @@
 import { z } from "zod";
 import { INTERESTS } from "./planning";
+import { ideaSchema } from "../../supabase/functions/_shared/trip-ideas";
 
 const KEY = "ai-travel-planning-draft";
-const schema = z.object({
+export const plannerDraftSchema = z.object({
   destination: z.string().trim().min(1).max(200),
   start: z
     .string()
@@ -17,13 +18,14 @@ const schema = z.object({
   currency: z.string().regex(/^[A-Z]{3}$/),
   style: z.enum(["Budget", "Balanced", "Luxury"]),
   interest: z.string().refine((value) => INTERESTS.includes(value)),
+  ideas: ideaSchema.optional(),
 });
-export type PlannerDraft = z.infer<typeof schema>;
+export type PlannerDraft = z.infer<typeof plannerDraftSchema>;
 
 export function readPlannerDraft(): PlannerDraft | null {
   try {
     if (typeof window === "undefined") return null;
-    const result = schema.safeParse(JSON.parse(sessionStorage.getItem(KEY) ?? "null"));
+    const result = plannerDraftSchema.safeParse(JSON.parse(sessionStorage.getItem(KEY) ?? "null"));
     return result.success ? result.data : null;
   } catch {
     return null;
@@ -32,7 +34,7 @@ export function readPlannerDraft(): PlannerDraft | null {
 
 export function savePlannerDraft(draft: PlannerDraft) {
   try {
-    sessionStorage.setItem(KEY, JSON.stringify(schema.parse(draft)));
+    sessionStorage.setItem(KEY, JSON.stringify(plannerDraftSchema.parse(draft)));
     return true;
   } catch {
     return false;

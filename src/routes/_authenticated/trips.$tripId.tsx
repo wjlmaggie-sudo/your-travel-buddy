@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { ArrowLeft, ArrowDown, ArrowUp, Trash2, MapPin, Sparkles, Loader2 } from "lucide-react";
+import { ArrowLeft, Trash2, MapPin, Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AppHeader } from "@/components/AppHeader";
@@ -10,10 +10,10 @@ import { TripSuggestions } from "@/components/TripSuggestions";
 import { DailyBudget, DayBudgetSummary, dailyMoney } from "@/components/DailyBudget";
 import { DestinationExplorer } from "@/components/DestinationExplorer";
 import { TripWeather } from "@/components/TripWeather";
+import { ItineraryDay as DayCard } from "@/components/ItineraryDay";
 import { Button } from "@/components/ui/button";
 import { TravelShop } from "@/components/TravelShop";
 import { TripSettings } from "@/components/TripSettings";
-import { EditActivity } from "@/components/EditActivity";
 import { useTripPreferences } from "@/lib/travel-preferences";
 import { PRODUCTS } from "@/lib/travel-data";
 import { downloadText, budgetAllocation, dailyBudgets } from "@/lib/planning";
@@ -220,145 +220,27 @@ function Itinerary({ data, refresh }: { data: Data; refresh: () => void }) {
               currency={data.trip.currency}
               style={preferences.preference.style}
             />
-            <DayCard day={day} items={items} tripId={data.trip.id} refresh={refresh} />
+            <DayCard
+              day={day}
+              items={items}
+              tripId={data.trip.id}
+              refresh={refresh}
+              destination={data.trip.destination}
+              style={preferences.preference.style}
+              foodPerPerson={
+                data.trip.currency === "EUR"
+                  ? (budgetAllocation(
+                      daily[day - 1]?.amount ?? 0,
+                      preferences.preference.style,
+                    ).find((item) => item.label === "Food")?.amount ?? 0) /
+                    preferences.preference.travelers
+                  : undefined
+              }
+            />
           </div>
         );
       })}
     </div>
-  );
-}
-
-function DayCard({
-  day,
-  items,
-  tripId,
-  refresh,
-}: {
-  day: number;
-  items: Data["activities"];
-  tripId: string;
-  refresh: () => void;
-}) {
-  const [f, setF] = useState({ time: "", title: "", location: "", notes: "" });
-
-  async function add(e: React.FormEvent) {
-    e.preventDefault();
-    if (!f.title.trim()) return;
-    const { error } = await supabase.from("activities").insert({
-      ...f,
-      trip_id: tripId,
-      day,
-      position: Math.max(-1, ...items.map((item) => item.position)) + 1,
-    });
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    setF({ time: "", title: "", location: "", notes: "" });
-    refresh();
-  }
-  async function move(idx: number, dir: -1 | 1) {
-    const a = items[idx],
-      b = items[idx + dir];
-    if (!a || !b) return;
-    const results = await Promise.all([
-      supabase.from("activities").update({ position: b.position }).eq("id", a.id),
-      supabase.from("activities").update({ position: a.position }).eq("id", b.id),
-    ]);
-    if (results.some((result) => result.error))
-      toast.error("Could not reorder activities. Please try again.");
-    refresh();
-  }
-  async function remove(id: string) {
-    const { error } = await supabase.from("activities").delete().eq("id", id);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    refresh();
-  }
-
-  return (
-    <section className="rounded-xl border bg-card p-6 shadow-card">
-      <h2 className="text-2xl font-semibold">Day {day}</h2>
-      <ul className="mt-4 divide-y">
-        {items.map((a, i) => (
-          <li key={a.id} className="flex flex-wrap items-start gap-3 py-3 sm:flex-nowrap">
-            <span className="w-14 shrink-0 font-medium text-primary">{a.time || "—"}</span>
-            <div className="min-w-0 flex-1 break-words">
-              <p className="font-medium">{a.title}</p>
-              {a.location && (
-                <a
-                  className="flex items-center gap-1 text-sm text-muted-foreground underline"
-                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a.location)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <MapPin className="h-3 w-3" />
-                  {a.location}
-                </a>
-              )}
-              {a.notes && <p className="text-sm text-muted-foreground">{a.notes}</p>}
-            </div>
-            <div className="flex w-full justify-end sm:w-auto">
-              <EditActivity activity={a} refresh={refresh} />
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => move(i, -1)}
-                disabled={i === 0}
-                aria-label="Move up"
-              >
-                <ArrowUp className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => move(i, 1)}
-                disabled={i === items.length - 1}
-                aria-label="Move down"
-              >
-                <ArrowDown className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="icon" onClick={() => remove(a.id)} aria-label="Delete">
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          </li>
-        ))}
-      </ul>
-      <form onSubmit={add} className="mt-4 grid gap-2 sm:grid-cols-[90px_1fr_1fr_auto]">
-        <Input
-          aria-label={`Day ${day} activity time`}
-          type="time"
-          value={f.time}
-          onChange={(e) => setF({ ...f, time: e.target.value })}
-        />
-        <Input
-          aria-label={`Day ${day} activity title`}
-          required
-          placeholder="Activity"
-          value={f.title}
-          onChange={(e) => setF({ ...f, title: e.target.value })}
-        />
-        <Input
-          aria-label={`Day ${day} activity place`}
-          placeholder="Place"
-          value={f.location}
-          onChange={(e) => setF({ ...f, location: e.target.value })}
-        />
-        <Input
-          aria-label={`Day ${day} activity notes`}
-          placeholder="Notes"
-          className="sm:col-span-3"
-          value={f.notes}
-          onChange={(e) => setF({ ...f, notes: e.target.value })}
-        />
-        <Button type="submit" variant="secondary">
-          Add
-        </Button>
-      </form>
-    </section>
   );
 }
 

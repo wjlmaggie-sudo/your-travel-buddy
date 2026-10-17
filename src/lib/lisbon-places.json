@@ -1,0 +1,145 @@
+[
+  {
+    "name": "Alfama",
+    "lat": 38.71222222,
+    "lon": -9.13,
+    "description": "The Alfama (Portuguese pronunciation: [alˈfɐmɐ]) is the oldest neighborhood of Lisbon, spreading on the slope between the São Jorge Castle and the Tagus river. The district includes the freguesias (parishes) of São Miguel, Santo Estêvão, São Vicente de Fora and part of the two streets, \"Freguesia da Sé: Rua do Barão\" and \"Rua São João da Praça\".",
+    "source": "https://en.wikipedia.org/wiki/Alfama",
+    "image": {
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/07/Lisbon_alfalma.jpg/960px-Lisbon_alfalma.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "credit": "Arne Müseler",
+      "license": "CC BY-SA 3.0 de",
+      "source": "https://commons.wikimedia.org/wiki/File:Lisbon_alfalma.jpg"
+    }
+  },
+  {
+    "name": "Belém Tower",
+    "lat": 38.69166667,
+    "lon": -9.21611111,
+    "description": "Belém Tower (Portuguese: Torre de Belém, pronounced [ˈtoʁɨ ðɨ βɨˈlɐ̃j]; literally: Bethlehem Tower), officially the Tower of Saint Vincent (Portuguese: Torre de São Vicente), is a 16th-century fortification located in Lisbon, Portugal, which served as a point of embarkation and disembarkation for Portuguese explorers and as a ceremonial gateway to Lisbon. The tower symbolizes P",
+    "source": "https://en.wikipedia.org/wiki/Bel%C3%A9m_Tower",
+    "image": {
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/65/Torre_Bel%C3%A9m_April_2009-4a.jpg/960px-Torre_Bel%C3%A9m_April_2009-4a.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "credit": "Alvesgaspar",
+      "license": "CC BY-SA 3.0",
+      "source": "https://commons.wikimedia.org/wiki/File:Torre_Bel%C3%A9m_April_2009-4a.jpg"
+    }
+  },
+  {
+    "name": "Carmo Convent",
+    "lat": 38.71222222,
+    "lon": -9.14,
+    "description": "The Convent of Our Lady of Mount Carmel (Portuguese: Convento da Ordem do Carmo) is a former Catholic convent located in the civil parish of Santa Maria Maior, municipality of Lisbon, Portugal. The medieval convent was ruined during the sequence of the 1755 Lisbon earthquake, and the destroyed Gothic Church of Our Lady of Mount Carmel (Portuguese: Igreja do Carmo) on the southe",
+    "source": "https://en.wikipedia.org/wiki/Carmo_Convent",
+    "image": {
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f7/Lisbon09.jpg/960px-Lisbon09.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "credit": "Georges Jansoone",
+      "license": "CC BY 2.5",
+      "source": "https://commons.wikimedia.org/wiki/File:Lisbon09.jpg"
+    }
+  },
+  {
+    "name": "Chiado",
+    "lat": 38.71055556,
+    "lon": -9.14222222,
+    "description": "The Chiado (Portuguese pronunciation: [ʃiˈaðu]) is a neighborhood in the historic center of Lisbon, the capital of Portugal. Chiado is an important cultural and commercial district, known for its luxury shopping, historic landmarks, and its numerous theatres and museums.",
+    "source": "https://en.wikipedia.org/wiki/Chiado",
+    "image": {
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/10/Lisbon_10064_Lisboa_Pra%C3%A7a_Lu%C3%ADs_de_Cam%C3%B5es_2006_Luca_Galuzzi_%28cropped%29.jpg/960px-Lisbon_10064_Lisboa_Pra%C3%A7a_Lu%C3%ADs_de_Cam%C3%B5es_2006_Luca_Galuzzi_%28cropped%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "credit": "Luca Galuzzi (Lucag)",
+      "license": "CC BY-SA 2.5",
+      "source": "https://commons.wikimedia.org/wiki/File:Lisbon_10064_Lisboa_Pra%C3%A7a_Lu%C3%ADs_de_Cam%C3%B5es_2006_Luca_Galuzzi_(cropped).jpg"
+    }
+  },
+  {
+    "name": "Jerónimos Monastery",
+    "lat": 38.69777778,
+    "lon": -9.20611111,
+    "description": "The Jerónimos Monastery or Hieronymites Monastery (Portuguese: Mosteiro dos Jerónimos, pronounced [muʃˈtɐjɾu ðu(ʒ) ʒɨˈɾɔnimuʃ]) is a former monastery of the Order of Saint Jerome near the Tagus river in the parish of Belém, in the Lisbon Municipality, Portugal. It became the necropolis of the Portuguese royal dynasty of Aviz in the 16th century but was secularized on 28 Decembe",
+    "source": "https://en.wikipedia.org/wiki/Jer%C3%B3nimos_Monastery",
+    "image": {
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0e/1502_legte_K%C3%B6nig_Manuel_I._den_Grundstein_f%C3%BCr_das_Hieronymus_Kloster_in_Lissabon._06.jpg/960px-1502_legte_K%C3%B6nig_Manuel_I._den_Grundstein_f%C3%BCr_das_Hieronymus_Kloster_in_Lissabon._06.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "credit": "Holger Uwe Schmitt",
+      "license": "CC BY-SA 4.0",
+      "source": "https://commons.wikimedia.org/wiki/File:1502_legte_K%C3%B6nig_Manuel_I._den_Grundstein_f%C3%BCr_das_Hieronymus_Kloster_in_Lissabon._06.jpg"
+    }
+  },
+  {
+    "name": "Lisbon Cathedral",
+    "lat": 38.70972222,
+    "lon": -9.13305556,
+    "description": "The Cathedral of Saint Mary Major (Portuguese: Santa Maria Maior de Lisboa or Sé-Catedral Metropolitana Patriarcal de Santa Maria Maior de Lisboa), often called Lisbon Cathedral or simply the Sé (Sé de Lisboa), is a Roman Catholic cathedral located in Lisbon, Portugal. It is the oldest church in the city, built in 1147.",
+    "source": "https://en.wikipedia.org/wiki/Lisbon_Cathedral",
+    "image": {
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4a/Catedral%2C_Lisboa%2C_Portugal%2C_2022-07-24%2C_DD_24.jpg/960px-Catedral%2C_Lisboa%2C_Portugal%2C_2022-07-24%2C_DD_24.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "credit": "Diego Delso",
+      "license": "CC BY-SA 4.0",
+      "source": "https://commons.wikimedia.org/wiki/File:Catedral,_Lisboa,_Portugal,_2022-07-24,_DD_24.jpg"
+    }
+  },
+  {
+    "name": "Pena Palace",
+    "lat": 38.78777778,
+    "lon": -9.39055556,
+    "description": "The Pena Palace (Portuguese: Palácio da Pena) is a Romanticist palace in São Pedro de Penaferrim, in the municipality of Sintra, on the Portuguese Riviera. The castle stands on the top of a hill in the Sintra Mountains above the town of Sintra, and on a clear day it can be easily seen from Lisbon and much of its metropolitan area.",
+    "source": "https://en.wikipedia.org/wiki/Pena_Palace",
+    "image": {
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3e/Sintra_-_Palacio_da_Pena_%2820332995770%29.jpg/960px-Sintra_-_Palacio_da_Pena_%2820332995770%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "credit": "Singa Hitam",
+      "license": "CC BY 2.0",
+      "source": "https://commons.wikimedia.org/wiki/File:Sintra_-_Palacio_da_Pena_(20332995770).jpg"
+    }
+  },
+  {
+    "name": "Santa Justa Lift",
+    "lat": 38.71222222,
+    "lon": -9.13944444,
+    "description": "The Santa Justa Lift (Portuguese: Elevador de Santa Justa, pronounced [elɨvɐˈðoɾ ðɨ ˈsɐ̃tɐ ˈʒuʃtɐ]), also called Carmo Lift (Portuguese: Elevador do Carmo, [elɨvɐˈðoɾ ðu ˈkaɾmu]), is an elevator, or lift, in the civil parish of Santa Maria Maior, in the historic center of Lisbon, Portugal. Situated at the end of Rua de Santa Justa, it connects the lower streets of the Baixa wit",
+    "source": "https://en.wikipedia.org/wiki/Santa_Justa_Lift",
+    "image": {
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c0/Elevador_de_Santa_Justa_from_Rua_de_Santa_Justa.jpg/960px-Elevador_de_Santa_Justa_from_Rua_de_Santa_Justa.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "credit": "Dicklyon",
+      "license": "CC BY-SA 4.0",
+      "source": "https://commons.wikimedia.org/wiki/File:Elevador_de_Santa_Justa_from_Rua_de_Santa_Justa.jpg"
+    }
+  },
+  {
+    "name": "Sintra National Palace",
+    "lat": 38.79777778,
+    "lon": -9.39083333,
+    "description": "The Palace of Sintra (Portuguese: Palácio de Sintra), also called Town Palace (Palácio da Vila), is located in the town of Sintra, in the Lisbon District of Portugal. It is a present-day historic house museum.",
+    "source": "https://en.wikipedia.org/wiki/Sintra_National_Palace",
+    "image": {
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/70/Pal%C3%A1cio_Nacional_de_Sintra_from_above_74.jpg/960px-Pal%C3%A1cio_Nacional_de_Sintra_from_above_74.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "credit": "Kent Wang",
+      "license": "CC BY 4.0",
+      "source": "https://commons.wikimedia.org/wiki/File:Pal%C3%A1cio_Nacional_de_Sintra_from_above_74.jpg"
+    }
+  },
+  {
+    "name": "São Jorge Castle",
+    "lat": 38.71388889,
+    "lon": -9.13361111,
+    "description": "São Jorge Castle (Portuguese: Castelo de São Jorge; Portuguese pronunciation: [kɐʃˈtɛlu dɨ sɐ̃w̃ ˈʒɔɾʒɨ]), sometimes known in English as Saint George's Castle, is a historic castle in the Portuguese capital of Lisbon, located in the freguesia of Santa Maria Maior. Human occupation of the castle hill dates to at least the 8th century BC while the oldest fortifications on the sit",
+    "source": "https://en.wikipedia.org/wiki/S%C3%A3o_Jorge_Castle",
+    "image": {
+      "url": "https://upload.wikimedia.org/wikipedia/commons/3/37/Castelo_Sao_Jorge_Lisboa_1.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail_unscaled",
+      "credit": "Wikimedia Commons contributor",
+      "license": "CC BY-SA 2.0",
+      "source": "https://commons.wikimedia.org/wiki/File:Castelo_Sao_Jorge_Lisboa_1.JPG"
+    }
+  },
+  {
+    "name": "Time Out Market Lisboa",
+    "lat": 38.70694444,
+    "lon": -9.14555556,
+    "description": "Time Out Market Lisboa is a food hall located in the Mercado da Ribeira at Cais do Sodré in Lisbon, Portugal.",
+    "source": "https://en.wikipedia.org/wiki/Time_Out_Market_Lisboa",
+    "image": {
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/cd/Drinks_at_Mercado_da_Ribeira_%28Lissabon_2016%29_%2826003375942%29.jpg/960px-Drinks_at_Mercado_da_Ribeira_%28Lissabon_2016%29_%2826003375942%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "credit": "Paul Arps from The Netherlands",
+      "license": "CC BY 2.0",
+      "source": "https://commons.wikimedia.org/wiki/File:Drinks_at_Mercado_da_Ribeira_(Lissabon_2016)_(26003375942).jpg"
+    }
+  }
+]

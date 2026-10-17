@@ -2,6 +2,12 @@ import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
+import type { Tables } from "@/integrations/supabase/types";
+import {
+  prepareSuggestedPlan,
+  saveSuggestedPlan,
+  type SuggestedActivity,
+} from "@/lib/suggested-plan";
 import { readPlannerDraft, clearPlannerDraft } from "@/lib/planner-draft";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,6 +35,9 @@ export function NewTripDialog({
   templateId?: string;
 }) {
   const template = TEMPLATES.find((t) => t.id === templateId);
+  const [imported] = useState(() => (!template ? readPlannerDraft() : null));
+  const [createdTrip, setCreatedTrip] = useState<Tables<"trips"> | null>(null);
+  const [plannedActivities, setPlannedActivities] = useState<SuggestedActivity[] | null>(null);
   const [f, setF] = useState(() => ({
     destination: template?.destination ?? "",
     start: new Date().toISOString().slice(0, 10),
@@ -38,9 +47,9 @@ export function NewTripDialog({
     currency: "EUR",
     style: "Balanced" as TravelStyle,
     interest: template?.category ?? "Food & culture",
-    ...(!template ? readPlannerDraft() : null),
+    ...imported,
   }));
-  const [requestAi, setRequestAi] = useState(!template);
+  const [requestAi, setRequestAi] = useState(!template && !imported?.ideas);
   const [busy, setBusy] = useState(false);
   const qc = useQueryClient();
   const navigate = useNavigate();
@@ -62,18 +71,23 @@ export function NewTripDialog({
     }
     setBusy(true);
     try {
-      const { data, error } = await supabase
-        .from("trips")
-        .insert({
-          destination: f.destination.trim(),
-          start_date: f.start,
-          end_date: endDate(f.start, f.days),
-          budget: f.budget,
-          currency: f.currency,
-        })
-        .select()
-        .single();
+      const response = createdTrip
+        ? { data: createdTrip, error: null }
+        : await supabase
+            .from("trips")
+            .insert({
+              destination: f.destination.trim(),
+              start_date: f.start,
+              end_date: endDate(f.start, f.days),
+              budget: f.budget,
+              currency: f.currency,
+            })
+            .select()
+            .single();
+      const { data, error } = response;
       if (error) throw error;
+      if (!data) throw new Error("The trip could not be created.");
+      setCreatedTrip(data);
       try {
         await saveTripPreferences(data.id, {
           ...DEFAULT_PREFERENCES,
@@ -95,6 +109,17 @@ export function NewTripDialog({
             "Trip created, but template activities could not save. Add activities on your trip page.",
           );
       }
+      if (imported?.ideas) {
+        const items = plannedActivities ?? prepareSuggestedPlan(data.id, imported.ideas, []);
+        setPlannedActivities(items);
+        try {
+          await saveSuggestedPlan(items);
+        } catch {
+          throw new Error(
+            "Your trip was created, but the itinerary could not save. Keep this window open and retry saving.",
+          );
+        }
+      }
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["trips"] }),
         qc.invalidateQueries({ queryKey: ["travel-preferences"] }),
@@ -104,7 +129,7 @@ export function NewTripDialog({
       navigate({
         to: "/trips/$tripId",
         params: { tripId: data.id },
-        ...(requestAi ? { search: { suggest: true } } : {}),
+        ...(requestAi && !imported?.ideas ? { search: { suggest: true } } : {}),
       });
     } catch (error) {
       toast.error(
@@ -124,157 +149,184 @@ export function NewTripDialog({
       <DialogContent className="max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-display text-2xl">
-            {template ? template.name : "Your next story"}
+            {imported?.ideas
+              ? "Save your complete plan"
+              : template
+                ? template.name
+                : "Your next story"}
           </DialogTitle>
           <DialogDescription>
-            {template
-              ? "Make this template your own. Suggested activities are added when you keep its destination."
-              : "Set a destination, a little time, and a budget for the whole group."}
+            {imported?.ideas
+              ? "Your itinerary and edits are ready. Confirm the details and save every day to your account."
+              : template
+                ? "Make this template your own. Suggested activities are added when you keep its destination."
+                : "Set a destination, a little time, and a budget for the whole group."}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={create} className="space-y-4">
-          <div>
-            <Label htmlFor="new-destination">Destination</Label>
-            <Input
-              id="new-destination"
-              className="mt-2"
-              required
-              maxLength={200}
-              value={f.destination}
-              onChange={(e) => setF({ ...f, destination: e.target.value })}
-              placeholder="Lisbon, Portugal"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label htmlFor="new-start">Departure</Label>
-              <Input
-                id="new-start"
-                className="mt-2"
-                type="date"
-                required
-                value={f.start}
-                onChange={(e) => setF({ ...f, start: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="new-days">Days</Label>
-              <Input
-                id="new-days"
-                className="mt-2"
-                type="number"
-                min={1}
-                max={30}
-                required
-                value={f.days}
-                onChange={(e) => setF({ ...f, days: Number(e.target.value) })}
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label htmlFor="new-travelers">Travelers</Label>
-              <Input
-                id="new-travelers"
-                className="mt-2"
-                type="number"
-                min={1}
-                max={20}
-                required
-                value={f.travelers}
-                onChange={(e) => setF({ ...f, travelers: Number(e.target.value) })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="new-currency">Currency</Label>
-              <select
-                id="new-currency"
-                className="mt-2 h-10 w-full rounded-md border bg-background px-3 text-sm"
-                value={f.currency}
-                onChange={(e) => setF({ ...f, currency: e.target.value })}
-              >
-                {Intl.supportedValuesOf("currency").map((c) => (
-                  <option key={c}>{c}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <fieldset>
-            <legend className="mb-2 text-sm font-medium">Budget style</legend>
-            <div className="grid grid-cols-3 gap-2">
-              {STYLES.map((style) => (
-                <Button
-                  type="button"
-                  key={style}
-                  variant={f.style === style ? "secondary" : "outline"}
-                  aria-pressed={f.style === style}
-                  onClick={() =>
-                    setF({
-                      ...f,
-                      style,
-                      budget: estimatedBudget(f.days, f.travelers, style),
-                      currency: "EUR",
-                    })
-                  }
+          {imported?.ideas && (
+            <p className="text-sm text-muted-foreground">
+              {f.destination} · {f.days} days · {f.travelers} travelers · {f.start} · {f.budget}{" "}
+              {f.currency} group budget
+            </p>
+          )}
+          <details open={!imported?.ideas}>
+            <summary className="mb-3 cursor-pointer text-sm font-medium">
+              Confirm or adjust trip details
+            </summary>
+            <fieldset disabled={!!createdTrip || busy} className="space-y-4">
+              <div>
+                <Label htmlFor="new-destination">Destination</Label>
+                <Input
+                  id="new-destination"
+                  className="mt-2"
+                  required
+                  readOnly={!!imported?.ideas}
+                  maxLength={200}
+                  value={f.destination}
+                  onChange={(e) => setF({ ...f, destination: e.target.value })}
+                  placeholder="Lisbon, Portugal"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="new-start">Departure</Label>
+                  <Input
+                    id="new-start"
+                    className="mt-2"
+                    type="date"
+                    required
+                    value={f.start}
+                    onChange={(e) => setF({ ...f, start: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="new-days">Days</Label>
+                  <Input
+                    id="new-days"
+                    readOnly={!!imported?.ideas}
+                    className="mt-2"
+                    type="number"
+                    min={1}
+                    max={30}
+                    required
+                    value={f.days}
+                    onChange={(e) => setF({ ...f, days: Number(e.target.value) })}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="new-travelers">Travelers</Label>
+                  <Input
+                    id="new-travelers"
+                    className="mt-2"
+                    type="number"
+                    min={1}
+                    max={20}
+                    required
+                    value={f.travelers}
+                    onChange={(e) => setF({ ...f, travelers: Number(e.target.value) })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="new-currency">Currency</Label>
+                  <select
+                    id="new-currency"
+                    className="mt-2 h-10 w-full rounded-md border bg-background px-3 text-sm"
+                    value={f.currency}
+                    onChange={(e) => setF({ ...f, currency: e.target.value })}
+                  >
+                    {Intl.supportedValuesOf("currency").map((c) => (
+                      <option key={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <fieldset>
+                <legend className="mb-2 text-sm font-medium">Budget style</legend>
+                <div className="grid grid-cols-3 gap-2">
+                  {STYLES.map((style) => (
+                    <Button
+                      type="button"
+                      key={style}
+                      variant={f.style === style ? "secondary" : "outline"}
+                      aria-pressed={f.style === style}
+                      onClick={() =>
+                        setF({
+                          ...f,
+                          style,
+                          budget: estimatedBudget(f.days, f.travelers, style),
+                          currency: "EUR",
+                        })
+                      }
+                    >
+                      {style}
+                    </Button>
+                  ))}
+                </div>
+              </fieldset>
+              <div>
+                <Label htmlFor="new-budget">Total group budget</Label>
+                <Input
+                  id="new-budget"
+                  className="mt-2"
+                  type="number"
+                  required
+                  min={0}
+                  max={1000000}
+                  step="0.01"
+                  value={f.budget}
+                  onChange={(e) => setF({ ...f, budget: Number(e.target.value) })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="new-interest">What do you love?</Label>
+                <select
+                  id="new-interest"
+                  className="mt-2 h-10 w-full rounded-md border bg-background px-3 text-sm"
+                  value={f.interest}
+                  onChange={(e) => setF({ ...f, interest: e.target.value })}
                 >
-                  {style}
-                </Button>
-              ))}
-            </div>
-          </fieldset>
-          <div>
-            <Label htmlFor="new-budget">Total group budget</Label>
-            <Input
-              id="new-budget"
-              className="mt-2"
-              type="number"
-              required
-              min={0}
-              max={1000000}
-              step="0.01"
-              value={f.budget}
-              onChange={(e) => setF({ ...f, budget: Number(e.target.value) })}
-            />
-          </div>
-          <div>
-            <Label htmlFor="new-interest">What do you love?</Label>
-            <select
-              id="new-interest"
-              className="mt-2 h-10 w-full rounded-md border bg-background px-3 text-sm"
-              value={f.interest}
-              onChange={(e) => setF({ ...f, interest: e.target.value })}
-            >
-              {INTERESTS.map((i) => (
-                <option key={i}>{i}</option>
-              ))}
-            </select>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Budget style presets use estimated EUR costs. Edit your total and currency as needed.
-            Flights are excluded.
-          </p>
-          <label className="flex items-start gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={requestAi}
-              onChange={(e) => setRequestAi(e.target.checked)}
-              disabled={busy}
-              className="mt-1"
-            />
-            <span>
-              Suggest the whole trip after creating it.
-              <span className="block text-xs text-muted-foreground">
-                You can review and edit every day before saving the suggestion.
-              </span>
-            </span>
-          </label>
+                  {INTERESTS.map((i) => (
+                    <option key={i}>{i}</option>
+                  ))}
+                </select>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Budget style presets use estimated EUR costs. Edit your total and currency as
+                needed. Flights are excluded.
+              </p>
+              {!imported?.ideas && (
+                <label className="flex items-start gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={requestAi}
+                    onChange={(e) => setRequestAi(e.target.checked)}
+                    disabled={busy}
+                    className="mt-1"
+                  />
+                  <span>
+                    Suggest the whole trip after creating it.
+                    <span className="block text-xs text-muted-foreground">
+                      You can review and edit every day before saving the suggestion.
+                    </span>
+                  </span>
+                </label>
+              )}
+            </fieldset>
+          </details>
           <Button className="w-full" disabled={busy}>
             {busy ? (
               "Creating…"
             ) : (
               <>
                 <Plus className="mr-2 h-4 w-4" />
-                Create trip
+                {createdTrip
+                  ? "Retry saving itinerary"
+                  : imported?.ideas
+                    ? "Save whole plan"
+                    : "Create trip"}
               </>
             )}
           </Button>

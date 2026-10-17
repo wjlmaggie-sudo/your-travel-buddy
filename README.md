@@ -129,12 +129,38 @@ upgrade has not been applied automatically.
 
 ### Public travel planner and weather
 
-The homepage now includes an interactive trip brief (destination, departure,
-1–30 days, 1–20 travelers, currency, group budget, style, and interests). The
-preview shows daily group and per-person averages and an estimated daily
-category allocation. The validated brief stays in this tab's session storage
-through sign-in, opens the new-trip form, and clears only after successful
-creation. Templates continue to use their own defaults.
+The homepage generates a complete, editable starter itinerary before sign-in.
+Only the destination needs typing: days, travelers, and total budget have useful
+defaults. Departure date, currency, style, and interests are under More options.
+Budget presets change meals and activities as well as daily allocations. EUR
+bands are rough planning estimates; other currencies use the selected travel
+style without assuming an exchange rate. Unknown destinations get a clearly
+labeled flexible outline, never fabricated venue names or AI claims.
+
+Users can edit every day, download without an account, or save the entire edited
+plan through sign-in. The validated itinerary travels with the brief in this
+tab's session storage. The save dialog carries existing edits into one bulk
+activity upsert and retries against the same trip and activity IDs if saving
+fails. Regular trip suggestions also provide a local starter by default. AI
+enhancement is optional and falls back explicitly when unavailable; the previous
+production Edge Function endpoint was verified to return HTTP 404.
+
+Day views now include numbered OpenStreetMap markers, credited location photos,
+and restaurant alternatives with menu and map links. Lisbon has an offline
+curated guide covering Alfama, central Lisbon, Belém, Sintra, and Chiado. Other
+places use the existing on-demand directory; coverage varies. Additional photos
+are matched by place coordinates and require an open Commons license. Maps load
+as days enter view. The saved itinerary keeps Add activity controls but hides
+extra fields until pressed; existing activities use their Edit controls.
+
+Leaflet 1.9.4 is vendored from its npm registry release under its BSD 2-Clause
+license in public/vendor/leaflet/LICENSE. Maps attribute OpenStreetMap. The
+curated place summaries are adapted from Wikipedia (CC BY-SA), linked on each
+card; photo creator/license links are shown individually. Restaurant information
+links to venue or official tourism pages and is not live inventory or a booking.
+Run scripts/refresh-lisbon-guide.py to refresh curated place metadata and image
+attribution from the Wikipedia and Commons APIs. It downloads metadata, not
+image binaries.
 
 Destination weather is available on the public brief and saved itinerary.
 Open-Meteo geocoding resolves the destination (including a country qualifier),

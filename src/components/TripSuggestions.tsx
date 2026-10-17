@@ -3,13 +3,15 @@ import { Loader2, Sparkles, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 import { generateTripIdeas } from "@/lib/ai.functions";
+import { createStarterIdeas } from "@/lib/starter-plan";
 import { useTripPreferences } from "@/lib/travel-preferences";
 import {
   prepareSuggestedPlan,
   saveSuggestedPlan,
   type SuggestedActivity,
 } from "@/lib/suggested-plan";
-import { dailyBudgets } from "@/lib/planning";
+import { dailyBudgets, budgetAllocation } from "@/lib/planning";
+import { DayVisuals } from "./DayVisuals";
 import { searchDestinations, nearbyPlaces } from "@/lib/place-directory";
 import { tripDays } from "@/lib/trips";
 import { DayBudgetSummary } from "@/components/DailyBudget";
@@ -34,7 +36,7 @@ export function TripSuggestions({
 }: Props) {
   const preferences = useTripPreferences(trip.id);
   const [interests, setInterests] = useState("");
-  const [useDirectory, setUseDirectory] = useState(true);
+  const [useDirectory, setUseDirectory] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState("");
@@ -51,7 +53,7 @@ export function TripSuggestions({
     preferences.preference.travelers,
     trip.start_date,
   );
-  async function run() {
+  async function run(enhance = false) {
     if (
       draft.length &&
       !window.confirm("Replace the unsaved suggestion? Your saved itinerary will stay unchanged.")
@@ -63,7 +65,7 @@ export function TripSuggestions({
     setStatus("Planning your entire trip…");
     try {
       let places: { name: string; kind: string }[] = [];
-      if (useDirectory) {
+      if (useDirectory && enhance) {
         setStatus("Finding local places for your trip…");
         try {
           const locations = await searchDestinations(trip.destination);
@@ -87,28 +89,33 @@ export function TripSuggestions({
         }
       }
       setStatus(`Planning all ${days} days. This can take a minute…`);
-      const response = await generateTripIdeas({
-        data: {
-          destination: trip.destination,
-          days,
-          interests: interests || preferences.preference.interest,
-          travelers: preferences.preference.travelers,
-          budget: Number(trip.budget),
-          currency: trip.currency,
-          style: preferences.preference.style,
-          places,
-        },
-      });
+      const input = {
+        destination: trip.destination,
+        days,
+        interests: interests || preferences.preference.interest,
+        travelers: preferences.preference.travelers,
+        budget: Number(trip.budget),
+        currency: trip.currency,
+        style: preferences.preference.style,
+        places,
+      };
+      const response = enhance
+        ? await generateTripIdeas({ data: input })
+        : { ideas: createStarterIdeas(input), error: null };
       if (response.error || !response.ideas) {
-        setError(response.error || "No suggested itinerary was returned. Please try again.");
-        return;
+        response.ideas = createStarterIdeas(input);
+        setDirectoryNote(
+          "Live AI enhancement is unavailable. This complete, editable starter itinerary uses templates instead; it is not AI-generated.",
+        );
       }
       if (
         response.ideas.days.length !== days ||
         response.ideas.days.some((day, index) => day.day !== index + 1)
       ) {
-        setError("The suggestion did not cover every day. Please try again.");
-        return;
+        response.ideas = createStarterIdeas(input);
+        setDirectoryNote(
+          "The AI result was incomplete. A complete template-based starter itinerary is shown instead.",
+        );
       }
       setDraft(prepareSuggestedPlan(trip.id, response.ideas, activities));
       setSummary(
@@ -168,31 +175,36 @@ export function TripSuggestions({
           Get a day-by-day plan for all {days} days in {trip.destination}. Edit anything below, then
           save the whole itinerary in one step.
         </p>
-        <Label htmlFor="ai-interests" className="mt-4 block">
-          What would make this trip yours?
-        </Label>
-        <Textarea
-          id="ai-interests"
-          className="mt-2"
-          maxLength={500}
-          placeholder={preferences.preference.interest}
-          value={interests}
-          onChange={(e) => setInterests(e.target.value)}
-          disabled={loading || saving}
-        />
-        <label className="mt-3 flex items-start gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={useDirectory}
-            onChange={(e) => setUseDirectory(e.target.checked)}
+        <details className="mt-4 rounded-lg border p-3">
+          <summary className="cursor-pointer text-sm font-medium">
+            Personalize this plan (optional)
+          </summary>
+          <Label htmlFor="ai-interests" className="mt-4 block">
+            What would make this trip yours?
+          </Label>
+          <Textarea
+            id="ai-interests"
+            className="mt-2"
+            maxLength={500}
+            placeholder={preferences.preference.interest}
+            value={interests}
+            onChange={(e) => setInterests(e.target.value)}
             disabled={loading || saving}
-            className="mt-1"
           />
-          Include local directory places when available
-        </label>
+          <label className="mt-3 flex items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={useDirectory}
+              onChange={(e) => setUseDirectory(e.target.checked)}
+              disabled={loading || saving}
+              className="mt-1"
+            />
+            Include local directory places when available
+          </label>
+        </details>
         <div className="mt-4 flex flex-wrap gap-3">
           <Button
-            onClick={run}
+            onClick={() => run()}
             disabled={loading || saving || preferences.isPending || preferences.isError}
           >
             {loading ? (
@@ -205,6 +217,13 @@ export function TripSuggestions({
               : draft.length
                 ? "Suggest another plan"
                 : "Suggest my whole trip"}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => run(true)}
+            disabled={loading || saving || preferences.isPending || preferences.isError}
+          >
+            Try AI enhancement
           </Button>
           {draft.length > 0 && (
             <Button
@@ -232,6 +251,7 @@ export function TripSuggestions({
           </p>
         )}
         <p className="mt-4 text-xs text-muted-foreground">
+          Starter suggestions work without AI. Live AI enhancement needs a configured backend.
           Suggestions and daily spending limits are estimates, excluding flights. Existing saved
           activities are kept. New activities are added only when you save.
         </p>
@@ -281,66 +301,85 @@ export function TripSuggestions({
                   style={preferences.preference.style}
                 />
                 <div className="space-y-4">
+                  <DayVisuals
+                    destination={trip.destination}
+                    day={budget.day}
+                    style={preferences.preference.style}
+                    foodPerPerson={
+                      trip.currency === "EUR"
+                        ? (budgetAllocation(budget.amount, preferences.preference.style).find(
+                            (item) => item.label === "Food",
+                          )?.amount ?? 0) / preferences.preference.travelers
+                        : undefined
+                    }
+                  />
                   {items.map((item, index) => (
-                    <fieldset
-                      key={item.id}
-                      disabled={saving || loading || saved}
-                      className="rounded-lg border p-4"
-                    >
-                      <legend className="px-1 text-sm text-muted-foreground">
-                        Activity {index + 1}
-                      </legend>
-                      <div className="grid gap-3 sm:grid-cols-[100px_1fr]">
-                        <div>
-                          <Label htmlFor={`suggestion-time-${item.id}`}>Time</Label>
-                          <Input
-                            id={`suggestion-time-${item.id}`}
-                            type="time"
-                            value={item.time}
-                            onChange={(e) => update(item.id, "time", e.target.value)}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor={`suggestion-title-${item.id}`}>Activity</Label>
-                          <Input
-                            id={`suggestion-title-${item.id}`}
-                            required
-                            maxLength={200}
-                            value={item.title}
-                            onChange={(e) => update(item.id, "title", e.target.value)}
-                          />
-                        </div>
-                      </div>
-                      <Label htmlFor={`suggestion-location-${item.id}`} className="mt-3 block">
-                        Place
-                      </Label>
-                      <Input
-                        id={`suggestion-location-${item.id}`}
-                        maxLength={300}
-                        value={item.location}
-                        onChange={(e) => update(item.id, "location", e.target.value)}
-                      />
-                      <Label htmlFor={`suggestion-notes-${item.id}`} className="mt-3 block">
-                        Notes
-                      </Label>
-                      <Textarea
-                        id={`suggestion-notes-${item.id}`}
-                        maxLength={1000}
-                        value={item.notes}
-                        onChange={(e) => update(item.id, "notes", e.target.value)}
-                      />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="mt-2"
-                        onClick={() =>
-                          setDraft((current) => current.filter((a) => a.id !== item.id))
-                        }
+                    <details key={item.id} className="rounded-lg border">
+                      <summary className="cursor-pointer p-4 text-sm">
+                        <span className="mr-2 text-primary">{item.time}</span>
+                        {item.title || "Your activity"}
+                        <span className="ml-2 text-xs text-muted-foreground">· Edit details</span>
+                      </summary>
+                      <fieldset
+                        key={item.id}
+                        disabled={saving || loading || saved}
+                        className="rounded-lg border p-4"
                       >
-                        <Trash2 className="mr-1 h-4 w-4" />
-                        Remove
-                      </Button>
-                    </fieldset>
+                        <legend className="px-1 text-sm text-muted-foreground">
+                          Activity {index + 1}
+                        </legend>
+                        <div className="grid gap-3 sm:grid-cols-[100px_1fr]">
+                          <div>
+                            <Label htmlFor={`suggestion-time-${item.id}`}>Time</Label>
+                            <Input
+                              id={`suggestion-time-${item.id}`}
+                              type="time"
+                              value={item.time}
+                              onChange={(e) => update(item.id, "time", e.target.value)}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor={`suggestion-title-${item.id}`}>Activity</Label>
+                            <Input
+                              id={`suggestion-title-${item.id}`}
+                              required
+                              maxLength={200}
+                              value={item.title}
+                              onChange={(e) => update(item.id, "title", e.target.value)}
+                            />
+                          </div>
+                        </div>
+                        <Label htmlFor={`suggestion-location-${item.id}`} className="mt-3 block">
+                          Place
+                        </Label>
+                        <Input
+                          id={`suggestion-location-${item.id}`}
+                          maxLength={300}
+                          value={item.location}
+                          onChange={(e) => update(item.id, "location", e.target.value)}
+                        />
+                        <Label htmlFor={`suggestion-notes-${item.id}`} className="mt-3 block">
+                          Notes
+                        </Label>
+                        <Textarea
+                          id={`suggestion-notes-${item.id}`}
+                          maxLength={1000}
+                          value={item.notes}
+                          onChange={(e) => update(item.id, "notes", e.target.value)}
+                        />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="mt-2"
+                          onClick={() =>
+                            setDraft((current) => current.filter((a) => a.id !== item.id))
+                          }
+                        >
+                          <Trash2 className="mr-1 h-4 w-4" />
+                          Remove
+                        </Button>
+                      </fieldset>
+                    </details>
                   ))}
                 </div>
                 <Button

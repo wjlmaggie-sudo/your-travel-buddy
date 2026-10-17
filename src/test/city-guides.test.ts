@@ -1,0 +1,37 @@
+import { describe, expect, it } from "vitest";
+import { curatedDay, curatedRestaurants, loadCityGuide, dayGuide } from "@/lib/city-guides";
+describe("visual day guides", () => {
+  it("groups the Lisbon, Belém, and Sintra stops separately, with real coordinates and credited photos", () => {
+    for (let day = 1; day <= 5; day++) {
+      const stops = curatedDay("Lisbon, Portugal", day)!;
+      expect(stops.length).toBeGreaterThanOrEqual(2);
+      for (const stop of stops) {
+        expect(stop.lat).toBeGreaterThan(38);
+        expect(stop.lat).toBeLessThan(40);
+        expect(stop.lon).toBeGreaterThan(-10);
+        expect(stop.lon).toBeLessThan(-8);
+        expect(stop.image?.source).toMatch(/^https:\/\/commons.wikimedia.org\//);
+        expect(stop.image?.license).toMatch(/CC|Public domain|PD/);
+      }
+    }
+    expect(curatedDay("Lisbon, Portugal", 3)?.map((item) => item.name)).toContain("Belém Tower");
+    expect(curatedDay("Lisbon, Portugal", 4)?.map((item) => item.name)).toContain(
+      "Sintra National Palace",
+    );
+    expect(
+      curatedRestaurants("Lisbon, Portugal", 4, "Budget").every((item) =>
+        item.address.includes("Sintra"),
+      ),
+    ).toBe(true);
+  });
+  it("changes restaurant ordering by budget and never uses the Lisbon guide for another city", async () => {
+    const guide = await loadCityGuide("Lisbon, Portugal");
+    expect(dayGuide(guide, "Lisbon, Portugal", 1, "Budget").restaurants[0]?.name).toBe(
+      "Time Out Market Lisboa",
+    );
+    expect(dayGuide(guide, "Lisbon, Portugal", 1, "Luxury").restaurants[0]?.name).toBe(
+      "Cantinho do Avillez",
+    );
+    expect(curatedDay("Kyoto, Japan", 1)).toBeNull();
+  });
+});

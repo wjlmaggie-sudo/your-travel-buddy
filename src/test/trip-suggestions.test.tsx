@@ -1,3 +1,6 @@
+vi.mock("@/components/DayVisuals", () => ({
+  DayVisuals: () => <div>Day map and restaurants</div>,
+}));
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { randomUUID } from "node:crypto";
@@ -55,11 +58,19 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 describe("whole-trip suggestion workflow", () => {
+  it("returns every day as a starter itinerary when AI enhancement fails", async () => {
+    api.generate.mockResolvedValue({ ideas: null, error: "AI setup is pending" });
+    render(<TripSuggestions trip={trip} activities={[]} onSaved={vi.fn()} onApplied={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Try AI enhancement" }));
+    await screen.findByText(/Live AI enhancement is unavailable/);
+    expect(screen.getAllByLabelText("Activity")).toHaveLength(10);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
   it("lets users edit the suggestion before saving every day together", async () => {
     const onSaved = vi.fn(),
       onApplied = vi.fn();
     render(<TripSuggestions trip={trip} activities={[]} onSaved={onSaved} onApplied={onApplied} />);
-    fireEvent.click(screen.getByRole("button", { name: "Suggest my whole trip" }));
+    fireEvent.click(screen.getByRole("button", { name: "Try AI enhancement" }));
     await screen.findByText("A relaxed city trip.");
     fireEvent.change(screen.getAllByLabelText("Activity")[0]!, {
       target: { value: "My custom walk" },
@@ -73,7 +84,7 @@ describe("whole-trip suggestion workflow", () => {
   it("keeps the editable draft when a cloud save fails", async () => {
     api.save.mockRejectedValueOnce(new Error("offline"));
     render(<TripSuggestions trip={trip} activities={[]} onSaved={vi.fn()} onApplied={vi.fn()} />);
-    fireEvent.click(screen.getByRole("button", { name: "Suggest my whole trip" }));
+    fireEvent.click(screen.getByRole("button", { name: "Try AI enhancement" }));
     await screen.findByText("A relaxed city trip.");
     fireEvent.click(screen.getByRole("button", { name: "Save whole itinerary" }));
     await waitFor(() =>
@@ -91,8 +102,8 @@ describe("whole-trip suggestion workflow", () => {
         onApplied={vi.fn()}
       />,
     );
-    await screen.findByText("A relaxed city trip.");
-    expect(api.generate).toHaveBeenCalledOnce();
-    expect(api.generate.mock.calls[0]?.[0].data.days).toBe(2);
+    await screen.findByText(/This is a template-based plan/);
+    expect(api.generate).not.toHaveBeenCalled();
+    expect(screen.getAllByLabelText("Activity")).toHaveLength(10);
   });
 });
