@@ -11,7 +11,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export function TripSettings({ trip }: { trip: Tables<"trips"> }) {
+export function TripSettings({
+  trip,
+  includesFlights = false,
+}: {
+  trip: Tables<"trips">;
+  includesFlights?: boolean;
+}) {
   const prefs = useTripPreferences(trip.id);
   const [draft, setDraft] = useState<{
     travelers: number;
@@ -126,17 +132,20 @@ export function TripSettings({ trip }: { trip: Tables<"trips"> }) {
               Use estimated {value.style.toLowerCase()} budget
             </Button>
           )}
-          <div className="mt-5 grid gap-3 sm:grid-cols-5">
-            {budgetAllocation(Number(trip.budget), prefs.preference.style).map((b) => (
-              <div key={b.label} className="rounded-lg bg-muted/60 p-3">
-                <p className="text-xs text-muted-foreground">{b.label}</p>
-                <p className="mt-1 font-medium">{money(b.amount, trip.currency)}</p>
-              </div>
-            ))}
-          </div>
+          {!includesFlights && (
+            <div className="mt-5 grid gap-3 sm:grid-cols-5">
+              {budgetAllocation(Number(trip.budget), prefs.preference.style).map((b) => (
+                <div key={b.label} className="rounded-lg bg-muted/60 p-3">
+                  <p className="text-xs text-muted-foreground">{b.label}</p>
+                  <p className="mt-1 font-medium">{money(b.amount, trip.currency)}</p>
+                </div>
+              ))}
+            </div>
+          )}
           <p className="mt-3 text-xs text-muted-foreground">
-            Suggested allocation, not actual spending. Flights excluded. Use the Budget tab to
-            record expenses.
+            Suggested allocation, not actual spending.{" "}
+            {includesFlights ? "Flights are included in the overview below." : "Flights excluded."}{" "}
+            Use the Budget tab to record expenses.
           </p>
         </>
       )}

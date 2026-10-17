@@ -17,6 +17,7 @@ export function ItineraryDay({
   destination,
   style,
   foodPerPerson,
+  ticketBudget,
   travelers,
   date,
 }: {
@@ -29,6 +30,7 @@ export function ItineraryDay({
   destination: string;
   style: TravelStyle;
   foodPerPerson?: number | undefined;
+  ticketBudget?: number | undefined;
 }) {
   const [f, setF] = useState({ time: "", title: "", location: "", notes: "" });
   const [showAdd, setShowAdd] = useState(false);
@@ -72,9 +74,13 @@ export function ItineraryDay({
   }
 
   return (
-    <section className="rounded-xl border bg-card p-6 shadow-card">
+    <section
+      id={day === 1 ? "trip-explore" : undefined}
+      className="rounded-xl border bg-card p-6 shadow-card"
+    >
       <h2 className="text-2xl font-semibold">Day {day}</h2>
       <DayVisuals
+        ticketBudget={ticketBudget}
         travelers={travelers}
         date={date}
         destination={destination}

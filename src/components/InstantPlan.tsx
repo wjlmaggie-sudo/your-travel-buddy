@@ -1,3 +1,6 @@
+import { JourneyPlanner } from "./JourneyPlanner";
+import { createJourneyIdeas } from "@/lib/journey-plan";
+import type { Journey } from "@/lib/journey-planning";
 import { AccommodationPlanner } from "./AccommodationPlanner";
 import { stayCost, stayBudget, type StayChoice } from "@/lib/stay-planning";
 import { useState } from "react";
@@ -24,13 +27,20 @@ export function InstantPlan({
   initialIdeas: TripIdeas;
   onEdited: () => void;
 }) {
+  const [journey, setJourney] = useState<Journey | null>(brief.journey ?? null);
+  const [activityEdited, setActivityEdited] = useState(false);
   const [stay, setStay] = useState<StayChoice | null>(brief.stay ?? null);
   const [ideas, setIdeas] = useState(initialIdeas);
   const navigate = useNavigate();
   const budgets = dailyBudgets(brief.budget, brief.days, brief.travelers, brief.start);
-  const stayPlan = stayBudget(brief, stay);
+  const effectiveBrief = {
+    ...brief,
+    ...(journey ? { flightBudget: journey.flightBudget, hotelComfort: journey.hotelComfort } : {}),
+  };
+  const stayPlan = stayBudget(effectiveBrief, stay);
   function editIdeas(change: (current: TripIdeas) => TripIdeas) {
     onEdited();
+    setActivityEdited(true);
     setIdeas(change);
   }
   function update(
@@ -67,6 +77,26 @@ export function InstantPlan({
           Edit any activity below. Change your trip details above and rebuild to create a different
           outline.
         </p>
+        <nav aria-label="Trip planning steps" className="mt-5 flex flex-wrap gap-2">
+          {[
+            ["trip-flights", "1 · Flights"],
+            ["trip-stay", "2 · Stay"],
+            ["trip-explore", "3 · Explore & stories"],
+          ].map(([id, label]) => (
+            <Button
+              key={id}
+              type="button"
+              size="sm"
+              variant="outline"
+              className="rounded-full"
+              onClick={() =>
+                document.getElementById(id!)?.scrollIntoView({ behavior: "smooth", block: "start" })
+              }
+            >
+              {label}
+            </Button>
+          ))}
+        </nav>
         <div className="mt-5 flex flex-wrap gap-3">
           <Button
             type="button"
@@ -76,7 +106,12 @@ export function InstantPlan({
                 return;
               }
               if (
-                !savePlannerDraft({ ...brief, ideas, ...(stay ? { stay } : { stay: undefined }) })
+                !savePlannerDraft({
+                  ...brief,
+                  ...(journey ? { journey } : {}),
+                  ideas,
+                  ...(stay ? { stay } : { stay: undefined }),
+                })
               ) {
                 toast.error("Your browser could not keep this plan. Download a copy instead.");
                 return;
@@ -95,6 +130,13 @@ export function InstantPlan({
                 [
                   `${brief.destination} · ${brief.days} days · ${brief.travelers} travelers`,
                   ideas.summary ?? "",
+                  ...(journey
+                    ? [
+                        `Departure: ${journey.departure}`,
+                        `Group return-flight allowance: ${journey.flightBudget.toFixed(2)} ${brief.currency}`,
+                        `Hotel comfort: ${journey.hotelComfort}`,
+                      ]
+                    : []),
                   stay
                     ? `Chosen stay: ${stay.name} · ${stayCost(stay, brief) ?? "unverified"} ${brief.currency} whole group / stay; based on entered quote`
                     : "Accommodation not quoted yet.",
@@ -119,12 +161,29 @@ export function InstantPlan({
           sign-in.
         </p>
       </div>
-      <AccommodationPlanner
+      <JourneyPlanner
         brief={brief}
+        journey={journey}
+        stay={stay}
+        onChange={(next) => {
+          setJourney(next);
+          onEdited();
+          if (!activityEdited) setIdeas(createJourneyIdeas(brief, next, stay));
+        }}
+      />
+      {activityEdited && journey && (
+        <p className="text-xs text-muted-foreground">
+          Your edited activities are kept when the budget changes. Check admission prices against
+          the updated sightseeing allowance.
+        </p>
+      )}
+      <AccommodationPlanner
+        brief={effectiveBrief}
         choice={stay}
         onChoose={(choice) => {
           setStay(choice);
           onEdited();
+          if (journey && !activityEdited) setIdeas(createJourneyIdeas(brief, journey, choice));
         }}
       />
       <TripWeather
@@ -134,17 +193,22 @@ export function InstantPlan({
         days={brief.days}
       />
       {ideas.days.map((day, dayIndex) => (
-        <section key={day.day} className="rounded-2xl border bg-card p-5 shadow-card md:p-6">
+        <section
+          id={day.day === 1 ? "trip-explore" : undefined}
+          key={day.day}
+          className="rounded-2xl border bg-card p-5 shadow-card md:p-6"
+        >
           <h3 className="text-2xl font-semibold">
             Day {day.day}{" "}
             <span className="text-sm text-muted-foreground">· {budgets[dayIndex]?.date}</span>
           </h3>
           <DayBudgetSummary
             afterStay={
-              stayPlan.quoted !== null || !stayPlan.nights
+              journey || stayPlan.quoted !== null || !stayPlan.nights
                 ? stayPlan.daily[dayIndex]?.amount
                 : undefined
             }
+            includesFlights={!!journey}
             amount={budgets[dayIndex]?.amount ?? 0}
             travelers={brief.travelers}
             currency={brief.currency}
@@ -152,6 +216,11 @@ export function InstantPlan({
           />
           <div className="space-y-3">
             <DayVisuals
+              ticketBudget={
+                brief.currency === "EUR" && journey
+                  ? (Math.max(0, stayPlan.remaining) * 0.25) / brief.days
+                  : undefined
+              }
               travelers={brief.travelers}
               date={budgets[dayIndex]?.date}
               destination={brief.destination}
@@ -159,9 +228,11 @@ export function InstantPlan({
               style={brief.style}
               foodPerPerson={
                 brief.currency === "EUR"
-                  ? (budgetAllocation(budgets[dayIndex]?.amount ?? 0, brief.style).find(
-                      (item) => item.label === "Food",
-                    )?.amount ?? 0) / brief.travelers
+                  ? journey
+                    ? (Math.max(0, stayPlan.remaining) * 0.4) / brief.days / brief.travelers
+                    : (budgetAllocation(budgets[dayIndex]?.amount ?? 0, brief.style).find(
+                        (item) => item.label === "Food",
+                      )?.amount ?? 0) / brief.travelers
                   : undefined
               }
             />

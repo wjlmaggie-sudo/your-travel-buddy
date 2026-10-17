@@ -6,9 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { budgetAllocation, INTERESTS, STYLES, estimatedBudget } from "@/lib/planning";
 import { readPlannerDraft, plannerDraftSchema, type PlannerDraft } from "@/lib/planner-draft";
+import { createJourneyIdeas } from "@/lib/journey-plan";
+import { flightAllowance, journeyBudget } from "@/lib/journey-planning";
 import { createStarterIdeas, budgetTravelStyle } from "@/lib/starter-plan";
 import { InstantPlan } from "./InstantPlan";
 import type { TripIdeas } from "../../supabase/functions/_shared/trip-ideas";
+import { CurrencyConverter } from "./CurrencyConverter";
 import { TripWeather } from "./TripWeather";
 
 const COLORS = ["bg-secondary", "bg-primary", "bg-amber-500", "bg-sky-600", "bg-stone-400"];
@@ -21,6 +24,7 @@ const formatMoney = (amount: number, currency: string) =>
 
 export function TravelPlanner() {
   const [draft, setDraft] = useState<PlannerDraft>(() => ({
+    journey: { departure: "", flightBudget: 375, hotelComfort: "Comfortable" },
     destination: "",
     start: new Date().toISOString().slice(0, 10),
     days: 5,
@@ -51,7 +55,13 @@ export function TravelPlanner() {
   const daily = draft.budget / Math.max(1, draft.days);
   const perPerson = daily / Math.max(1, draft.travelers);
   const resolvedStyle = budgetTravelStyle(draft);
-  const allocation = budgetAllocation(daily, resolvedStyle);
+  const flightTarget = flightAllowance(draft.budget);
+  const allocation = draft.journey?.departure.trim()
+    ? journeyBudget(
+        { ...draft, days: Math.max(1, draft.days), travelers: Math.max(1, draft.travelers) },
+        { ...draft.journey, flightBudget: flightTarget },
+      ).parts.map((part) => ({ ...part, amount: part.amount / Math.max(1, draft.days) }))
+    : budgetAllocation(daily, resolvedStyle);
 
   return (
     <section
@@ -68,7 +78,8 @@ export function TravelPlanner() {
             Make room for your next adventure.
           </h2>
           <p className="mt-3 text-muted-foreground">
-            Start with the essentials. Make every day your own.
+            From take-off to the stories you bring home. Plan flights, a stay and every day in
+            between.
           </p>
         </div>
         <span className="inline-flex items-center gap-2 rounded-full border bg-card px-4 py-2 text-xs text-secondary">
@@ -80,20 +91,16 @@ export function TravelPlanner() {
           className="space-y-5 p-6 md:p-8"
           onSubmit={(event) => {
             event.preventDefault();
-            const parsed = plannerDraftSchema.safeParse({ ...draft, ideas: undefined });
+            const parsed = plannerDraftSchema.safeParse({
+              ...draft,
+              journey: { ...draft.journey, flightBudget: flightTarget },
+              ideas: undefined,
+            });
             if (!parsed.success) {
-              toast.error("Check your destination, days, people, and budget.");
+              toast.error("Enter departure, destination, days, people and a valid total budget.");
               return;
             }
-            const ideas = createStarterIdeas({
-              destination: parsed.data.destination,
-              days: parsed.data.days,
-              travelers: parsed.data.travelers,
-              budget: parsed.data.budget,
-              currency: parsed.data.currency,
-              style: parsed.data.style,
-              interests: parsed.data.interest,
-            });
+            const ideas = createJourneyIdeas(parsed.data, parsed.data.journey!);
             if (
               result &&
               planEdited &&
@@ -113,6 +120,27 @@ export function TravelPlanner() {
               <Compass className="h-5 w-5" />
             </span>
             <span className="font-medium">A whole trip, with less effort</span>
+          </div>
+          <div>
+            <Label htmlFor="planner-departure">Departure city / airport</Label>
+            <Input
+              id="planner-departure"
+              className="mt-2 h-11"
+              required
+              maxLength={200}
+              placeholder="e.g. Berlin, Germany"
+              value={draft.journey?.departure ?? ""}
+              onChange={(e) =>
+                setDraft({
+                  ...draft,
+                  journey: {
+                    departure: e.target.value,
+                    flightBudget: flightTarget,
+                    hotelComfort: draft.journey?.hotelComfort ?? "Comfortable",
+                  },
+                })
+              }
+            />
           </div>
           <div>
             <Label htmlFor="planner-destination">Where would you love to go?</Label>
@@ -217,7 +245,7 @@ export function TravelPlanner() {
             />
             <p className="mt-2 text-xs text-muted-foreground">
               {customBudget
-                ? "Your spending limit for the whole trip, excluding flights."
+                ? "Your spending limit for the whole trip, including flight and hotel allowances."
                 : "A starting estimate is filled in for you. Adjust it if you like."}
             </p>
           </div>
@@ -336,7 +364,7 @@ export function TravelPlanner() {
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
           <p className="text-center text-xs text-muted-foreground">
-            Just add a destination. Get every day of your trip without signing in. Free
+            Add your departure and destination. Get every day of your trip without signing in. Free
             template-based suggestions; no AI API key or AI charges.
           </p>
         </form>
@@ -372,12 +400,14 @@ export function TravelPlanner() {
             </div>
           </div>
           <div className="rounded-2xl bg-card/70 p-5">
-            <h4 className="text-sm font-semibold">A little plan for each day</h4>
+            <h4 className="text-sm font-semibold">
+              Average daily allocation{draft.journey?.departure.trim() ? " · flights included" : ""}
+            </h4>
             <div className="my-4 flex h-2 overflow-hidden rounded-full" aria-hidden="true">
               {allocation.map((item, index) => (
                 <div
                   key={item.label}
-                  className={COLORS[index]}
+                  className={COLORS[index % COLORS.length]}
                   style={{ width: `${daily > 0 ? (item.amount / daily) * 100 : 20}%` }}
                 />
               ))}
@@ -386,7 +416,7 @@ export function TravelPlanner() {
               {allocation.map((item, index) => (
                 <div key={item.label} className="flex items-center justify-between gap-2 text-sm">
                   <dt className="flex items-center gap-2">
-                    <span className={`h-2 w-2 rounded-full ${COLORS[index]}`} />
+                    <span className={`h-2 w-2 rounded-full ${COLORS[index % COLORS.length]}`} />
                     {item.label}
                   </dt>
                   <dd className="font-medium">{formatMoney(item.amount, draft.currency)}</dd>
@@ -396,7 +426,8 @@ export function TravelPlanner() {
           </div>
           <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
             Suggested allocation, not live prices. Daily figures are averages; final daily budgets
-            account for rounding. Style presets use EUR estimates. Flights are excluded.
+            account for rounding. Style presets use EUR estimates. Flight and hotel allowances are
+            included after you enter your departure.
           </p>
           <div className="mt-6 flex items-start gap-3 border-t border-secondary/15 pt-5">
             <Sparkles className="mt-1 h-5 w-5 shrink-0 text-primary" />
@@ -409,6 +440,7 @@ export function TravelPlanner() {
             </p>
           </div>
           <div className="mt-6">
+            <CurrencyConverter key={draft.currency} currency={draft.currency} />
             <TripWeather
               key={`${draft.destination}-${draft.start}-${draft.days}`}
               destination={draft.destination}

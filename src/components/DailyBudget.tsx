@@ -18,10 +18,12 @@ export function DailyBudget({
   trip,
   travelers,
   expenses,
+  includesFlights = false,
 }: {
   trip: Tables<"trips">;
   travelers: number;
   expenses: Tables<"expenses">[];
+  includesFlights?: boolean;
 }) {
   const days = dailyBudgets(
     Number(trip.budget),
@@ -34,7 +36,8 @@ export function DailyBudget({
       <h2 className="text-2xl font-semibold">Your daily budget</h2>
       <p className="mt-2 text-sm text-muted-foreground">
         Your group budget is spread across the trip. These are planned spending limits, not live
-        price quotes; flights are excluded.
+        price quotes;{" "}
+        {includesFlights ? "flight allowances are included." : "flights are excluded."}
       </p>
       <div className="mt-4 overflow-x-auto">
         <table className="w-full min-w-[540px] text-left text-sm">
@@ -104,12 +107,14 @@ export function DayBudgetSummary({
   currency,
   style,
   afterStay,
+  includesFlights = false,
 }: {
   amount: number;
   travelers: number;
   currency: string;
   style: TravelStyle;
   afterStay?: number | undefined;
+  includesFlights?: boolean;
 }) {
   return (
     <div className="my-4 rounded-lg bg-muted/60 p-4">
@@ -121,7 +126,8 @@ export function DayBudgetSummary({
       </p>
       {afterStay !== undefined && (
         <p className="mt-2 text-sm text-secondary">
-          After accommodation: {dailyMoney(afterStay, currency)} for the group ·{" "}
+          {includesFlights ? "After flights & hotel:" : "After accommodation:"}{" "}
+          {dailyMoney(afterStay, currency)} for the group ·{" "}
           {dailyMoney(afterStay / travelers, currency)} per person. Stay cost is already reserved in
           the comparison above.
         </p>

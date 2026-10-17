@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { journeySchema } from "./journey-planning";
 import { stayChoiceSchema } from "./stay-planning";
 import { INTERESTS } from "./planning";
 import { ideaSchema } from "../../supabase/functions/_shared/trip-ideas";
@@ -21,6 +22,7 @@ export const plannerDraftSchema = z.object({
   interest: z.string().refine((value) => INTERESTS.includes(value)),
   ideas: ideaSchema.optional(),
   stay: stayChoiceSchema.optional(),
+  journey: journeySchema.optional(),
 });
 export type PlannerDraft = z.infer<typeof plannerDraftSchema>;
 

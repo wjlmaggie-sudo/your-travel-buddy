@@ -16,7 +16,10 @@ export function budgetTravelStyle(
   return perPerson < 100 ? "Budget" : perPerson < 250 ? "Balanced" : "Luxury";
 }
 
-export function createStarterIdeas(value: TripIdeaInput): TripIdeas {
+export function createStarterIdeas(
+  value: TripIdeaInput,
+  options?: { style?: TravelStyle },
+): TripIdeas {
   const input = tripIdeaInput.parse(value);
   const city = input.destination.split(",")[0]!.trim().toLowerCase();
   const template = TEMPLATES.find((item) => item.destination.split(",")[0]!.toLowerCase() === city);
@@ -50,7 +53,7 @@ export function createStarterIdeas(value: TripIdeaInput): TripIdeas {
           "A flexible day to explore",
         ];
   const daily = input.budget / input.days;
-  const style = budgetTravelStyle(input);
+  const style = options?.style ?? budgetTravelStyle(input);
   const modest = style === "Budget";
   const luxury = style === "Luxury";
   const tight = input.budget === 0 || (input.currency === "EUR" && daily / input.travelers < 40);

@@ -141,9 +141,7 @@ Users can edit every day, download without an account, or save the entire edited
 plan through sign-in. The validated itinerary travels with the brief in this
 tab's session storage. The save dialog carries existing edits into one bulk
 activity upsert and retries against the same trip and activity IDs if saving
-fails. Regular saved-trip suggestions try AI first and clearly fall back to a local starter on failure. AI
-enhancement is optional and falls back explicitly when unavailable; the previous
-production Edge Function endpoint was verified to return HTTP 404.
+fails. Saved-trip suggestions also use free local templates. Optional historical AI function sources remain in the repository but are not called by the planning UI.
 
 Day views now include numbered OpenStreetMap markers, credited location photos,
 and restaurant alternatives with menu and map links. Lisbon has an offline
@@ -192,3 +190,14 @@ See [live AI and stays](deployment/LIVE_AI_AND_STAYS.md). Public and saved plans
 ## Free planner mode
 
 As of 17 October 2026, public and saved-trip planning use local templates by default. The “Create my travel plan” action does not call an AI provider. Destination, duration, group size, budget and interests still shape the outline. Maps, weather, saved trips, accommodation quote comparison and daily budgets remain available. Hotel prices are traveler-entered quotes or checked on external booking sites. Suggestions are labeled as template-based; no live-model generation or live hotel-price API is claimed.
+
+
+## Whole-trip planning and reference exchange rates
+
+New public plans require departure, destination, days, people and a total group budget. Return flights start as an editable 25% allocation, not a route-based fare estimate. Hotel comfort allocates 30%, 45% or 60% of the post-flight budget; an explicitly chosen stay quote overrides that allocation. The remaining budget is split among food (40%), tourist tickets (25%), local transport (20%) and shopping/buffer (15%), using exact cents and displaying any flights-plus-stay shortfall. Hotel adjustments retain activity edits. Flight links open a provider search; no actual airline, schedule, availability or fare has been retrieved.
+
+Journey settings are stored per trip in the signed-in user's `travel_journeys` Auth metadata, alongside existing stay settings. No database migration is required. Existing trips keep their flights-excluded calculations until the user explicitly saves journey settings. Imported public plans carry journey settings and edited activities through sign-in.
+
+Place cards have expandable, credited stories: selected Lisbon landmarks use official heritage sources; other exact linked Wikipedia pages can supply background on demand. Missing history is identified without inventing a story. Known standard-adult admission totals are compared with the indicative ticket allowance; unknown fees are explicitly excluded from totals.
+
+The compact currency calculator loads free ECB reference rates via Frankfurter v2 (`/v2/providers/ecb/rate/{base}/{quote}`) only when expanded. It displays the publication date, supports swapping currencies and computes entered amounts locally. The API receives only the currency pair, never the amount or trip budget. Rates are reference values, can use the previous business day, exclude bank spreads/fees and do not automatically change the trip's currency or budget. Source: https://frankfurter.dev/.

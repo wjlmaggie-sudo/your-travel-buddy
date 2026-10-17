@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { TEMPLATES, type TravelStyle } from "@/lib/travel-data";
 import { endDate, estimatedBudget, templateActivities, STYLES, INTERESTS } from "@/lib/planning";
+import { saveJourney } from "@/lib/journey-planning";
 import { saveStayChoice } from "@/lib/stay-planning";
 import { DEFAULT_PREFERENCES, saveTripPreferences } from "@/lib/travel-preferences";
 import { Button } from "@/components/ui/button";
@@ -110,6 +111,7 @@ export function NewTripDialog({
             "Trip created, but template activities could not save. Add activities on your trip page.",
           );
       }
+      if (imported?.journey) await saveJourney(data.id, imported.journey);
       if (imported?.stay) await saveStayChoice(data.id, imported.stay);
       if (imported?.ideas) {
         const items = plannedActivities ?? prepareSuggestedPlan(data.id, imported.ideas, []);
@@ -297,7 +299,10 @@ export function NewTripDialog({
               </div>
               <p className="text-xs text-muted-foreground">
                 Budget style presets use estimated EUR costs. Edit your total and currency as
-                needed. Flights are excluded.
+                needed.{" "}
+                {imported?.journey
+                  ? "Flight allowances are included."
+                  : "Flights are excluded until added to the trip."}
               </p>
               {!imported?.ideas && (
                 <label className="flex items-start gap-2 text-sm">

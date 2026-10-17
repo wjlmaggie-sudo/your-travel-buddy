@@ -94,6 +94,7 @@ export function AccommodationPlanner({
   }
   return (
     <section
+      id="trip-stay"
       className="my-6 rounded-2xl border bg-card p-5 shadow-card md:p-6"
       aria-labelledby={`${id}-title`}
     >
@@ -383,18 +384,20 @@ export function AccommodationPlanner({
         </p>
         {budget.shortfall > 0 ? (
           <p role="alert" className="mt-2 text-sm text-destructive">
-            Accommodation alone exceeds your trip budget by {money(budget.shortfall)}. Choose a
+            Flights and accommodation exceed your trip budget by {money(budget.shortfall)}. Choose a
             cheaper stay or increase the budget.
           </p>
         ) : (
           <p className="mt-1 text-sm">
             About {money(budget.remaining / brief.days)} / day for the group ·{" "}
-            {money(budget.remaining / brief.days / brief.travelers)} / person, after accommodation.
+            {money(budget.remaining / brief.days / brief.travelers)} / person, after{" "}
+            {brief.flightBudget !== undefined ? "flights and accommodation" : "accommodation"}.
           </p>
         )}
         <details className="mt-3">
           <summary className="cursor-pointer text-xs font-medium">
-            See daily budget after accommodation
+            See daily budget after{" "}
+            {brief.flightBudget !== undefined ? "flights and accommodation" : "accommodation"}
           </summary>
           <ul className="mt-2 space-y-1 text-xs">
             {budget.daily.map((day) => (
@@ -407,7 +410,10 @@ export function AccommodationPlanner({
         </details>
         <p className="mt-3 text-xs text-muted-foreground">
           This replaces the stay allowance rather than adding it twice. It is a plan, not an expense
-          or a booking. Flight costs are excluded; food and transport still need checking.
+          or a booking.{" "}
+          {brief.flightBudget !== undefined
+            ? "Flights are already reserved in the overview above; food and transport still need checking."
+            : "Flight costs are excluded; food and transport still need checking."}
         </p>
       </div>
     </section>

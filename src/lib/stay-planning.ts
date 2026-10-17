@@ -3,6 +3,8 @@ import { endDate, budgetAllocation, dailyBudgets } from "./planning";
 import type { TravelStyle } from "./travel-data";
 import { supabase } from "@/integrations/supabase/client";
 export type StayBrief = {
+  flightBudget?: number | undefined;
+  hotelComfort?: "Simple" | "Comfortable" | "Premium" | undefined;
   destination: string;
   start: string;
   days: number;
@@ -41,15 +43,21 @@ export function stayCost(choice: StayChoice, brief: StayBrief) {
 }
 export function stayBudget(brief: StayBrief, choice?: StayChoice | null) {
   const nights = Math.max(0, brief.days - 1);
-  const allowance = nights
-    ? (budgetAllocation(brief.budget, brief.style).find((item) => item.label === "Stays")?.amount ??
-      0)
-    : 0;
+  const flights = Math.max(0, brief.flightBudget ?? 0);
+  const ground = Math.max(0, brief.budget - flights);
+  const allowance = !nights
+    ? 0
+    : brief.hotelComfort
+      ? Math.round(
+          ground * { Simple: 0.3, Comfortable: 0.45, Premium: 0.6 }[brief.hotelComfort] * 100,
+        ) / 100
+      : (budgetAllocation(ground, brief.style).find((item) => item.label === "Stays")?.amount ?? 0);
   const quoted = choice ? stayCost(choice, brief) : null;
   const accommodation = quoted ?? allowance;
-  const remaining = Math.round((brief.budget - accommodation) * 100) / 100;
+  const remaining = Math.round((brief.budget - flights - accommodation) * 100) / 100;
   return {
     nights,
+    flights,
     allowance,
     quoted,
     accommodation,

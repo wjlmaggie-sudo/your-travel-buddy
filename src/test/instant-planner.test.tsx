@@ -21,20 +21,44 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 describe("public instant planner", () => {
-  it("shows the whole trip from a destination alone, with no sign-in navigation", () => {
+  it("creates flights, a stay and every day from departure and destination without sign-in", () => {
     render(
       <QueryClientProvider client={new QueryClient()}>
         <TravelPlanner />
       </QueryClientProvider>,
     );
+    fireEvent.change(screen.getByLabelText("Departure city / airport"), {
+      target: { value: "Berlin, Germany" },
+    });
     fireEvent.click(screen.getByRole("button", { name: "Lisbon" }));
     fireEvent.click(screen.getByRole("button", { name: "Create my travel plan" }));
     expect(screen.getByRole("heading", { name: "5 days in Lisbon, Portugal" })).toBeInTheDocument();
-    expect(screen.getAllByText(/^Breakfast and/)).toHaveLength(5);
+    expect(screen.getAllByText(/^Breakfast and/)).toHaveLength(4);
     expect(navigate).not.toHaveBeenCalled();
     expect(paidAI).not.toHaveBeenCalled();
     expect(screen.queryByRole("button", { name: /live AI/i })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Download without signing in" })).toBeInTheDocument();
+  });
+  it("updates hotel comfort without losing an edited activity", () => {
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <TravelPlanner />
+      </QueryClientProvider>,
+    );
+    fireEvent.change(screen.getByLabelText("Departure city / airport"), {
+      target: { value: "Berlin" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Lisbon" }));
+    fireEvent.click(screen.getByRole("button", { name: "Create my travel plan" }));
+    fireEvent.change(screen.getAllByLabelText("Activity")[0]!, {
+      target: { value: "My arrival plan" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Premium A larger share/ }));
+    expect(screen.getAllByLabelText("Activity")[0]).toHaveValue("My arrival plan");
+    expect(screen.getAllByText("€675.00").length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole("button", { name: "Save my whole plan" }));
+    expect(readPlannerDraft()?.journey?.hotelComfort).toBe("Premium");
+    expect(readPlannerDraft()?.ideas?.days[0]?.items[0]?.title).toBe("My arrival plan");
   });
   it("rebuilds for different budgets, retains daily caps, and carries edits into sign-in", () => {
     render(
@@ -42,6 +66,9 @@ describe("public instant planner", () => {
         <TravelPlanner />
       </QueryClientProvider>,
     );
+    fireEvent.change(screen.getByLabelText("Departure city / airport"), {
+      target: { value: "Berlin, Germany" },
+    });
     fireEvent.click(screen.getByRole("button", { name: "Lisbon" }));
     fireEvent.change(screen.getByLabelText("How many days?"), { target: { value: "3" } });
     const presets = screen.getByLabelText("Compare budget presets");
@@ -56,6 +83,8 @@ describe("public instant planner", () => {
     fireEvent.click(screen.getByRole("button", { name: "Save my whole plan" }));
     expect(readPlannerDraft()?.ideas?.days[0]?.items[0]?.title).toBe("My edited arrival");
     expect(readPlannerDraft()?.budget).toBe(1800);
+    expect(readPlannerDraft()?.journey?.departure).toBe("Berlin, Germany");
+    expect(readPlannerDraft()?.journey?.flightBudget).toBe(450);
     expect(navigate).toHaveBeenCalledWith({ to: "/trips" });
   });
 });

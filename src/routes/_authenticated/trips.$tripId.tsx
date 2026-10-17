@@ -5,6 +5,9 @@ import { ArrowLeft, Trash2, MapPin, Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { readStayChoice, stayBudget, type StayChoice } from "@/lib/stay-planning";
+import { CurrencyConverter } from "@/components/CurrencyConverter";
+import { JourneyPlanner } from "@/components/JourneyPlanner";
+import { journeyQuery, journeyBudget, type Journey } from "@/lib/journey-planning";
 import { AccommodationPlanner } from "@/components/AccommodationPlanner";
 import { AppHeader } from "@/components/AppHeader";
 import { tripQuery, tripDays, money, CATEGORIES } from "@/lib/trips";
@@ -65,6 +68,16 @@ function TripPage() {
     queryFn: () => readStayChoice(tripId),
   });
   const preferences = useTripPreferences(tripId);
+  const journey = useQuery(journeyQuery(tripId));
+  const brief = {
+    destination: trip.destination,
+    start: trip.start_date,
+    days: tripDays(trip.start_date, trip.end_date),
+    travelers: preferences.preference.travelers,
+    budget: Number(trip.budget),
+    currency: trip.currency,
+    style: preferences.preference.style,
+  };
   function exportTrip() {
     const p = preferences.preference;
     const spent = data.expenses.reduce((sum, e) => sum + Number(e.amount), 0);
@@ -79,10 +92,13 @@ function TripPage() {
         ? `Chosen accommodation: ${stay.data.name} · amount ${stay.data.amount} ${trip.currency} / ${stay.data.unit}. Verify quote dates, guests and fees in the app.`
         : "Accommodation not quoted yet.",
       "",
-      "SUGGESTED ALLOCATION (flights excluded)",
-      ...budgetAllocation(Number(trip.budget), p.style).map(
-        (b) => `${b.label}: ${money(b.amount, trip.currency)}`,
-      ),
+      journey.data
+        ? `ROUTE: ${journey.data.departure} → ${trip.destination} · ALLOCATION INCLUDING FLIGHTS`
+        : "SUGGESTED ALLOCATION (flights excluded)",
+      ...(journey.data
+        ? journeyBudget(brief, journey.data, stay.data).parts
+        : budgetAllocation(Number(trip.budget), p.style)
+      ).map((b) => `${b.label}: ${money(b.amount, trip.currency)}`),
       "",
       ...Array.from({ length: tripDays(trip.start_date, trip.end_date) }, (_, index) =>
         [
@@ -143,19 +159,33 @@ function TripPage() {
             </Button>
           </div>
         </div>
-        <TripSettings key={trip.id} trip={trip} />
+        <TripSettings key={trip.id} trip={trip} includesFlights={!!journey.data} />
+        {!journey.isPending && !journey.isError && (
+          <JourneyPlanner
+            key={trip.id}
+            brief={brief}
+            journey={journey.data}
+            stay={stay.data}
+            tripId={trip.id}
+          />
+        )}
+        {journey.isError && (
+          <p role="alert" className="mt-4 text-sm text-destructive">
+            Flight settings could not load. Refresh before changing your journey budget.
+          </p>
+        )}
         <AccommodationPlanner
           tripId={trip.id}
           brief={{
-            destination: trip.destination,
-            start: trip.start_date,
-            days: tripDays(trip.start_date, trip.end_date),
-            travelers: preferences.preference.travelers,
-            budget: Number(trip.budget),
-            currency: trip.currency,
-            style: preferences.preference.style,
+            ...brief,
+            ...(journey.data
+              ? { flightBudget: journey.data.flightBudget, hotelComfort: journey.data.hotelComfort }
+              : {}),
           }}
         />
+        <div className="my-5 max-w-sm">
+          <CurrencyConverter key={trip.currency} currency={trip.currency} />
+        </div>
         <Tabs value={tab} onValueChange={setTab} className="mt-8">
           <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1 sm:w-fit">
             <TabsTrigger value="itinerary">Itinerary</TabsTrigger>
@@ -173,12 +203,13 @@ function TripPage() {
                 days={tripDays(trip.start_date, trip.end_date)}
               />
             </div>
-            <Itinerary data={data} refresh={refresh} stay={stay.data} />
+            <Itinerary data={data} refresh={refresh} stay={stay.data} journey={journey.data} />
           </TabsContent>
           <TabsContent value="budget">
             <DailyBudget
               trip={trip}
               travelers={preferences.preference.travelers}
+              includesFlights={!!journey.data}
               expenses={data.expenses}
             />
             <Budget data={data} refresh={refresh} />
@@ -186,6 +217,7 @@ function TripPage() {
           <TabsContent value="ideas" forceMount className="data-[state=inactive]:hidden">
             <TripSuggestions
               key={tripId}
+              journey={journey.data}
               stayChoice={stay.data}
               trip={trip}
               activities={data.activities}
@@ -224,15 +256,20 @@ function Itinerary({
   data,
   refresh,
   stay,
+  journey,
 }: {
   data: Data;
   refresh: () => void;
   stay?: StayChoice | null | undefined;
+  journey?: Journey | null | undefined;
 }) {
   const days = tripDays(data.trip.start_date, data.trip.end_date);
   const preferences = useTripPreferences(data.trip.id);
   const stayPlan = stayBudget(
     {
+      ...(journey
+        ? { flightBudget: journey.flightBudget, hotelComfort: journey.hotelComfort }
+        : {}),
       destination: data.trip.destination,
       start: data.trip.start_date,
       days,
@@ -258,16 +295,22 @@ function Itinerary({
             <p className="mb-2 text-sm text-muted-foreground">{daily[day - 1]?.date}</p>
             <DayBudgetSummary
               afterStay={
-                stayPlan.quoted !== null || !stayPlan.nights
+                journey || stayPlan.quoted !== null || !stayPlan.nights
                   ? stayPlan.daily[day - 1]?.amount
                   : undefined
               }
+              includesFlights={!!journey}
               amount={daily[day - 1]?.amount ?? 0}
               travelers={preferences.preference.travelers}
               currency={data.trip.currency}
               style={preferences.preference.style}
             />
             <DayCard
+              ticketBudget={
+                data.trip.currency === "EUR" && journey
+                  ? (Math.max(0, stayPlan.remaining) * 0.25) / days
+                  : undefined
+              }
               travelers={preferences.preference.travelers}
               date={daily[day - 1]?.date}
               day={day}
@@ -278,11 +321,15 @@ function Itinerary({
               style={preferences.preference.style}
               foodPerPerson={
                 data.trip.currency === "EUR"
-                  ? (budgetAllocation(
-                      daily[day - 1]?.amount ?? 0,
-                      preferences.preference.style,
-                    ).find((item) => item.label === "Food")?.amount ?? 0) /
-                    preferences.preference.travelers
+                  ? journey
+                    ? (Math.max(0, stayPlan.remaining) * 0.4) /
+                      days /
+                      preferences.preference.travelers
+                    : (budgetAllocation(
+                        daily[day - 1]?.amount ?? 0,
+                        preferences.preference.style,
+                      ).find((item) => item.label === "Food")?.amount ?? 0) /
+                      preferences.preference.travelers
                   : undefined
               }
             />

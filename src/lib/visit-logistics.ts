@@ -109,3 +109,12 @@ export function routeLegs(places: VisualPlace[]) {
     };
   });
 }
+
+export function admissionEstimate(places: VisualPlace[], travelers: number) {
+  const known = places.map((place) => admissionFor(place.name));
+  return {
+    total:
+      Math.round(known.reduce((sum, item) => sum + (item?.price ?? 0), 0) * travelers * 100) / 100,
+    unknown: known.filter((item) => item?.price === undefined).length,
+  };
+}

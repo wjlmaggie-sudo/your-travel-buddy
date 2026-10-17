@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { MapPin, Utensils, ExternalLink, Loader2 } from "lucide-react";
+import { admissionEstimate } from "@/lib/visit-logistics";
 import { dayGuide, loadCityGuide, type VisualPlace } from "@/lib/city-guides";
 import type { TravelStyle } from "@/lib/travel-data";
 import { AdmissionDetails, RouteLogistics } from "./VisitLogistics";
+import { PlaceStory } from "./PlaceStory";
 import { DayRouteMap } from "./DayRouteMap";
 import { fetchPlacePhoto } from "@/lib/place-photos";
 
@@ -40,6 +42,7 @@ export function DayVisuals({
   day,
   style,
   foodPerPerson,
+  ticketBudget,
   travelers = 1,
   date,
 }: {
@@ -49,6 +52,7 @@ export function DayVisuals({
   day: number;
   style: TravelStyle;
   foodPerPerson?: number | undefined;
+  ticketBudget?: number | undefined;
 }) {
   const box = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
@@ -121,6 +125,24 @@ export function DayVisuals({
       ) : guide?.places.length ? (
         <>
           <DayRouteMap places={guide.places} day={day} />
+          <div className="rounded-lg bg-muted/50 p-3 text-xs leading-relaxed">
+            <p>
+              Standard entry at the marked stops with known tariffs:{" "}
+              <strong>€{admissionEstimate(guide.places, travelers).total.toFixed(2)}</strong> for{" "}
+              {travelers} adults, if you enter all of them and access is available.{" "}
+              {admissionEstimate(guide.places, travelers).unknown > 0
+                ? `${admissionEstimate(guide.places, travelers).unknown} stop(s) have unverified fees or opening status; those costs are not included.`
+                : "Food and transport are separate."}
+            </p>
+            {ticketBudget !== undefined &&
+              admissionEstimate(guide.places, travelers).total > ticketBudget && (
+                <p className="mt-2 text-primary">
+                  Above this day’s indicative ticket allowance (€{ticketBudget.toFixed(2)}). Choose
+                  fewer paid stops, free exterior views, or move budget from another day. These
+                  stops are suggestions, not purchased tickets.
+                </p>
+              )}
+          </div>
           <RouteLogistics places={guide.places} destination={destination} day={day} />
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {guide.places.map((place, index) => (
@@ -139,6 +161,7 @@ export function DayVisuals({
                   <p className="mt-2 line-clamp-3 text-xs leading-relaxed text-muted-foreground">
                     {place.description}
                   </p>
+                  <PlaceStory place={place} />
                   <AdmissionDetails place={place} travelers={travelers} date={date} />
                   <div className="mt-3 flex gap-3 text-xs">
                     <a

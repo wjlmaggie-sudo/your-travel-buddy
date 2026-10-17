@@ -3,6 +3,8 @@ import { Loader2, Sparkles, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 import { stayBudget, type StayChoice } from "@/lib/stay-planning";
+import { createJourneyIdeas } from "@/lib/journey-plan";
+import type { Journey } from "@/lib/journey-planning";
 import { createStarterIdeas } from "@/lib/starter-plan";
 import { useTripPreferences } from "@/lib/travel-preferences";
 import {
@@ -21,6 +23,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 
 type Props = {
+  journey?: Journey | null | undefined;
   stayChoice?: StayChoice | null | undefined;
   trip: Tables<"trips">;
   activities: Tables<"activities">[];
@@ -31,6 +34,7 @@ type Props = {
 export function TripSuggestions({
   trip,
   stayChoice,
+  journey,
   activities,
   autoGenerate = false,
   onSaved,
@@ -57,6 +61,9 @@ export function TripSuggestions({
   );
   const stayPlan = stayBudget(
     {
+      ...(journey
+        ? { flightBudget: journey.flightBudget, hotelComfort: journey.hotelComfort }
+        : {}),
       destination: trip.destination,
       start: trip.start_date,
       days,
@@ -113,7 +120,14 @@ export function TripSuggestions({
         style: preferences.preference.style,
         places,
       };
-      const ideas = createStarterIdeas(input);
+      const ideas = journey
+        ? createJourneyIdeas(
+            { ...input, start: trip.start_date, interest: input.interests },
+            journey,
+            stayChoice,
+            places,
+          )
+        : createStarterIdeas(input);
       setDraft(prepareSuggestedPlan(trip.id, ideas, activities));
       setSummary(ideas.summary ?? "A complete, editable template plan based on your trip details.");
       setApplied([]);
@@ -279,10 +293,11 @@ export function TripSuggestions({
                 </div>
                 <DayBudgetSummary
                   afterStay={
-                    stayPlan.quoted !== null || !stayPlan.nights
+                    journey || stayPlan.quoted !== null || !stayPlan.nights
                       ? stayPlan.daily[budget.day - 1]?.amount
                       : undefined
                   }
+                  includesFlights={!!journey}
                   amount={budget.amount}
                   travelers={preferences.preference.travelers}
                   currency={trip.currency}
@@ -290,6 +305,11 @@ export function TripSuggestions({
                 />
                 <div className="space-y-4">
                   <DayVisuals
+                    ticketBudget={
+                      trip.currency === "EUR" && journey
+                        ? (Math.max(0, stayPlan.remaining) * 0.25) / days
+                        : undefined
+                    }
                     travelers={preferences.preference.travelers}
                     date={budget.date}
                     destination={trip.destination}
@@ -297,9 +317,13 @@ export function TripSuggestions({
                     style={preferences.preference.style}
                     foodPerPerson={
                       trip.currency === "EUR"
-                        ? (budgetAllocation(budget.amount, preferences.preference.style).find(
-                            (item) => item.label === "Food",
-                          )?.amount ?? 0) / preferences.preference.travelers
+                        ? journey
+                          ? (Math.max(0, stayPlan.remaining) * 0.4) /
+                            days /
+                            preferences.preference.travelers
+                          : (budgetAllocation(budget.amount, preferences.preference.style).find(
+                              (item) => item.label === "Food",
+                            )?.amount ?? 0) / preferences.preference.travelers
                         : undefined
                     }
                   />
