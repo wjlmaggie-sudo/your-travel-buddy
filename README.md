@@ -88,6 +88,8 @@ Run `npm run build:pages` with the public configuration in your ignored local `.
 
 The connected OAuth credential can push source code but cannot create GitHub Actions workflows without its `workflow` scope. Ready-to-use workflow templates are retained in `deployment/github-actions/`. To enable automatic builds from `main` later, add `pages.yml` through GitHub's web editor or a credential authorized to manage workflows, placing it at `.github/workflows/pages.yml`, then switch Pages Source to **GitHub Actions**. It builds from the repository secrets already configured and uploads `dist/`. Do not put private backend keys into browser variables.
 
+
+this is a test
 ## Full-trip suggestions, daily budgets, and place coverage
 
 New custom trips can open straight into a full suggested itinerary. The complete
@@ -124,3 +126,5 @@ and backend capacity have not been verified or changed from this checkout.
 can be deployed without those owner permissions, but live AI generation remains
 unavailable until the Edge Function and backend secret are deployed. The database
 upgrade has not been applied automatically.
+
+
