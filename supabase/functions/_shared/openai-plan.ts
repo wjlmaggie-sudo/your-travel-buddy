@@ -28,6 +28,49 @@ export const planJSONSchema = {
   required: ["summary", "days"],
 };
 
+export class PlanProviderError extends Error {
+  constructor(
+    public statusCode: number,
+    message: string,
+  ) {
+    super(message);
+    this.name = "PlanProviderError";
+  }
+}
+export function providerErrorMessage(status: number, code: unknown, type: unknown) {
+  const billing = new Map([
+    [
+      "credit_balance_exhausted",
+      "OpenAI API credit has run out. The project owner needs to add API credit in OpenAI billing before live AI can work.",
+    ],
+    [
+      "project_spend_limit_exceeded",
+      "This OpenAI project has reached its spending limit. The project owner needs to review the project limit in OpenAI settings.",
+    ],
+    [
+      "organization_spend_limit_exceeded",
+      "The OpenAI organization has reached its spending limit. The project owner needs to review the organization limit in OpenAI settings.",
+    ],
+    [
+      "organization_usage_limit_exceeded",
+      "The OpenAI organization has reached its approved usage limit. The project owner needs to check OpenAI usage limits.",
+    ],
+  ]);
+  if (status === 429) {
+    if (typeof code === "string" && billing.has(code)) return billing.get(code)!;
+    if (code === "slow_down" || code === "rate_limit_exceeded" || type === "rate_limit_error")
+      return "OpenAI rate limit reached. Please wait before trying again.";
+    if (code === "insufficient_quota" || type === "insufficient_quota")
+      return "OpenAI API quota is unavailable. The project owner needs to check API billing, available credits and usage limits before live AI can work.";
+    return "OpenAI returned a rate or billing limit. The project owner needs to check API billing and usage limits before retrying.";
+  }
+  if (status === 401)
+    return "OpenAI rejected the API key. The project owner needs to check OPENAI_API_KEY in backend secrets.";
+  if (status === 403)
+    return "OpenAI denied access. The project owner needs to check the provider account and model permissions.";
+  return "The AI provider could not complete this request. Please try again later.";
+}
+
 export async function openAIPlan(
   input: TripIdeaInput,
   key: string,
@@ -51,13 +94,12 @@ export async function openAIPlan(
     signal: AbortSignal.timeout(120000),
   });
   if (!response.ok) {
-    const error = new Error(
-      response.status === 429
-        ? "AI rate or billing limit reached. Check your provider account."
-        : "The AI provider could not complete this request.",
+    // Never forward raw provider messages; they can contain account identifiers.
+    const details = await response.json().catch(() => null);
+    throw new PlanProviderError(
+      response.status,
+      providerErrorMessage(response.status, details?.error?.code, details?.error?.type),
     );
-    Object.assign(error, { statusCode: response.status });
-    throw error;
   }
   const body = await response.json();
   if (body.status !== "completed")

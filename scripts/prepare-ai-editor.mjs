@@ -1,16 +1,25 @@
 // Produce one reproducible Edge Function file for Supabase's dashboard editor.
 // Private credentials are never read by this script.
-import { build } from "esbuild";
+import { execFileSync } from "node:child_process";
 import { writeFileSync } from "node:fs";
-const result = await build({
-  entryPoints: ["supabase/functions/generate-trip-ideas/index.ts"],
-  bundle: true,
-  platform: "neutral",
-  format: "esm",
-  write: false,
-  external: ["@supabase/supabase-js", "@ai-sdk/openai", "ai", "zod"],
-});
-let source = result.outputFiles[0].text;
+import path from "node:path";
+// Use the installed CLI: pnpm exposes transitive binaries without exposing their
+// packages to direct imports from project scripts.
+let source = execFileSync(
+  path.resolve("node_modules/.bin/esbuild"),
+  [
+    "supabase/functions/generate-trip-ideas/index.ts",
+    "--bundle",
+    "--platform=neutral",
+    "--format=esm",
+    "--log-level=error",
+    "--external:@supabase/supabase-js",
+    "--external:@ai-sdk/openai",
+    "--external:ai",
+    "--external:zod",
+  ],
+  { encoding: "utf8" },
+);
 for (const [name, version] of Object.entries({
   "@supabase/supabase-js": "2.118.0",
   "@ai-sdk/openai": "4.0.95",

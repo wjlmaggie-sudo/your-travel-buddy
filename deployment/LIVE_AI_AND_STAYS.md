@@ -9,8 +9,11 @@ No trip-table migration or account migration is required for this connection.
 ## AI deployment
 
 The function and `20261017180000_ai_usage.sql` were deployed through the owner's
-Supabase dashboard on 17 October 2026. The OpenAI provider key still needs to be
-added by the owner before a successful generation can be verified.
+Supabase dashboard on 17 October 2026. The owner saved `OPENAI_API_KEY` on 17 October 2026. The live provider test
+now reaches OpenAI but returns HTTP 429 with `credit_balance_exhausted`.
+The API organization has no prepaid credit remaining; the owner must add credit
+in OpenAI billing before a successful generation can be verified. No credit
+purchase or payment was made during this test.
 
 1. Add `OPENAI_API_KEY` in **Edge Functions → Secrets**. Never put it in GitHub
    source, browser code, a `VITE_` variable, or chat. The provider account needs
@@ -29,7 +32,8 @@ added by the owner before a successful generation can be verified.
    local `.env` (or matching GitHub Actions secrets if enabling workflow builds).
    These are public endpoint/gateway values. The current local build is configured.
 6. Sign in on the published site, open a trip and choose **Suggest my whole trip**.
-   Confirm a full AI plan appears. If setup/provider access fails, the exact error
+   Confirm a full AI plan appears. Provider credit exhaustion, spending/usage caps
+   and temporary rate limits have distinct, sanitized messages. If setup/provider access fails, the exact error
    and an explicitly labeled template fallback are shown instead.
 
 Each authenticated account can claim at most **20 requests per UTC day**, enforced

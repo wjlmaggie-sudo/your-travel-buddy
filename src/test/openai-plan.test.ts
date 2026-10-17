@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { openAIPlan } from "../../supabase/functions/_shared/openai-plan";
+import { openAIPlan, providerErrorMessage } from "../../supabase/functions/_shared/openai-plan";
 const input = {
   destination: "Lisbon",
   days: 1,
@@ -18,16 +18,14 @@ const ideas = {
 };
 describe("live OpenAI plan provider", () => {
   it("requests structured output privately, includes chosen stay cost and validates coverage", async () => {
-    const request = vi
-      .fn()
-      .mockResolvedValue(
-        Response.json({
-          status: "completed",
-          output: [
-            { type: "message", content: [{ type: "output_text", text: JSON.stringify(ideas) }] },
-          ],
-        }),
-      );
+    const request = vi.fn().mockResolvedValue(
+      Response.json({
+        status: "completed",
+        output: [
+          { type: "message", content: [{ type: "output_text", text: JSON.stringify(ideas) }] },
+        ],
+      }),
+    );
     expect(await openAIPlan(input, "test-private-key", "gpt-5.4-mini", request)).toEqual(ideas);
     const body = JSON.parse(request.mock.calls[0]![1].body);
     expect(body.text.format.strict).toBe(true);
@@ -50,19 +48,17 @@ describe("live OpenAI plan provider", () => {
         { ...input, days: 2 },
         "test",
         undefined,
-        vi
-          .fn()
-          .mockResolvedValue(
-            Response.json({
-              status: "completed",
-              output: [
-                {
-                  type: "message",
-                  content: [{ type: "output_text", text: JSON.stringify(ideas) }],
-                },
-              ],
-            }),
-          ),
+        vi.fn().mockResolvedValue(
+          Response.json({
+            status: "completed",
+            output: [
+              {
+                type: "message",
+                content: [{ type: "output_text", text: JSON.stringify(ideas) }],
+              },
+            ],
+          }),
+        ),
       ),
     ).rejects.toThrow("incomplete");
   });
@@ -75,5 +71,27 @@ describe("live OpenAI plan provider", () => {
         vi.fn().mockResolvedValue(new Response("provider secret error", { status: 429 })),
       ),
     ).rejects.toThrow("billing limit");
+  });
+});
+
+describe("safe provider limit messages", () => {
+  it("distinguishes credit exhaustion, spending caps, and temporary request limits", () => {
+    expect(providerErrorMessage(429, "credit_balance_exhausted", "insufficient_quota")).toContain(
+      "credit has run out",
+    );
+    expect(
+      providerErrorMessage(429, "project_spend_limit_exceeded", "insufficient_quota"),
+    ).toContain("project has reached its spending limit");
+    expect(providerErrorMessage(429, "organization_usage_limit_exceeded", null)).toContain(
+      "approved usage limit",
+    );
+    expect(providerErrorMessage(429, "rate_limit_exceeded", "rate_limit_error")).toContain("wait");
+    expect(providerErrorMessage(429, "insufficient_quota", null)).toContain("check API billing");
+  });
+  it("does not expose untrusted provider messages or private identifiers", () => {
+    expect(providerErrorMessage(429, "private-account-identifier", null)).not.toContain(
+      "private-account-identifier",
+    );
+    expect(providerErrorMessage(401, null, null)).toContain("rejected the API key");
   });
 });

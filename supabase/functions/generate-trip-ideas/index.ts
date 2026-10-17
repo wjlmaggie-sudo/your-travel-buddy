@@ -1,7 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { createOpenAI } from "@ai-sdk/openai";
 import { streamText, Output } from "ai";
-import { openAIPlan } from "../_shared/openai-plan.ts";
+import { openAIPlan, PlanProviderError } from "../_shared/openai-plan.ts";
 import { ideaSchema, tripIdeaInput, tripIdeaPrompt } from "../_shared/trip-ideas.ts";
 
 const cors = {
@@ -105,6 +105,8 @@ Deno.serve(async (request: Request) => {
     });
     return reply({ ideas: await result.output, error: null });
   } catch (error) {
+    if (error instanceof PlanProviderError)
+      return reply({ error: error.message }, error.statusCode === 401 ? 503 : error.statusCode);
     const status = (error as { statusCode?: number })?.statusCode;
     if (status === 429)
       return reply({ error: "Too many requests. Please wait a moment and try again." }, 429);

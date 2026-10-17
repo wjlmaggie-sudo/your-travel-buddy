@@ -71,7 +71,7 @@ Deploy `supabase/functions/generate-trip-ideas/index.ts` through the existing Lo
 
 For a Supabase project managed by your account, add a management token as the repository secret `SUPABASE_ACCESS_TOKEN`, then install the optional `deployment/github-actions/supabase-function.yml` workflow under `.github/workflows/` through an account with workflow permissions, and run **Actions → Deploy AI backend → Run workflow**. The function is deployed separately from the website, and the website can publish while backend setup is pending. For a Lovable-managed project, use Lovable Cloud to deploy the function and configure its secret instead.
 
-The owner-managed AI function and daily usage migration were deployed on 17 October 2026. OpenAI generation still requires the owner’s provider secret and a successful live test. See [live AI and accommodation setup](deployment/LIVE_AI_AND_STAYS.md) for the current two-backend connection, public build variables and remaining provider access. Existing sign-in and trip data are preserved.
+The owner-managed AI function and daily usage migration were deployed on 17 October 2026. The owner saved the provider secret; the live test reaches OpenAI but returns `credit_balance_exhausted`. The owner needs to add API credit in OpenAI billing before successful generation can be verified. See [live AI and accommodation setup](deployment/LIVE_AI_AND_STAYS.md) for the current two-backend connection, public build variables and remaining provider access. Existing sign-in and trip data are preserved.
 
 ### Local checks
 
