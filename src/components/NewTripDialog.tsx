@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
+import { readPlannerDraft, clearPlannerDraft } from "@/lib/planner-draft";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { TEMPLATES, type TravelStyle } from "@/lib/travel-data";
@@ -28,7 +29,7 @@ export function NewTripDialog({
   templateId?: string;
 }) {
   const template = TEMPLATES.find((t) => t.id === templateId);
-  const [f, setF] = useState({
+  const [f, setF] = useState(() => ({
     destination: template?.destination ?? "",
     start: new Date().toISOString().slice(0, 10),
     days: template?.days ?? 5,
@@ -37,7 +38,8 @@ export function NewTripDialog({
     currency: "EUR",
     style: "Balanced" as TravelStyle,
     interest: template?.category ?? "Food & culture",
-  });
+    ...(!template ? readPlannerDraft() : null),
+  }));
   const [requestAi, setRequestAi] = useState(!template);
   const [busy, setBusy] = useState(false);
   const qc = useQueryClient();
@@ -97,6 +99,7 @@ export function NewTripDialog({
         qc.invalidateQueries({ queryKey: ["trips"] }),
         qc.invalidateQueries({ queryKey: ["travel-preferences"] }),
       ]);
+      if (!template) clearPlannerDraft();
       onOpenChange(false);
       navigate({
         to: "/trips/$tripId",

@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Compass, Map, Wallet, Sparkles, ShoppingBag, Users, LayoutTemplate } from "lucide-react";
 import hero from "@/assets/hero.jpg";
 import { Button } from "@/components/ui/button";
+import { TravelPlanner } from "@/components/TravelPlanner";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -82,8 +83,14 @@ function Index() {
           <p className="mt-6 max-w-md text-lg text-muted-foreground">
             Itineraries, budgets and fresh ideas for every journey — all saved to your account.
           </p>
-          <Button asChild size="lg" className="mt-8">
-            <Link to="/trips">Start planning</Link>
+          <Button
+            size="lg"
+            className="mt-8"
+            onClick={() =>
+              document.getElementById("plan-your-trip")?.scrollIntoView({ block: "start" })
+            }
+          >
+            Start planning
           </Button>
         </div>
         <img
@@ -94,6 +101,7 @@ function Index() {
           className="rounded-2xl shadow-card"
         />
       </main>
+      <TravelPlanner />
       <section className="mx-auto grid max-w-6xl gap-6 px-6 pb-20 md:grid-cols-3">
         {features.map((f) => (
           <div key={f.title} className="rounded-xl border bg-card p-6 shadow-card">

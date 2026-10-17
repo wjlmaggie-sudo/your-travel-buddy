@@ -9,6 +9,7 @@ import { tripQuery, tripDays, money, CATEGORIES } from "@/lib/trips";
 import { TripSuggestions } from "@/components/TripSuggestions";
 import { DailyBudget, DayBudgetSummary, dailyMoney } from "@/components/DailyBudget";
 import { DestinationExplorer } from "@/components/DestinationExplorer";
+import { TripWeather } from "@/components/TripWeather";
 import { Button } from "@/components/ui/button";
 import { TravelShop } from "@/components/TravelShop";
 import { TripSettings } from "@/components/TripSettings";
@@ -143,6 +144,14 @@ function TripPage() {
             <TabsTrigger value="shop">Shops & packing</TabsTrigger>
           </TabsList>
           <TabsContent value="itinerary">
+            <div className="my-5">
+              <TripWeather
+                key={`${trip.destination}-${trip.start_date}-${trip.end_date}`}
+                destination={trip.destination}
+                startDate={trip.start_date}
+                days={tripDays(trip.start_date, trip.end_date)}
+              />
+            </div>
             <Itinerary data={data} refresh={refresh} />
           </TabsContent>
           <TabsContent value="budget">
@@ -235,14 +244,12 @@ function DayCard({
   async function add(e: React.FormEvent) {
     e.preventDefault();
     if (!f.title.trim()) return;
-    const { error } = await supabase
-      .from("activities")
-      .insert({
-        ...f,
-        trip_id: tripId,
-        day,
-        position: Math.max(-1, ...items.map((item) => item.position)) + 1,
-      });
+    const { error } = await supabase.from("activities").insert({
+      ...f,
+      trip_id: tripId,
+      day,
+      position: Math.max(-1, ...items.map((item) => item.position)) + 1,
+    });
     if (error) {
       toast.error(error.message);
       return;
@@ -373,15 +380,13 @@ function Budget({ data, refresh }: { data: Data; refresh: () => void }) {
       toast.error("Enter an amount");
       return;
     }
-    const { error } = await supabase
-      .from("expenses")
-      .insert({
-        trip_id: trip.id,
-        amount,
-        category: f.category,
-        note: f.note || null,
-        spent_on: f.spent_on,
-      });
+    const { error } = await supabase.from("expenses").insert({
+      trip_id: trip.id,
+      amount,
+      category: f.category,
+      note: f.note || null,
+      spent_on: f.spent_on,
+    });
     if (error) {
       toast.error(error.message);
       return;

@@ -124,3 +124,34 @@ and backend capacity have not been verified or changed from this checkout.
 can be deployed without those owner permissions, but live AI generation remains
 unavailable until the Edge Function and backend secret are deployed. The database
 upgrade has not been applied automatically.
+
+### Public travel planner and weather
+
+The homepage now includes an interactive trip brief (destination, departure,
+1–30 days, 1–20 travelers, currency, group budget, style, and interests). The
+preview shows daily group and per-person averages and an estimated daily
+category allocation. The validated brief stays in this tab's session storage
+through sign-in, opens the new-trip form, and clears only after successful
+creation. Templates continue to use their own defaults.
+
+Destination weather is available on the public brief and saved itinerary.
+Open-Meteo geocoding resolves the destination (including a country qualifier),
+with a selector to correct ambiguous locations. On-demand forecasts show current
+temperature separately from daily highs/lows and rain probability for matching
+trip dates, with Celsius/Fahrenheit switching. Dates beyond the available
+16-day forecast window, past trips, missing readings, and provider failures are
+explicitly identified. Forecasts cache for ten minutes and use cancellable,
+time-limited requests. No weather API key is embedded in the website.
+
+Sources: https://open-meteo.com/en/docs and
+https://open-meteo.com/en/docs/geocoding-api (location data: GeoNames).
+The default endpoint is intended for this personal, non-commercial deployment;
+commercial use requires the appropriate Open-Meteo service plan and a secure
+backend for any paid API credential. See https://open-meteo.com/en/terms.
+
+The newly authorized Supabase project `xuvilqwfeiwfoigcvrsb` is separate from the
+currently deployed backend. Linking its GitHub integration does not switch the
+app's public configuration or migrate accounts/data. Before switching production,
+prepare the base trips/activities/expenses schema with owner policies, then apply
+the preferences migration, configure auth redirects and AI, and validate saving.
+The existing preferences-only migration cannot initialize an empty project.

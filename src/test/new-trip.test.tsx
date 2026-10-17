@@ -31,14 +31,47 @@ vi.mock("@/integrations/supabase/client", () => ({
   },
 }));
 import { NewTripDialog } from "@/components/NewTripDialog";
+import { savePlannerDraft, readPlannerDraft } from "@/lib/planner-draft";
 afterEach(cleanup);
 beforeEach(() => {
   vi.clearAllMocks();
+  sessionStorage.clear();
   api.insertActivities.mockResolvedValue({ error: null });
   api.savePreferences.mockResolvedValue(undefined);
   api.invalidate.mockResolvedValue(undefined);
 });
 describe("creating an account trip from a template", () => {
+  it("carries the public planner choices into the saved trip and clears the draft after saving", async () => {
+    savePlannerDraft({
+      destination: "Kyoto, Japan",
+      start: "2026-11-01",
+      days: 7,
+      travelers: 3,
+      budget: 2100,
+      currency: "USD",
+      style: "Budget",
+      interest: "Food & culture",
+    });
+    render(<NewTripDialog open onOpenChange={vi.fn()} />);
+    expect(screen.getByLabelText("Destination")).toHaveValue("Kyoto, Japan");
+    expect(screen.getByLabelText("Total group budget")).toHaveValue(2100);
+    fireEvent.click(screen.getByRole("button", { name: "Create trip" }));
+    await waitFor(() => expect(api.navigate).toHaveBeenCalled());
+    expect(api.insertTrip).toHaveBeenCalledWith(
+      expect.objectContaining({
+        destination: "Kyoto, Japan",
+        start_date: "2026-11-01",
+        end_date: "2026-11-07",
+        budget: 2100,
+        currency: "USD",
+      }),
+    );
+    expect(api.savePreferences).toHaveBeenCalledWith(
+      "new-trip",
+      expect.objectContaining({ travelers: 3, style: "Budget" }),
+    );
+    expect(readPlannerDraft()).toBeNull();
+  });
   it("saves the chosen duration, group settings, and daily activities to the same trip", async () => {
     render(<NewTripDialog open onOpenChange={vi.fn()} templateId="lisbon" />);
     fireEvent.change(screen.getByLabelText("Departure"), { target: { value: "2026-12-31" } });

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { NewTripDialog } from "@/components/NewTripDialog";
 import { TripTemplates } from "@/components/TripTemplates";
+import { readPlannerDraft } from "@/lib/planner-draft";
 
 export const Route = createFileRoute("/_authenticated/trips/")({
   head: () => ({
@@ -24,7 +25,7 @@ export const Route = createFileRoute("/_authenticated/trips/")({
 
 function TripsPage() {
   const { data: trips } = useSuspenseQuery(tripsQuery());
-  const [dialog, setDialog] = useState(false);
+  const [dialog, setDialog] = useState(() => readPlannerDraft() !== null);
   const [templateId, setTemplateId] = useState("");
   return (
     <div className="min-h-screen">
