@@ -88,6 +88,8 @@ Run `npm run build:pages` with the public configuration in your ignored local `.
 
 The connected OAuth credential can push source code but cannot create GitHub Actions workflows without its `workflow` scope. Ready-to-use workflow templates are retained in `deployment/github-actions/`. To enable automatic builds from `main` later, add `pages.yml` through GitHub's web editor or a credential authorized to manage workflows, placing it at `.github/workflows/pages.yml`, then switch Pages Source to **GitHub Actions**. It builds from the repository secrets already configured and uploads `dist/`. Do not put private backend keys into browser variables.
 
+
+this is a test
 ## Full-trip suggestions, daily budgets, and place coverage
 
 New custom trips can open straight into a full suggested itinerary. The complete
@@ -155,3 +157,4 @@ app's public configuration or migrate accounts/data. Before switching production
 prepare the base trips/activities/expenses schema with owner policies, then apply
 the preferences migration, configure auth redirects and AI, and validate saving.
 The existing preferences-only migration cannot initialize an empty project.
+
