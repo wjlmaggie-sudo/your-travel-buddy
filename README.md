@@ -87,3 +87,6 @@ Until the function and its secret are deployed, the AI tab reports a setup/unava
 Run `npm run build:pages` with the public configuration in your ignored local `.env`, then `npm run publish:pages`. The publisher commits the contents of `dist/` to `gh-pages` without rewriting deployment history. A `main` push alone does not rebuild the website in this deployment mode.
 
 The connected OAuth credential can push source code but cannot create GitHub Actions workflows without its `workflow` scope. Ready-to-use workflow templates are retained in `deployment/github-actions/`. To enable automatic builds from `main` later, add `pages.yml` through GitHub's web editor or a credential authorized to manage workflows, placing it at `.github/workflows/pages.yml`, then switch Pages Source to **GitHub Actions**. It builds from the repository secrets already configured and uploads `dist/`. Do not put private backend keys into browser variables.
+
+
+this is a test
