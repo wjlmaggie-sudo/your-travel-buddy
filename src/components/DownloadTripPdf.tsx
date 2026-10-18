@@ -23,9 +23,9 @@ export function DownloadTripPdf({ trip, disabled = false }: { trip: PdfTrip; dis
       const missing = result.missingPhotos;
       if (missing)
         toast.info(
-          `PDF downloaded. ${missing} photo(s) could not be embedded; source links and available information are included.`,
+          `PDF ready. ${missing} photo(s) could not be embedded; source links and available information are included.`,
         );
-      else toast.success("PDF downloaded with all days, photos and available stories.");
+      else toast.success("PDF ready with all days and available photos and stories.");
     } catch {
       toast.error("The PDF could not be created. Please try again. Your plan is unchanged.");
     } finally {
@@ -45,11 +45,13 @@ export function DownloadTripPdf({ trip, disabled = false }: { trip: PdfTrip; dis
       <p role="status" className="mt-1 min-h-8 text-xs text-muted-foreground">
         {status || "All days, photos & available stories · no sign-in needed for guest plans"}
       </p>
-      {file && (
-        <a href={file.url} download={file.filename} className="text-xs text-secondary underline">
-          PDF ready · download again
-        </a>
-      )}
+      <div className="min-h-5">
+        {file && (
+          <a href={file.url} download={file.filename} className="text-xs text-secondary underline">
+            PDF ready · download again
+          </a>
+        )}
+      </div>
     </div>
   );
 }
