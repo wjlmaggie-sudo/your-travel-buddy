@@ -16,6 +16,11 @@ describe("live place directory", () => {
                   description: "marketplace",
                   coordinates: [{ lat: 48.1, lon: 11.1 }],
                 },
+                "14": {
+                  title: "Example Cathedral",
+                  description: "small Gothic cathedral and seat of the Archbishop",
+                  coordinates: [{ lat: 48.13, lon: 11.13 }],
+                },
                 "12": {
                   title: "Police Office",
                   description: "law enforcement agency",
@@ -38,7 +43,10 @@ describe("live place directory", () => {
       lon: 11.1,
       source: "https://en.wikipedia.org/wiki/City",
     });
-    expect(places).toHaveLength(1);
+    expect(places).toHaveLength(2);
+    expect(places.find((place) => place.name === "Example Cathedral")?.category).toBe(
+      "Attractions",
+    );
     expect(places[0]?.category).toBe("Shops");
     expect(places[0]?.source).toContain("en.wikipedia.org");
     expect(fetcher).toHaveBeenCalledTimes(2);
@@ -70,20 +78,18 @@ describe("live place directory", () => {
   it("keeps the search ranking rather than ordering by Wikipedia page ID", async () => {
     vi.stubGlobal(
       "fetch",
-      vi
-        .fn()
-        .mockResolvedValue(
-          new Response(
-            JSON.stringify({
-              query: {
-                pages: {
-                  "1": { title: "Other place", index: 2, coordinates: [{ lat: 1, lon: 1 }] },
-                  "99": { title: "Test city", index: 1, coordinates: [{ lat: 52, lon: 13 }] },
-                },
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            query: {
+              pages: {
+                "1": { title: "Other place", index: 2, coordinates: [{ lat: 1, lon: 1 }] },
+                "99": { title: "Test city", index: 1, coordinates: [{ lat: 52, lon: 13 }] },
               },
-            }),
-          ),
+            },
+          }),
         ),
+      ),
     );
     const result = await searchDestinations("Unique test city");
     expect(result[0]?.name).toBe("Test city");

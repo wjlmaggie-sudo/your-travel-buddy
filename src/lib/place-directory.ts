@@ -189,7 +189,9 @@ export async function nearbyPlaces(destination: Destination): Promise<Place[]> {
       )
         return [];
       const category: Place["category"] =
-        /shop|market|mall|shopping|retail|bookstore|bookshop/.test(text)
+        /\b(?:shops?|markets?|marketplaces?|malls?|shopping|retail|bookstores?|bookshops?)\b/.test(
+          text,
+        )
           ? "Shops"
           : /restaurant|cafe|café|coffee|bakery|pub |bar /.test(text)
             ? "Food & drink"

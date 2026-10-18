@@ -188,7 +188,7 @@ export function LocalShopping({ destination }: { destination: string }) {
                 Directions ↗
               </a>
               <a href={store.source} target="_blank" rel="noreferrer">
-                OpenStreetMap source ↗
+                Directory source ↗
               </a>
             </div>
           </article>
