@@ -25,6 +25,7 @@ describe("PDF download control", () => {
     vi.stubGlobal("URL", Object.assign(URL, { revokeObjectURL: vi.fn() }));
     vi.mocked(downloadTripPdf).mockResolvedValueOnce({
       missingPhotos: 0,
+      missingMaps: 0,
       url: "blob:pdf",
       filename: "lisbon.pdf",
     });

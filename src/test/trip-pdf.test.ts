@@ -23,6 +23,13 @@ vi.mock("@/lib/city-guides", () => ({
     ],
   }),
 }));
+vi.mock("@/lib/pdf-street-map", () => ({
+  streetMapWays: vi.fn(async () => []),
+  streetMapSvg: vi.fn(
+    () =>
+      '<svg xmlns="http://www.w3.org/2000/svg" width="998" height="500"><rect width="998" height="500" fill="white"/></svg>',
+  ),
+}));
 vi.mock("@/lib/place-stories", () => ({
   curatedStory: () => ({
     text: "Complete history story including 1838.",
@@ -111,4 +118,21 @@ describe("complete PDF document", () => {
     );
     expect(missingPhotos).toBe(0);
   });
+});
+
+it("embeds a street map for every day, before the itinerary, even when days have not been opened", async () => {
+  const { definition, missingMaps } = await buildTripPdf(trip);
+  const text = JSON.stringify(definition);
+  expect(missingMaps).toBe(0);
+  expect(text.match(/<svg /g)?.length).toBe(2);
+  expect(text.indexOf("Day 1 map")).toBeLessThan(text.indexOf("Edited activity"));
+  expect(text).toContain("OpenStreetMap contributors");
+});
+it("retains visible fallback diagrams and reports missing street maps", async () => {
+  const { streetMapWays } = await import("@/lib/pdf-street-map");
+  vi.mocked(streetMapWays).mockRejectedValueOnce(new Error("offline"));
+  const { definition, missingMaps } = await buildTripPdf(trip);
+  expect(missingMaps).toBe(2);
+  expect(JSON.stringify(definition)).toContain("Street map unavailable at export time");
+  expect(JSON.stringify(definition)).toContain("Geographic stop overview");
 });

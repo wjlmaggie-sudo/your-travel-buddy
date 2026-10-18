@@ -21,11 +21,16 @@ export function DownloadTripPdf({ trip, disabled = false }: { trip: PdfTrip; dis
       const result = await downloadTripPdf(trip, setStatus);
       setFile(result);
       const missing = result.missingPhotos;
+      if (result.missingMaps)
+        toast.info(
+          `PDF ready. Street maps for ${result.missingMaps} day(s) could not load; map links and available stop diagrams are included. Retry when your connection improves.`,
+        );
       if (missing)
         toast.info(
           `PDF ready. ${missing} photo(s) could not be embedded; source links and available information are included.`,
         );
-      else toast.success("PDF ready with all days and available photos and stories.");
+      else if (!result.missingMaps)
+        toast.success("PDF ready with daily maps, photos and available stories.");
     } catch {
       toast.error("The PDF could not be created. Please try again. Your plan is unchanged.");
     } finally {
@@ -43,7 +48,7 @@ export function DownloadTripPdf({ trip, disabled = false }: { trip: PdfTrip; dis
         Download PDF
       </Button>
       <p role="status" className="mt-1 min-h-8 text-xs text-muted-foreground">
-        {status || "All days, photos & available stories · no sign-in needed for guest plans"}
+        {status || "All days, maps, photos & available stories · no sign-in needed for guest plans"}
       </p>
       <div className="min-h-5">
         {file && (

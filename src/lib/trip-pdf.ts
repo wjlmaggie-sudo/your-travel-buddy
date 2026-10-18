@@ -1,3 +1,4 @@
+import { streetMapWays, streetMapSvg } from "./pdf-street-map";
 import type { Content, TDocumentDefinitions } from "pdfmake/interfaces";
 import { dayGuide, loadCityGuide, type VisualPlace } from "./city-guides";
 import { curatedStory, fetchPlaceStory, type PlaceStory } from "./place-stories";
@@ -126,7 +127,7 @@ export function routeDiagram(places: VisualPlace[]): Content {
 export async function buildTripPdf(
   trip: PdfTrip,
   progress: (message: string) => void = () => {},
-): Promise<{ definition: TDocumentDefinitions; missingPhotos: number }> {
+): Promise<{ definition: TDocumentDefinitions; missingPhotos: number; missingMaps: number }> {
   const { brief: b, journey, stay } = trip;
   const money = (n: number) => `${n.toFixed(2)} ${b.currency}`;
   progress("Loading all days and stories…");
@@ -135,6 +136,25 @@ export async function buildTripPdf(
     directory
       ? dayGuide(directory, b.destination, i + 1, b.style)
       : { places: [], restaurants: [] },
+  );
+  const mapKey = (places: VisualPlace[]) => places.map(keyFor).join("|");
+  const mapSets = [
+    ...new Map(
+      guides.filter((g) => g.places.length).map((g) => [mapKey(g.places), g.places]),
+    ).entries(),
+  ];
+  const maps = new Map<string, string | null>();
+  let mapCursor = 0;
+  const mapTask = Promise.all(
+    Array.from({ length: Math.min(2, mapSets.length) }, async () => {
+      while (mapCursor < mapSets.length) {
+        const [key, places] = mapSets[mapCursor++]!;
+        const svg = await streetMapWays(places)
+          .then((ways) => streetMapSvg(places, ways))
+          .catch(() => null);
+        maps.set(key, svg);
+      }
+    }),
   );
   const unique = [...new Map(guides.flatMap((g) => g.places).map((p) => [keyFor(p), p])).values()];
   const media = new Map<string, PlaceMedia>();
@@ -154,6 +174,8 @@ export async function buildTripPdf(
       }
     }),
   );
+  progress("Embedding daily street maps…");
+  await mapTask;
   const content: Content[] = [
     {
       text: "TRAVEL BUDDY / YOUR TRAVEL GUIDE",
@@ -257,8 +279,55 @@ export async function buildTripPdf(
       paragraph(
         `Group daily share of total budget: ${money(budgets[index]!.amount)} · Per person: ${money(budgets[index]!.perPerson)}${operating ? `\nDaily food, activities, local transport & shopping estimate: ${money(operating[index]!.amount)} (flights/hotel separate)` : ""}`,
       ),
-      heading("Your itinerary"),
     );
+    if (guide.places.length) {
+      const svg = maps.get(mapKey(guide.places));
+      content.push({
+        stack: [
+          heading(`Day ${day} map · suggested stops`),
+          ...(svg
+            ? [{ svg, width: 499 } as Content]
+            : [
+                paragraph(
+                  "Street map unavailable at export time. Geographic stop diagram below; use the links for an online map.",
+                ),
+                routeDiagram(guide.places),
+              ]),
+          ...(svg
+            ? [
+                link(
+                  "Map data © OpenStreetMap contributors · ODbL",
+                  "https://www.openstreetmap.org/copyright",
+                ),
+                paragraph(
+                  "Numbered pins match the suggested stops below. Dotted lines show visit order, not walking or driving routes. These reference stops are separate from your edited itinerary.",
+                ),
+              ]
+            : []),
+        ],
+      });
+      if (svg)
+        guide.places.forEach((p, i) =>
+          content.push(
+            link(
+              `${i + 1}. ${p.name}`,
+              `https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lon}`,
+            ),
+          ),
+        );
+    }
+    if (!guide.places.length)
+      content.push(
+        heading(`Day ${day} map`),
+        paragraph(
+          "Street map unavailable: no mapped stop coordinates could be loaded for this day.",
+        ),
+        link(
+          "Open destination map",
+          `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(b.destination)}`,
+        ),
+      );
+    content.push(heading("Your itinerary"));
     const items = trip.days.find((d) => d.day === day)?.items ?? [];
     if (!items.length) content.push(paragraph("No activities added for this day."));
     items.forEach((item) =>
@@ -282,7 +351,7 @@ export async function buildTripPdf(
           "Destination photos, place stories and stop references are unavailable. Your itinerary is included in full.",
         ),
       );
-    else content.push(routeDiagram(guide.places));
+
     guide.places.forEach((place, i) => {
       const m = media.get(keyFor(place))!;
       content.push({
@@ -394,6 +463,7 @@ export async function buildTripPdf(
     if (data) images[`photo-${i}`] = data;
   });
   return {
+    missingMaps: guides.filter((g) => !g.places.length || !maps.get(mapKey(g.places))).length,
     missingPhotos: unique.filter((p) => !media.get(keyFor(p))?.data).length,
     definition: {
       pageSize: "A4",
@@ -443,5 +513,10 @@ export async function downloadTripPdf(trip: PdfTrip, progress?: (message: string
   document.body.append(anchor);
   anchor.click();
   anchor.remove();
-  return { missingPhotos: result.missingPhotos, url, filename: anchor.download };
+  return {
+    missingPhotos: result.missingPhotos,
+    missingMaps: result.missingMaps,
+    url,
+    filename: anchor.download,
+  };
 }
