@@ -1,0 +1,114 @@
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { buildTripPdf, type PdfTrip } from "@/lib/trip-pdf";
+vi.mock("@/lib/city-guides", () => ({
+  loadCityGuide: vi.fn(async () => ({})),
+  dayGuide: () => ({
+    places: [
+      {
+        name: "Pena Palace",
+        lat: 38.78,
+        lon: -9.39,
+        description: "A palace reference",
+        source: "https://example.org/palace",
+      },
+    ],
+    restaurants: [
+      {
+        name: "Local café",
+        kind: "Café",
+        address: "Main road",
+        price: "Check menu",
+        source: "https://example.org/menu",
+      },
+    ],
+  }),
+}));
+vi.mock("@/lib/place-stories", () => ({
+  curatedStory: () => ({
+    text: "Complete history story including 1838.",
+    source: "https://example.org/history",
+    credit: "Official history",
+  }),
+  fetchPlaceStory: vi.fn(),
+}));
+vi.mock("@/lib/place-photos", () => ({ fetchPlacePhoto: vi.fn(async () => null) }));
+const trip: PdfTrip = {
+  brief: {
+    destination: "Lisbon",
+    start: "2026-11-01",
+    days: 2,
+    travelers: 2,
+    budget: 1500,
+    currency: "EUR",
+    style: "Balanced",
+  },
+  journey: { departure: "Berlin", flightBudget: 350, hotelComfort: "Comfortable" },
+  days: [
+    { day: 1, items: [{ title: "Edited activity", notes: "My full notes" }] },
+    { day: 2, items: [{ title: "Hidden second day", notes: "Long story ".repeat(300) }] },
+  ],
+  packing: ["Raincoat"],
+  expenses: [{ amount: 23.5, category: "food", note: "Lunch", spent_on: "2026-11-01" }],
+};
+describe("complete PDF document", () => {
+  beforeEach(() => vi.clearAllMocks());
+  it("exports every day, edits, full notes, stories, sources, tickets, restaurants and budget provenance", async () => {
+    const { definition, missingPhotos } = await buildTripPdf(trip);
+    const text = JSON.stringify(definition);
+    for (const value of [
+      "Edited activity",
+      "Hidden second day",
+      trip.days[1]!.items[0]!.notes!,
+      "Complete history story including 1838.",
+      "https://example.org/history",
+      "20.00 EUR / adult",
+      "Local café",
+      "Raincoat",
+      "23.50 EUR",
+      "DEMONSTRATION ONLY",
+      "fictional",
+      "1500.00 EUR",
+      "750.00 EUR",
+      "Remaining:",
+      "separate from your edited itinerary",
+    ])
+      expect(text).toContain(value);
+    expect(missingPhotos).toBe(1); // unique missing photo, not per repeated day
+    expect(
+      (definition.content as { pageBreak?: string }[]).filter((n) => n.pageBreak === "before"),
+    ).toHaveLength(3);
+  });
+  it("keeps edited operating estimates and selected flight prices consistent", async () => {
+    const { flightScope } = await import("@/lib/travel-workspace");
+    const { definition } = await buildTripPdf({
+      ...trip,
+      journey: {
+        ...trip.journey!,
+        selectedFlight: {
+          id: "quote",
+          label: "My quote",
+          evidence: "entered",
+          amount: 420,
+          scope: flightScope(trip.brief, "Berlin"),
+        },
+        estimates: { food: 100, activities: 100, transport: 100, shopping: 100 },
+      },
+    });
+    const text = JSON.stringify(definition);
+    expect(text).toContain("420.00 EUR");
+    expect(text).toContain("entered quote");
+    expect(text).toContain(
+      "Daily food, activities, local transport & shopping estimate: 200.00 EUR",
+    );
+  });
+  it("still exports itinerary when the place directory is unavailable", async () => {
+    const { loadCityGuide } = await import("@/lib/city-guides");
+    vi.mocked(loadCityGuide).mockRejectedValueOnce(new Error("offline"));
+    const { definition, missingPhotos } = await buildTripPdf({ ...trip, journey: null });
+    expect(JSON.stringify(definition)).toContain("Hidden second day");
+    expect(JSON.stringify(definition)).toContain(
+      "Destination photos, place stories and stop references are unavailable",
+    );
+    expect(missingPhotos).toBe(0);
+  });
+});

@@ -1,3 +1,4 @@
+import { DownloadTripPdf } from "@/components/DownloadTripPdf";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useSuspenseQuery, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -27,7 +28,7 @@ import { TravelShop } from "@/components/TravelShop";
 import { TripSettings } from "@/components/TripSettings";
 import { useTripPreferences } from "@/lib/travel-preferences";
 import { PRODUCTS } from "@/lib/travel-data";
-import { downloadText, budgetAllocation, dailyBudgets } from "@/lib/planning";
+import { budgetAllocation, dailyBudgets } from "@/lib/planning";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
@@ -126,47 +127,6 @@ function TripPage() {
     currency: "currency",
     weather: "weather",
   };
-  function exportTrip() {
-    const p = preferences.preference;
-    const spent = data.expenses.reduce((sum, e) => sum + Number(e.amount), 0);
-    const text = [
-      "AI Travel — " + trip.destination,
-      `${trip.start_date} → ${trip.end_date} | ${tripDays(trip.start_date, trip.end_date)} days | ${p.travelers} travelers`,
-      `${p.style} | ${p.interest}`,
-      `Group budget: ${money(Number(trip.budget), trip.currency)}`,
-      `Per person: ${money(Number(trip.budget) / p.travelers, trip.currency)}`,
-      `Actual spending: ${money(spent, trip.currency)}`,
-      stay.data
-        ? `Chosen accommodation (${stay.data.evidence === "demo" ? "DEMONSTRATION" : "entered quote"}): ${stay.data.name} · amount ${stay.data.amount} ${trip.currency} / ${stay.data.unit}. Verify quote dates, guests and fees in the app.`
-        : "Accommodation not quoted yet.",
-      journey.data && connectedBudget(brief, journey.data, stay.data).flightChoice
-        ? `Flight selection: ${connectedBudget(brief, journey.data, stay.data).flightChoice!.label} · ${connectedBudget(brief, journey.data, stay.data).flightChoice!.evidence}`
-        : "No flight quote selected.",
-      "",
-      journey.data
-        ? `ROUTE: ${journey.data.departure} → ${trip.destination} · ALLOCATION INCLUDING FLIGHTS`
-        : "SUGGESTED ALLOCATION (flights excluded)",
-      ...(journey.data
-        ? journeyBudget(brief, journey.data, stay.data).parts
-        : budgetAllocation(Number(trip.budget), p.style)
-      ).map((b) => `${b.label}: ${money(b.amount, trip.currency)}`),
-      "",
-      ...Array.from({ length: tripDays(trip.start_date, trip.end_date) }, (_, index) =>
-        [
-          `DAY ${index + 1} · ${dailyMoney(dailyBudgets(Number(trip.budget), tripDays(trip.start_date, trip.end_date), p.travelers, trip.start_date)[index]?.amount ?? 0, trip.currency)} group daily budget`,
-          ...data.activities
-            .filter((a) => a.day === index + 1)
-            .map((a) => `${a.time ?? ""} ${a.title} — ${a.location ?? ""}\n${a.notes ?? ""}`),
-          "",
-        ].join("\n"),
-      ),
-      "PACKING LIST",
-      ...p.packing.map((id) => PRODUCTS.find((product) => product.id === id)?.name ?? id),
-      "",
-      "Suggested costs are estimates. Check local availability and opening hours.",
-    ].join("\n");
-    downloadText("ai-travel-plan.txt", text);
-  }
 
   async function deleteTrip() {
     if (!confirm("Delete this trip?")) return;
@@ -197,14 +157,29 @@ function TripPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={exportTrip}
-              disabled={preferences.isPending || preferences.isError}
-            >
-              Export plan
-            </Button>
+            <DownloadTripPdf
+              disabled={
+                preferences.isPending ||
+                preferences.isError ||
+                journey.isPending ||
+                stay.isPending ||
+                selectionBusy
+              }
+              trip={{
+                brief,
+                interest: preferences.preference.interest,
+                journey: journey.data,
+                stay: stay.data,
+                days: Array.from({ length: brief.days }, (_, i) => ({
+                  day: i + 1,
+                  items: data.activities.filter((a) => a.day === i + 1),
+                })),
+                expenses: data.expenses,
+                packing: preferences.preference.packing.map(
+                  (id) => PRODUCTS.find((p) => p.id === id)?.name ?? id,
+                ),
+              }}
+            />
             <Button variant="ghost" size="sm" onClick={deleteTrip}>
               <Trash2 className="mr-1 h-4 w-4" /> Delete
             </Button>

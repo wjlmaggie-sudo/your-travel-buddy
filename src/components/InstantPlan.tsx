@@ -1,3 +1,4 @@
+import { DownloadTripPdf } from "./DownloadTripPdf";
 import { WorkspacePanel, type BudgetSnapshot } from "./TravelWorkspace";
 import { SavePlanButton } from "./SavePlanButton";
 import { TripBudgetDashboard } from "./TripBudgetDashboard";
@@ -11,11 +12,11 @@ import type { Journey } from "@/lib/journey-planning";
 import { AccommodationPlanner } from "./AccommodationPlanner";
 import { stayCost, stayBudget, type StayChoice } from "@/lib/stay-planning";
 import { useEffect, useState } from "react";
-import { Download, Plus, Trash2, Check } from "lucide-react";
+import { Plus, Trash2, Check } from "lucide-react";
 import { toast } from "sonner";
 import type { TripIdeas } from "../../supabase/functions/_shared/trip-ideas";
 import { savePlannerDraft, saveGuestSimulation, type PlannerDraft } from "@/lib/planner-draft";
-import { dailyBudgets, downloadText, budgetAllocation } from "@/lib/planning";
+import { dailyBudgets, budgetAllocation } from "@/lib/planning";
 import { DayVisuals } from "./DayVisuals";
 import { DayBudgetSummary } from "./DailyBudget";
 import { Button } from "./ui/button";
@@ -145,42 +146,16 @@ export function InstantPlan({
                 return true;
               }}
             />
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() =>
-                downloadText(
-                  "my-travel-plan.txt",
-                  [
-                    `${brief.destination} · ${brief.days} days · ${brief.travelers} travelers`,
-                    ideas.summary ?? "",
-                    ...(journey
-                      ? [
-                          `Departure: ${journey.departure}`,
-                          `Group return-flight allowance: ${journey.flightBudget.toFixed(2)} ${brief.currency}`,
-                          `Hotel comfort: ${journey.hotelComfort}`,
-                          `Selected flight cost or allowance: ${connected.flight.toFixed(2)} ${brief.currency}; ${connected.flightChoice?.evidence ?? "unselected allowance"}`,
-                          `Planned total: ${connected.planned.toFixed(2)} ${brief.currency}; remaining ${connected.remaining.toFixed(2)} ${brief.currency}`,
-                        ]
-                      : []),
-                    stay
-                      ? `Chosen stay: ${stay.name} · ${stayCost(stay, brief) ?? "unverified"} ${brief.currency} whole group / stay; ${stay.evidence === "demo" ? "DEMONSTRATION ONLY" : "based on entered quote"}`
-                      : "Accommodation not quoted yet.",
-                    ...ideas.days.map((day, index) =>
-                      [
-                        `Day ${day.day} · ${budgets[index]?.date} · ${budgets[index]?.amount.toFixed(2)} ${brief.currency} group budget`,
-                        ...day.items.map(
-                          (item) => `${item.time} ${item.title} — ${item.location}\n${item.notes}`,
-                        ),
-                      ].join("\n"),
-                    ),
-                  ].join("\n\n"),
-                )
-              }
-            >
-              <Download className="mr-2 h-4 w-4" />
-              Download without signing in
-            </Button>
+            <DownloadTripPdf
+              trip={{
+                brief,
+                summary: ideas.summary,
+                interest: brief.interest,
+                journey,
+                stay,
+                days: ideas.days,
+              }}
+            />
           </div>
           <p className="mt-3 text-xs text-muted-foreground">
             Free template planner · no AI API key or AI charges. Only saving to your account needs
