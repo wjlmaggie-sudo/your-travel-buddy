@@ -62,7 +62,7 @@ export function HotelRecommendations({
         prices are simulated. Illustrations are not property photographs. Use the booking search or
         add a current quote below for a real stay.
       </p>
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="offer-grid grid gap-4">
         {demoHotels(brief, journey).map((option, index) => {
           const active =
             stay?.scope === stayScope(brief) &&
@@ -101,7 +101,9 @@ export function HotelRecommendations({
                   {dailyMoney(option.amount, brief.currency)}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Entire stay · whole group · simulated total
+                  {dailyMoney(option.amount / (brief.days - 1), brief.currency)} / night · group ·
+                  simulated
+                  <span className="block">Entire stay · whole group · simulated total</span>
                 </p>
                 <Button
                   className="mt-4 w-full"

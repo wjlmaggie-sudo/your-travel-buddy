@@ -89,7 +89,7 @@ export function DayRouteMap({ places, day }: { places: VisualPlace[]; day: numbe
   }, [places]);
   if (failed)
     return (
-      <p className="rounded-xl bg-muted p-4 text-sm text-muted-foreground">
+      <p className="flex h-64 items-center justify-center rounded-xl bg-muted p-4 text-sm text-muted-foreground sm:h-72">
         The map is unavailable. Use the place and directions links below.
       </p>
     );

@@ -12,7 +12,7 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 describe("exchange widget", () => {
-  it("loads only on expansion, calculates locally and swaps currencies", async () => {
+  it("loads only on request, calculates locally and swaps currencies", async () => {
     vi.mocked(fetchExchangeRate).mockImplementation(async (base, quote) => ({
       base,
       quote,
@@ -25,7 +25,7 @@ describe("exchange widget", () => {
       </QueryClientProvider>,
     );
     expect(fetchExchangeRate).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByText("Currency exchange"));
+    fireEvent.click(screen.getByRole("button", { name: "Check exchange rate" }));
     expect(await screen.findByText("$112.53")).toBeInTheDocument();
     expect(screen.getByText(/published 2026-10-16/)).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("Amount to convert"), { target: { value: "200" } });

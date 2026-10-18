@@ -1,32 +1,34 @@
-import { TravelNavigation } from "./TravelNavigation";
-import { SECTIONS, type TravelSection } from "@/lib/travel-workspace";
-import { useEffect, useState } from "react";
-import { ArrowRight, MapPin, Sparkles, Wallet, Check, Compass } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Compass, MapPin, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { budgetAllocation, INTERESTS, STYLES, estimatedBudget } from "@/lib/planning";
-import { readPlannerDraft, plannerDraftSchema, type PlannerDraft } from "@/lib/planner-draft";
-import { createJourneyIdeas } from "@/lib/journey-plan";
-import { flightAllowance, journeyBudget } from "@/lib/journey-planning";
-import { createStarterIdeas, budgetTravelStyle } from "@/lib/starter-plan";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "./ui/dialog";
+import {
+  TravelWorkspace,
+  WorkspacePanel,
+  BudgetSummary,
+  type BudgetSnapshot,
+} from "./TravelWorkspace";
+import { TravelTools } from "./TravelTools";
 import { InstantPlan } from "./InstantPlan";
+import { SECTIONS, type TravelSection } from "@/lib/travel-workspace";
+import {
+  readPlannerDraft,
+  readGuestSimulation,
+  plannerDraftSchema,
+  type PlannerDraft,
+} from "@/lib/planner-draft";
+import { createJourneyIdeas } from "@/lib/journey-plan";
+import { flightAllowance } from "@/lib/journey-planning";
+import { budgetTravelStyle } from "@/lib/starter-plan";
+import { STYLES, INTERESTS, estimatedBudget } from "@/lib/planning";
 import type { TripIdeas } from "../../supabase/functions/_shared/trip-ideas";
-import { CurrencyConverter } from "./CurrencyConverter";
-import { TripWeather } from "./TripWeather";
-
-const COLORS = ["bg-secondary", "bg-primary", "bg-amber-500", "bg-sky-600", "bg-stone-400"];
-const formatMoney = (amount: number, currency: string) =>
-  new Intl.NumberFormat(undefined, {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 2,
-  }).format(amount);
 
 export function TravelPlanner() {
+  const preferencesTrigger = useRef<HTMLButtonElement>(null);
   const [draft, setDraft] = useState<PlannerDraft>(() => ({
-    journey: { departure: "", flightBudget: 375, hotelComfort: "Comfortable" },
     destination: "",
     start: new Date().toISOString().slice(0, 10),
     days: 5,
@@ -35,482 +37,379 @@ export function TravelPlanner() {
     currency: "EUR",
     style: "Balanced",
     interest: "Food & culture",
+    journey: {
+      departure: "",
+      flightBudget: 0,
+      hotelComfort: "Comfortable",
+      flightsRequired: false,
+    },
   }));
-  const [section, setSection] = useState<TravelSection>("planner");
-  const [customBudget, setCustomBudget] = useState(false);
-  const [planEdited, setPlanEdited] = useState(false);
+  const [pendingPlan, setPendingPlan] = useState<PlannerDraft | null>(null);
+  const [budget, setBudget] = useState<BudgetSnapshot | null>(null);
+  const [section, setSection] = useState<TravelSection>("planner"),
+    [editing, setEditing] = useState(true),
+    [preferences, setPreferences] = useState(false),
+    [edited, setEdited] = useState(false);
   const [result, setResult] = useState<{
     brief: PlannerDraft;
     ideas: TripIdeas;
     revision: number;
   } | null>(null);
   useEffect(() => {
-    const saved = readPlannerDraft();
+    const saved = readGuestSimulation() ?? readPlannerDraft();
     if (saved) {
       setDraft(saved);
-      setCustomBudget(true);
-      if (saved.ideas) setResult({ brief: saved, ideas: saved.ideas, revision: 1 });
+      if (saved.ideas) {
+        setResult({ brief: saved, ideas: saved.ideas, revision: 1 });
+        setEditing(false);
+      }
     }
   }, []);
-  useEffect(() => {
-    if (result) document.getElementById("whole-plan-heading")?.focus();
-  }, [result]);
-  const daily = draft.budget / Math.max(1, draft.days);
-  const perPerson = daily / Math.max(1, draft.travelers);
-  const resolvedStyle = budgetTravelStyle(draft);
-  const flightTarget = flightAllowance(draft.budget);
-  const allocation =
-    draft.journey && (draft.journey.flightsRequired === false || draft.journey.departure.trim())
-      ? journeyBudget(
-          { ...draft, days: Math.max(1, draft.days), travelers: Math.max(1, draft.travelers) },
-          { ...draft.journey, flightBudget: flightTarget },
-        ).parts.map((part) => ({ ...part, amount: part.amount / Math.max(1, draft.days) }))
-      : budgetAllocation(daily, resolvedStyle);
-
+  function generate(event: React.FormEvent) {
+    event.preventDefault();
+    const includeFlights =
+      draft.journey?.flightsRequired !== false && !!draft.journey?.departure.trim();
+    const parsed = plannerDraftSchema.safeParse({
+      ...draft,
+      journey: {
+        ...draft.journey,
+        flightsRequired: includeFlights,
+        flightBudget: includeFlights ? flightAllowance(draft.budget) : 0,
+        departure: draft.journey?.departure ?? "",
+        hotelComfort: draft.journey?.hotelComfort ?? "Comfortable",
+        selectedFlight: undefined,
+      },
+      ideas: undefined,
+      stay: undefined,
+    });
+    if (!parsed.success) {
+      toast.error("Enter a destination, valid dates, days, people and budget.");
+      return;
+    }
+    if (result && edited) {
+      setPendingPlan(parsed.data);
+      return;
+    }
+    applyPlan(parsed.data);
+  }
+  function applyPlan(next: PlannerDraft) {
+    const ideas = createJourneyIdeas(next, next.journey!);
+    setResult((current) => ({
+      brief: { ...next, style: budgetTravelStyle(next) },
+      ideas,
+      revision: (current?.revision ?? 0) + 1,
+    }));
+    setEdited(false);
+    setEditing(false);
+    setPendingPlan(null);
+  }
+  const planned = result?.brief ?? draft;
   return (
     <section
       id="plan-your-trip"
-      aria-labelledby="planner-heading"
-      className="mx-auto max-w-6xl scroll-mt-6 px-4 py-6 sm:px-6"
+      className="mx-auto max-w-7xl px-4 py-6 sm:px-6"
+      aria-label="Guest travel planner"
     >
-      <div className="sticky top-0 z-20 mb-6 bg-background/95 py-3 backdrop-blur">
-        <TravelNavigation section={section} onChange={setSection} />
-      </div>
-      <div hidden={section !== "planner"}>
-        <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-secondary">
-              AI Travel Planner · free prototype
-            </p>
-            <h2 id="planner-heading" className="text-3xl font-semibold md:text-4xl">
-              Your next adventure starts here.
-            </h2>
-            <p className="mt-3 text-muted-foreground">
-              From take-off to the stories you bring home. Plan flights, a stay and every day in
-              between.
-            </p>
-          </div>
-          <span className="inline-flex items-center gap-2 rounded-full border bg-card px-4 py-2 text-xs text-secondary">
-            <Check className="h-3.5 w-3.5" /> Free to explore · Yours to edit
-          </span>
-        </div>
-        <div className="overflow-hidden rounded-3xl border bg-card shadow-card lg:grid lg:grid-cols-[1.15fr_1fr]">
-          <form
-            className="space-y-5 p-6 md:p-8"
-            onSubmit={(event) => {
-              event.preventDefault();
-              const parsed = plannerDraftSchema.safeParse({
-                ...draft,
-                journey: {
-                  ...draft.journey,
-                  flightBudget: draft.journey?.flightsRequired === false ? 0 : flightTarget,
-                },
-                ideas: undefined,
-              });
-              if (!parsed.success) {
-                toast.error("Enter departure, destination, days, people and a valid total budget.");
-                return;
-              }
-              const ideas = createJourneyIdeas(parsed.data, parsed.data.journey!);
-              if (
-                result &&
-                planEdited &&
-                !window.confirm("Rebuild this itinerary? This replaces edits in the preview below.")
-              )
-                return;
-              setResult((current) => ({
-                brief: { ...parsed.data, style: budgetTravelStyle(parsed.data) },
-                ideas,
-                revision: (current?.revision ?? 0) + 1,
-              }));
-              setPlanEdited(false);
-              setSection("planner");
+      <span className="sr-only" role="status">
+        {result
+          ? "Your trip plan is ready. Choose a section to explore or edit your trip details."
+          : ""}
+      </span>
+      <Dialog
+        open={!!pendingPlan}
+        onOpenChange={(open) => {
+          if (!open) setPendingPlan(null);
+        }}
+      >
+        <DialogContent
+          className="w-[calc(100%_-_2rem)] rounded-2xl"
+          onOpenAutoFocus={(e) => e.preventDefault()}
+        >
+          <DialogHeader>
+            <DialogTitle>Rebuild this simulation?</DialogTitle>
+            <DialogDescription>
+              This replaces edited activities and selected offers in the current simulation. Saved
+              account trips are not changed.
+            </DialogDescription>
+          </DialogHeader>
+          <Button
+            onClick={() => {
+              if (pendingPlan) applyPlan(pendingPlan);
             }}
           >
-            <div className="flex items-center gap-3 text-secondary">
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary/10">
-                <Compass className="h-5 w-5" />
-              </span>
-              <span className="font-medium">A whole trip, with less effort</span>
-            </div>
-            <label className="flex items-center gap-2 text-sm font-medium">
-              <input
-                type="checkbox"
-                checked={draft.journey?.flightsRequired !== false}
-                onChange={(e) =>
-                  setDraft({
-                    ...draft,
-                    journey: {
-                      departure: draft.journey?.departure ?? "",
-                      flightBudget: flightTarget,
-                      hotelComfort: draft.journey?.hotelComfort ?? "Comfortable",
-                      flightsRequired: e.target.checked,
-                    },
-                  })
-                }
-              />
-              Include flights in my trip
-            </label>
-            <div hidden={draft.journey?.flightsRequired === false}>
-              <Label htmlFor="planner-departure">Departure city / airport</Label>
-              <Input
-                id="planner-departure"
-                className="mt-2 h-11"
-                required={draft.journey?.flightsRequired !== false}
-                maxLength={200}
-                placeholder="e.g. Berlin, Germany"
-                value={draft.journey?.departure ?? ""}
-                onChange={(e) =>
-                  setDraft({
-                    ...draft,
-                    journey: {
-                      ...draft.journey,
-                      departure: e.target.value,
-                      flightBudget: flightTarget,
-                      hotelComfort: draft.journey?.hotelComfort ?? "Comfortable",
-                    },
-                  })
-                }
-              />
-            </div>
-            <div>
-              <Label htmlFor="planner-destination">Where would you love to go?</Label>
-              <div className="relative mt-2">
-                <MapPin className="absolute left-3 top-3 h-4 w-4 text-primary" />
+            Rebuild and replace edits
+          </Button>
+          <Button variant="outline" onClick={() => setPendingPlan(null)}>
+            Keep my edits
+          </Button>
+        </DialogContent>
+      </Dialog>
+      <TravelWorkspace
+        section={section}
+        onChange={setSection}
+        title={
+          result
+            ? `${result.brief.destination} · ${result.brief.days} days`
+            : "Make room for your next adventure"
+        }
+        summary={
+          result && budget ? (
+            <BudgetSummary {...budget} />
+          ) : (
+            <span className="text-secondary">Guest-friendly · free</span>
+          )
+        }
+      >
+        <WorkspacePanel
+          active={section === "planner" && (!result || editing)}
+          label="Plan your trip"
+        >
+          <div className="mx-auto max-w-2xl">
+            <p className="text-xs uppercase tracking-widest text-secondary">
+              A whole trip, with less effort
+            </p>
+            <h2 id="planner-heading" className="mt-2 text-3xl font-semibold">
+              Your next adventure starts here.
+            </h2>
+            <p className="mt-3 text-sm text-muted-foreground">
+              A few details are all you need. Explore every section without an account.
+            </p>
+            <form className="mt-6 space-y-5" onSubmit={generate}>
+              <div>
+                <Label htmlFor="planner-destination">Where would you love to go?</Label>
+                <div className="relative mt-2">
+                  <MapPin className="absolute left-3 top-3.5 h-4 w-4 text-primary" />
+                  <Input
+                    id="planner-destination"
+                    className="h-12 pl-10"
+                    placeholder="City or region, country"
+                    required
+                    maxLength={200}
+                    value={draft.destination}
+                    onChange={(e) => setDraft({ ...draft, destination: e.target.value })}
+                  />
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {["Lisbon, Portugal", "Kyoto, Japan", "Bali, Indonesia"].map((place) => (
+                    <button
+                      key={place}
+                      type="button"
+                      className="rounded-full border px-3 py-1 text-xs hover:bg-muted"
+                      onClick={() => setDraft({ ...draft, destination: place })}
+                    >
+                      {place.split(",")[0]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="planner-start">When do you leave?</Label>
+                  <Input
+                    id="planner-start"
+                    type="date"
+                    className="mt-2 h-11"
+                    required
+                    value={draft.start}
+                    onChange={(e) => setDraft({ ...draft, start: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="planner-days">How many days?</Label>
+                  <Input
+                    id="planner-days"
+                    type="number"
+                    className="mt-2 h-11"
+                    min={1}
+                    max={30}
+                    required
+                    value={draft.days}
+                    onChange={(e) => setDraft({ ...draft, days: Number(e.target.value) })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="planner-travelers">How many people?</Label>
+                  <Input
+                    id="planner-travelers"
+                    type="number"
+                    className="mt-2 h-11"
+                    min={1}
+                    max={20}
+                    required
+                    value={draft.travelers}
+                    onChange={(e) => setDraft({ ...draft, travelers: Number(e.target.value) })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="planner-budget">Total group budget ({draft.currency})</Label>
+                  <Input
+                    id="planner-budget"
+                    type="number"
+                    className="mt-2 h-11"
+                    min={0}
+                    max={1000000}
+                    step="0.01"
+                    required
+                    value={draft.budget}
+                    onChange={(e) => setDraft({ ...draft, budget: Number(e.target.value) })}
+                  />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="planner-departure">Departure city / airport</Label>
                 <Input
-                  id="planner-destination"
-                  className="h-11 pl-10"
-                  placeholder="e.g. Kyoto, Japan"
-                  required
+                  id="planner-departure"
+                  className="mt-2 h-11"
+                  placeholder="Optional · add it for flight comparisons"
                   maxLength={200}
-                  value={draft.destination}
-                  onChange={(e) => setDraft({ ...draft, destination: e.target.value })}
-                />
-              </div>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {["Lisbon, Portugal", "Kyoto, Japan", "Bali, Indonesia"].map((place) => (
-                  <button
-                    type="button"
-                    key={place}
-                    onClick={() => setDraft({ ...draft, destination: place })}
-                    className="rounded-full bg-muted/60 px-3 py-1 text-xs transition hover:bg-accent"
-                  >
-                    {place.split(",")[0]}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="planner-start">When do you leave?</Label>
-              <Input
-                id="planner-start"
-                className="mt-2 h-11"
-                type="date"
-                required
-                value={draft.start}
-                onChange={(e) => setDraft({ ...draft, start: e.target.value })}
-              />
-              <p className="mt-1 text-xs text-muted-foreground">
-                Defaults to today. Change it before saving if your trip is later.
-              </p>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="planner-days">How many days?</Label>
-                <Input
-                  className="mt-2 h-11"
-                  id="planner-days"
-                  type="number"
-                  required
-                  min={1}
-                  max={30}
-                  value={draft.days}
-                  onChange={(e) => {
-                    const days = Number(e.target.value);
+                  value={draft.journey?.departure ?? ""}
+                  onChange={(e) =>
                     setDraft({
                       ...draft,
-                      days,
-                      ...(!customBudget && draft.currency === "EUR"
-                        ? {
-                            budget: estimatedBudget(
-                              Math.max(1, days),
-                              Math.max(1, draft.travelers),
-                              draft.style,
-                            ),
-                          }
-                        : {}),
-                    });
-                  }}
+                      journey: {
+                        ...draft.journey,
+                        departure: e.target.value,
+                        flightsRequired: !!e.target.value.trim(),
+                        flightBudget: flightAllowance(draft.budget),
+                        hotelComfort: draft.journey?.hotelComfort ?? "Comfortable",
+                      },
+                    })
+                  }
                 />
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Leave blank to plan without flights. You can add flights later.
+                </p>
               </div>
-              <div>
-                <Label htmlFor="planner-travelers">How many people?</Label>
-                <Input
-                  className="mt-2 h-11"
-                  id="planner-travelers"
-                  type="number"
-                  required
-                  min={1}
-                  max={20}
-                  value={draft.travelers}
-                  onChange={(e) => {
-                    const travelers = Number(e.target.value);
-                    setDraft({
-                      ...draft,
-                      travelers,
-                      ...(!customBudget && draft.currency === "EUR"
-                        ? {
-                            budget: estimatedBudget(
-                              Math.max(1, draft.days),
-                              Math.max(1, travelers),
-                              draft.style,
-                            ),
-                          }
-                        : {}),
-                    });
-                  }}
-                />
-              </div>
-            </div>
-            <div>
-              <Label htmlFor="planner-budget">Total group budget ({draft.currency})</Label>
-              <Input
-                className="mt-2 h-11"
-                id="planner-budget"
-                type="number"
-                required
-                min={0}
-                max={1000000}
-                step="0.01"
-                value={draft.budget}
-                onChange={(e) => {
-                  setCustomBudget(true);
-                  setDraft({ ...draft, budget: Number(e.target.value) });
-                }}
-              />
-              <p className="mt-2 text-xs text-muted-foreground">
-                {customBudget
-                  ? "Your spending limit for the whole trip, including flight and hotel allowances."
-                  : "A starting estimate is filled in for you. Adjust it if you like."}
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2" aria-label="Compare budget presets">
-              {STYLES.map((style) => (
-                <button
-                  key={style}
+              <div className="flex flex-wrap gap-3">
+                <Button type="submit" className="h-11">
+                  {result ? "Rebuild my whole trip" : "Create my travel plan"}
+                </Button>
+                <Button
                   type="button"
-                  className={`rounded-full border px-3 py-2 text-xs ${draft.currency === "EUR" && draft.budget === estimatedBudget(Math.max(1, draft.days), Math.max(1, draft.travelers), style) ? "border-secondary bg-secondary/10 text-secondary" : "hover:bg-muted"}`}
-                  onClick={() => {
-                    setCustomBudget(false);
+                  variant="outline"
+                  className="h-11"
+                  ref={preferencesTrigger}
+                  onClick={() => setPreferences(true)}
+                >
+                  <SlidersHorizontal className="mr-2 h-4 w-4" />
+                  Preferences
+                </Button>
+                {result && (
+                  <Button type="button" variant="ghost" onClick={() => setEditing(false)}>
+                    Back to overview
+                  </Button>
+                )}
+              </div>
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                Free template suggestions · yours to edit. Live AI and provider offers are not
+                connected. Simulated flight and hotel offers are clearly labeled.
+              </p>
+            </form>
+          </div>
+        </WorkspacePanel>
+        <Dialog open={preferences} onOpenChange={setPreferences}>
+          <DialogContent
+            className="max-h-[85svh] w-[calc(100%_-_2rem)] overflow-y-auto rounded-2xl"
+            onCloseAutoFocus={(event) => {
+              event.preventDefault();
+              preferencesTrigger.current?.focus({ preventScroll: true });
+            }}
+          >
+            <DialogHeader>
+              <DialogTitle>Make the trip your own</DialogTitle>
+              <DialogDescription>
+                Optional preferences. Changes take effect when you generate or rebuild your plan.
+              </DialogDescription>
+            </DialogHeader>
+            <div>
+              <Label htmlFor="planner-currency">Currency</Label>
+              <select
+                id="planner-currency"
+                className="mt-2 h-11 w-full rounded-xl border bg-background px-3"
+                value={draft.currency}
+                onChange={(e) => setDraft({ ...draft, currency: e.target.value })}
+              >
+                {Intl.supportedValuesOf("currency").map((code) => (
+                  <option key={code}>{code}</option>
+                ))}
+              </select>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Changing currency does not convert the amount.
+              </p>
+            </div>
+            <div aria-label="Compare budget presets" className="grid grid-cols-3 gap-2">
+              {STYLES.map((style) => (
+                <Button
+                  variant="outline"
+                  key={style}
+                  onClick={() =>
                     setDraft({
                       ...draft,
                       style,
                       currency: "EUR",
-                      budget: estimatedBudget(
-                        Math.max(1, draft.days),
-                        Math.max(1, draft.travelers),
-                        style,
-                      ),
-                    });
-                  }}
+                      budget: estimatedBudget(draft.days, draft.travelers, style),
+                    })
+                  }
                 >
-                  {style} ·{" "}
-                  {formatMoney(
-                    estimatedBudget(Math.max(1, draft.days), Math.max(1, draft.travelers), style),
-                    "EUR",
-                  )}
-                </button>
+                  {style} · €{estimatedBudget(draft.days, draft.travelers, style)}
+                </Button>
               ))}
             </div>
-            <details className="rounded-xl border p-4">
-              <summary className="cursor-pointer text-sm font-medium">
-                More options · currency, style & interests
-              </summary>
-              <div className="mt-4 space-y-4">
-                <div>
-                  <Label htmlFor="planner-currency">Currency</Label>
-                  <select
-                    id="planner-currency"
-                    className="mt-2 h-11 w-full rounded-md border bg-background px-2 text-sm"
-                    value={draft.currency}
-                    onChange={(e) => {
-                      setCustomBudget(true);
-                      setDraft({ ...draft, currency: e.target.value });
-                    }}
-                  >
-                    {Intl.supportedValuesOf("currency").map((currency) => (
-                      <option key={currency}>{currency}</option>
-                    ))}
-                  </select>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  EUR presets are rough estimates. Changing currency does not convert the amount;
-                  other currencies use your selected travel style.
-                </p>
-                <fieldset>
-                  <legend className="mb-2 text-sm font-medium">Find your travel rhythm</legend>
-                  <div className="grid grid-cols-3 gap-2">
-                    {STYLES.map((style) => (
-                      <button
-                        key={style}
-                        type="button"
-                        aria-pressed={draft.style === style}
-                        className={`rounded-xl border px-2 py-3 text-sm transition ${draft.style === style ? "border-secondary bg-secondary/10 font-semibold text-secondary" : "hover:bg-muted"}`}
-                        onClick={() => {
-                          setCustomBudget(false);
-                          setDraft({
-                            ...draft,
-                            style,
-                            budget: estimatedBudget(
-                              Math.max(1, draft.days),
-                              Math.max(1, draft.travelers),
-                              style,
-                            ),
-                            currency: "EUR",
-                          });
-                        }}
-                      >
-                        {style}
-                      </button>
-                    ))}
-                  </div>
-                </fieldset>
-                <div>
-                  <Label htmlFor="planner-interest">What makes a great trip for you?</Label>
-                  <select
-                    id="planner-interest"
-                    className="mt-2 h-11 w-full rounded-md border bg-background px-3 text-sm"
-                    value={draft.interest}
-                    onChange={(e) => setDraft({ ...draft, interest: e.target.value })}
-                  >
-                    {INTERESTS.map((interest) => (
-                      <option key={interest}>{interest}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </details>
-            <Button size="lg" className="w-full" type="submit">
-              {result ? "Rebuild my whole trip" : "Create my travel plan"}
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-            <p className="text-center text-xs text-muted-foreground">
-              Add your departure and destination. Get every day of your trip without signing in.
-              Free template suggestions today; live AI and provider offers are not connected. Demo
-              offers are clearly labeled.
-            </p>
-          </form>
-          <aside
-            className="flex flex-col border-t bg-secondary/[0.055] p-6 md:p-8 lg:border-l lg:border-t-0"
-            aria-label="Your budget preview"
+            <div>
+              <Label htmlFor="planner-interest">What do you enjoy?</Label>
+              <select
+                id="planner-interest"
+                className="mt-2 h-11 w-full rounded-xl border bg-background px-3"
+                value={draft.interest}
+                onChange={(e) => setDraft({ ...draft, interest: e.target.value })}
+              >
+                {INTERESTS.map((interest) => (
+                  <option key={interest}>{interest}</option>
+                ))}
+              </select>
+            </div>
+            <Button onClick={() => setPreferences(false)}>Done</Button>
+          </DialogContent>
+        </Dialog>
+        {!result && !["planner", "currency", "weather"].includes(section) && (
+          <WorkspacePanel
+            active
+            label={SECTIONS.find((item) => item.id === section)?.label ?? "Travel options"}
           >
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-secondary">
-              Your adventure at a glance
-            </p>
-            <h3 className="mt-3 break-words text-3xl font-semibold">
-              {draft.destination.trim() || "Somewhere wonderful"}
-            </h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {draft.days || 1} days · {draft.travelers || 1}{" "}
-              {draft.travelers === 1 ? "traveler" : "travelers"} · {resolvedStyle.toLowerCase()}{" "}
-              travel
-            </p>
-            <div className="my-7 grid grid-cols-2 gap-4" aria-live="polite">
-              <div className="rounded-2xl border border-secondary/15 bg-card p-4">
-                <Wallet className="mb-3 h-4 w-4 text-secondary" />
-                <p className="break-words font-display text-3xl">
-                  {formatMoney(daily, draft.currency)}
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">per day · whole group</p>
-              </div>
-              <div className="rounded-2xl border border-secondary/15 bg-card p-4">
-                <span className="mb-3 block text-xs text-secondary">SHARED MOMENTS</span>
-                <p className="break-words font-display text-3xl">
-                  {formatMoney(perPerson, draft.currency)}
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">per person, per day</p>
-              </div>
-            </div>
-            <div className="rounded-2xl bg-card/70 p-5">
-              <h4 className="text-sm font-semibold">
-                Starting daily allocation
-                {draft.journey?.flightsRequired !== false && draft.journey?.departure.trim()
-                  ? " · flights included"
-                  : ""}
-              </h4>
-              <div className="my-4 flex h-2 overflow-hidden rounded-full" aria-hidden="true">
-                {allocation.map((item, index) => (
-                  <div
-                    key={item.label}
-                    className={COLORS[index % COLORS.length]}
-                    style={{ width: `${daily > 0 ? (item.amount / daily) * 100 : 20}%` }}
-                  />
-                ))}
-              </div>
-              <dl className="space-y-3">
-                {allocation.map((item, index) => (
-                  <div key={item.label} className="flex items-center justify-between gap-2 text-sm">
-                    <dt className="flex items-center gap-2">
-                      <span className={`h-2 w-2 rounded-full ${COLORS[index % COLORS.length]}`} />
-                      {item.label}
-                    </dt>
-                    <dd className="font-medium">{formatMoney(item.amount, draft.currency)}</dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
-            <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-              Suggested allocation, not live prices. Daily figures are averages; final daily budgets
-              account for rounding. Style presets use EUR estimates. Flight and hotel allowances are
-              included after you enter your departure.
-            </p>
-            <div className="mt-6 flex items-start gap-3 border-t border-secondary/15 pt-5">
-              <Sparkles className="mt-1 h-5 w-5 shrink-0 text-primary" />
-              <p className="text-sm leading-relaxed">
-                A plan with room for you.
-                <span className="block text-muted-foreground">
-                  Review your suggested plan, swap activities, discover local shops, and track
-                  spending as you go.
-                </span>
+            <div className="mx-auto max-w-lg py-12 text-center">
+              <Compass className="mx-auto h-10 w-10 text-secondary" />
+              <h2 className="mt-4 text-3xl font-semibold">Start with your trip.</h2>
+              <p className="mt-3 text-sm text-muted-foreground">
+                Your destination, dates and budget connect every recommendation. No sign-in needed.
               </p>
+              <Button className="mt-5" onClick={() => setSection("planner")}>
+                Open travel planner
+              </Button>
             </div>
-            <div className="mt-6">
-              <CurrencyConverter key={draft.currency} currency={draft.currency} />
-              <TripWeather
-                key={`${draft.destination}-${draft.start}-${draft.days}`}
-                destination={draft.destination}
-                startDate={draft.start}
-                days={Math.min(30, Math.max(1, draft.days))}
-              />
-            </div>
-          </aside>
-        </div>
-      </div>
-      {!result && section !== "planner" && (
-        <div className="rounded-2xl border bg-card px-6 py-14 text-center">
-          <p className="text-xs uppercase tracking-widest text-secondary">
-            {SECTIONS.find((item) => item.id === section)?.label}
-          </p>
-          <h2 className="mt-3 text-3xl font-semibold">Start with your trip.</h2>
-          <p className="mx-auto mt-3 max-w-md text-sm text-muted-foreground">
-            Destination, dates, travelers and budget connect every section. Create a plan to compare
-            options for your own journey.
-          </p>
-          <Button className="mt-5" onClick={() => setSection("planner")}>
-            Open travel planner
-          </Button>
-        </div>
-      )}
-      {result && (
-        <InstantPlan
-          key={result.revision}
+          </WorkspacePanel>
+        )}
+        {result && (
+          <InstantPlan
+            key={result.revision}
+            section={section}
+            overviewActive={!editing}
+            onEditBrief={() => setEditing(true)}
+            onSectionChange={setSection}
+            brief={result.brief}
+            initialIdeas={result.ideas}
+            onBudgetChange={setBudget}
+            onEdited={() => setEdited(true)}
+          />
+        )}
+        <TravelTools
+          key={`${planned.destination}-${planned.start}-${planned.days}`}
           section={section}
-          onSectionChange={setSection}
-          brief={result.brief}
-          initialIdeas={result.ideas}
-          onEdited={() => setPlanEdited(true)}
+          currency={planned.currency}
+          destination={planned.destination}
+          start={planned.start}
+          days={Math.min(30, Math.max(1, planned.days))}
         />
-      )}
+      </TravelWorkspace>
     </section>
   );
 }

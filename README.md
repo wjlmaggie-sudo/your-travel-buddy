@@ -205,3 +205,11 @@ The compact currency calculator loads free ECB reference rates via Frankfurter v
 ## Five-section Travel Buddy redesign
 
 The connected prototype now has dedicated Planner, Flights, Hotels, Attractions & Activities and Local Shopping views. The shared budget retains operating estimates while selection prices change and reports remaining/over-budget amounts. Flight and hotel comparison cards currently use explicitly fictional demonstration data; external provider links open real searches, not verified offers for those cards. Generation remains free local templates, with no paid AI calls. See [prototype behavior and live integration requirements](deployment/CONNECTED_TRAVEL_PROTOTYPE.md) for persistence, provenance, scope validation and remaining provider work.
+
+## Stable workspace and guest sessions
+
+The homepage uses a bundled CC0 photograph of Lago di Braies by Luca Bravo, credited beside the hero. The original file and license are documented in [asset credits](deployment/ASSET_CREDITS.md).
+
+Planning, flights, hotels, a single itinerary day, shopping, currency and weather now use one fixed-height responsive workspace. Each mounted view owns its scrolling area; hiding a view preserves its state and scroll position. Switching views cannot change document height. Generating a plan no longer calls `focus()` or automatically scrolls the window. The full budget is confined to Overview; a compact live summary stays in the workspace header. Photo and map failure placeholders retain their reserved dimensions. Currency is a dedicated on-demand card, and weather keeps loading/results within a reserved forecast area.
+
+Guest simulations use `sessionStorage` under `travel-buddy-guest-simulation`, independent of the existing explicit save/sign-in handoff key. They survive a refresh in the same tab and are not written to a personal account or persistent search history. Guest planning does not check authentication. An explicit Save action checks the existing session and either continues to the saved-trip flow or opens an optional sign-in prompt. Canceling that prompt retains the guest simulation. Saved trips, preferences, quotes, expense tracking and packing remain behind the existing authenticated routes. AI generation remains free local templates, and flight/hotel demonstration offers keep their provenance labels.

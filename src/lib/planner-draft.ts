@@ -52,3 +52,24 @@ export function clearPlannerDraft() {
     // The trip has already saved; storage availability must not block navigation.
   }
 }
+
+// Simulations are tab-session only and separate from the explicit sign-in handoff.
+const SIMULATION_KEY = "travel-buddy-guest-simulation";
+export function readGuestSimulation(): PlannerDraft | null {
+  try {
+    if (typeof window === "undefined") return null;
+    const result = plannerDraftSchema.safeParse(
+      JSON.parse(sessionStorage.getItem(SIMULATION_KEY) ?? "null"),
+    );
+    return result.success ? result.data : null;
+  } catch {
+    return null;
+  }
+}
+export function saveGuestSimulation(draft: PlannerDraft) {
+  try {
+    sessionStorage.setItem(SIMULATION_KEY, JSON.stringify(plannerDraftSchema.parse(draft)));
+  } catch {
+    /* In-memory planning continues when session storage is unavailable. */
+  }
+}

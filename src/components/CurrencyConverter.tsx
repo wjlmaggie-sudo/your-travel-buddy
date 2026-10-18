@@ -6,33 +6,41 @@ import { dailyMoney } from "./DailyBudget";
 import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
-export function CurrencyConverter({ currency = "EUR" }: { currency?: string }) {
+export function CurrencyConverter({
+  currency = "EUR",
+  active = true,
+}: {
+  currency?: string;
+  active?: boolean;
+}) {
   const id = useId();
-  const [open, setOpen] = useState(false),
+  const [requested, setRequested] = useState(false),
     [amount, setAmount] = useState("100");
   const [base, setBase] = useState(FX_CURRENCIES.includes(currency) ? currency : "EUR");
   const [quote, setQuote] = useState(currency === "USD" ? "EUR" : "USD");
   const rate = useQuery({
     queryKey: ["reference-exchange-rate", base, quote],
     queryFn: ({ signal }) => fetchExchangeRate(base, quote, signal),
-    enabled: open && base !== quote,
+    enabled: active && requested && base !== quote,
     staleTime: 1800000,
     retry: false,
   });
   const number = Number(amount),
     valid = amount.trim() !== "" && Number.isFinite(number) && number >= 0 && number <= 1e12;
   return (
-    <details
-      className="rounded-xl border bg-card p-4 shadow-sm"
-      onToggle={(event) => setOpen(event.currentTarget.open)}
-    >
-      <summary className="cursor-pointer text-sm font-medium">
-        <span className="inline-flex items-center gap-2">
-          <Coins className="h-4 w-4 text-primary" />
-          Currency exchange
+    <section className="tool-card mx-auto max-w-2xl" aria-label="Currency converter">
+      <div className="mb-6 flex items-center gap-3">
+        <span className="rounded-xl bg-secondary/10 p-3 text-secondary">
+          <Coins className="h-5 w-5" />
         </span>
-      </summary>
-      <div className="mt-4 space-y-3">
+        <div>
+          <h3 className="text-2xl font-semibold">Currency converter</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            A quick reference for everyday travel spending.
+          </p>
+        </div>
+      </div>
+      <div className="space-y-4">
         <div>
           <Label htmlFor={`${id}-amount`}>Amount to convert</Label>
           <Input
@@ -85,11 +93,18 @@ export function CurrencyConverter({ currency = "EUR" }: { currency?: string }) {
             </select>
           </div>
         </div>
-        <div aria-live="polite" className="rounded-lg bg-secondary/10 p-3">
+        <div
+          aria-live="polite"
+          className="flex min-h-[110px] flex-col justify-center rounded-xl bg-secondary/10 p-4"
+        >
           {!valid ? (
             <p className="text-sm">Enter a valid, non-negative amount.</p>
           ) : base === quote ? (
             <p className="text-lg font-semibold">{dailyMoney(number, quote)} · same currency</p>
+          ) : !requested ? (
+            <p className="text-sm text-muted-foreground">
+              Choose your currencies, then check the reference rate.
+            </p>
           ) : rate.isPending ? (
             <p className="text-sm">Checking reference rate…</p>
           ) : rate.isError ? (
@@ -107,17 +122,21 @@ export function CurrencyConverter({ currency = "EUR" }: { currency?: string }) {
             </>
           )}
         </div>
-        {base !== quote && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            disabled={rate.isFetching}
-            onClick={() => rate.refetch()}
-          >
-            Refresh rate
-          </Button>
-        )}
+        <Button
+          type="button"
+          className="w-full sm:w-auto"
+          disabled={base === quote || (requested && rate.isFetching)}
+          onClick={() => {
+            if (requested) void rate.refetch();
+            else setRequested(true);
+          }}
+        >
+          {requested && rate.isFetching
+            ? "Checking rate…"
+            : requested
+              ? "Refresh rate"
+              : "Check exchange rate"}
+        </Button>
         <p className="text-[11px] leading-relaxed text-muted-foreground">
           ECB reference rates via{" "}
           <a className="underline" href="https://frankfurter.dev/" target="_blank" rel="noreferrer">
@@ -127,6 +146,6 @@ export function CurrencyConverter({ currency = "EUR" }: { currency?: string }) {
           previous business day. This calculator does not change your trip budget.
         </p>
       </div>
-    </details>
+    </section>
   );
 }

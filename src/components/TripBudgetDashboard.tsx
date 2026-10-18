@@ -4,7 +4,6 @@ import { connectedBudget, type Estimates } from "@/lib/travel-workspace";
 import type { Journey } from "@/lib/journey-planning";
 import type { StayBrief, StayChoice } from "@/lib/stay-planning";
 import { dailyMoney } from "./DailyBudget";
-import { CurrencyConverter } from "./CurrencyConverter";
 export function TripBudgetDashboard({
   brief,
   journey,
@@ -74,7 +73,7 @@ export function TripBudgetDashboard({
           <p className="font-display text-3xl font-semibold">{money(brief.budget)}</p>
         </div>
       </div>
-      <dl className="mt-5 grid gap-3 sm:grid-cols-2 md:grid-cols-5">
+      <dl className="mt-5 grid grid-cols-2 gap-3 xl:grid-cols-5">
         {rows.map((row) => (
           <div key={row.label} className="min-w-0 rounded-xl bg-muted/40 p-3">
             <dt className="text-xs text-muted-foreground">{row.label}</dt>
@@ -141,9 +140,6 @@ export function TripBudgetDashboard({
           </div>
         </details>
       )}
-      <div className="mt-4 max-w-sm">
-        <CurrencyConverter currency={brief.currency} key={brief.currency} />
-      </div>
     </section>
   );
 }

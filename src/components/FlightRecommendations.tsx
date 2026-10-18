@@ -24,7 +24,8 @@ export function FlightRecommendations({
       <section className="rounded-2xl border bg-card p-6">
         <h2 className="text-2xl font-semibold">A trip without flights</h2>
         <p className="mt-3 text-muted-foreground">
-          Your flight cost is zero. Use the planner to rebuild with flights if you need them.
+          Your flight cost is zero. To compare flights, open Edit route & flight allowance below and
+          add your departure.
         </p>
       </section>
     );
@@ -47,7 +48,7 @@ export function FlightRecommendations({
         and prices below are simulated to demonstrate comparison and budget changes. They are not
         validated for this route or time zone. Live flight search is not connected.
       </p>
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="offer-grid grid gap-4">
         {demoFlights(brief, journey).map((option) => (
           <article
             key={option.id}

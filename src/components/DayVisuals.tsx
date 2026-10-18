@@ -19,7 +19,17 @@ function Photo({ place }: { place: VisualPlace }) {
     retry: false,
   });
   const photo = place.image ?? query.data;
-  if (!photo || failed) return null;
+  if (!photo || failed)
+    return (
+      <figure aria-label={`Photo unavailable for ${place.name}`}>
+        <div className="flex aspect-[16/10] items-center justify-center rounded-t-xl bg-muted text-xs text-muted-foreground">
+          {failed ? "Photo unavailable" : "Place photo"}
+        </div>
+        <figcaption className="h-8 px-3 pt-2 text-[10px] text-muted-foreground">
+          {place.name}
+        </figcaption>
+      </figure>
+    );
   return (
     <figure>
       <img
@@ -29,7 +39,7 @@ function Photo({ place }: { place: VisualPlace }) {
         className="aspect-[16/10] w-full rounded-t-xl object-cover"
         onError={() => setFailed(true)}
       />
-      <figcaption className="px-3 pt-2 text-[10px] text-muted-foreground">
+      <figcaption className="h-8 overflow-hidden px-3 pt-2 text-[10px] text-muted-foreground">
         <a href={photo.source} target="_blank" rel="noreferrer" className="underline">
           Photo: {photo.credit} · {photo.license}
         </a>
@@ -144,7 +154,7 @@ export function DayVisuals({
               )}
           </div>
           <RouteLogistics places={guide.places} destination={destination} day={day} />
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="offer-grid grid gap-3">
             {guide.places.map((place, index) => (
               <article
                 key={place.name}

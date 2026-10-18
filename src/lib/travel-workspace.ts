@@ -8,6 +8,8 @@ export const SECTIONS = [
   { id: "hotels", label: "Hotels" },
   { id: "attractions", label: "Attractions & Activities" },
   { id: "shopping", label: "Local Shopping" },
+  { id: "currency", label: "Currency" },
+  { id: "weather", label: "Weather" },
 ] as const;
 export type TravelSection = (typeof SECTIONS)[number]["id"];
 export const flightChoiceSchema = z.object({

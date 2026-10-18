@@ -11,9 +11,12 @@ import { Label } from "@/components/ui/label";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Sign in — AI Travel" },
-      { name: "description", content: "Sign in or create a AI Travel account to save your trips." },
-      { property: "og:title", content: "Sign in — AI Travel" },
+      { title: "Sign in — Travel Buddy" },
+      {
+        name: "description",
+        content: "Sign in or create a Travel Buddy account to save your trips.",
+      },
+      { property: "og:title", content: "Sign in — Travel Buddy" },
       { property: "og:description", content: "Access your saved trips." },
     ],
   }),
@@ -57,7 +60,13 @@ function AuthPage() {
     <div className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-sm rounded-2xl border bg-card p-8 shadow-card">
         <Link to="/" className="flex items-center gap-2 font-display text-xl font-semibold">
-          <img src={publicAsset("ai-travel-logo.svg")} alt="" className="h-7 w-7" /> AI Travel
+          <img src={publicAsset("ai-travel-logo.svg")} alt="" className="h-7 w-7" /> Travel Buddy
+        </Link>
+        <p className="mt-4 text-sm text-muted-foreground">
+          Create a free account to save your travel plans and access them anytime.
+        </p>
+        <Link to="/" className="mt-3 inline-block text-sm text-secondary underline">
+          Continue exploring as a guest
         </Link>
         {sent ? (
           <p className="mt-6 text-muted-foreground">

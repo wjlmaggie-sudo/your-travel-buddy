@@ -1,6 +1,6 @@
 import { SECTIONS, type TravelSection } from "@/lib/travel-workspace";
-import { Sparkles, Plane, BedDouble, MapPinned, ShoppingBag } from "lucide-react";
-const icons = [Sparkles, Plane, BedDouble, MapPinned, ShoppingBag];
+import { Sparkles, Plane, BedDouble, MapPinned, ShoppingBag, Coins, CloudSun } from "lucide-react";
+const icons = [Sparkles, Plane, BedDouble, MapPinned, ShoppingBag, Coins, CloudSun];
 export function TravelNavigation({
   section,
   onChange,
@@ -9,11 +9,8 @@ export function TravelNavigation({
   onChange: (section: TravelSection) => void;
 }) {
   return (
-    <nav
-      aria-label="Travel sections"
-      className="travel-navigation rounded-2xl border bg-card p-1.5 shadow-sm"
-    >
-      <label className="block w-full px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground sm:hidden">
+    <nav aria-label="Travel sections" className="travel-navigation h-full p-3">
+      <label className="block w-full px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground md:hidden">
         Travel section
         <select
           aria-label="Travel section"
@@ -28,7 +25,7 @@ export function TravelNavigation({
           ))}
         </select>
       </label>
-      <div className="hidden gap-1 overflow-x-auto sm:flex">
+      <div className="hidden h-full flex-col gap-1 md:flex">
         {SECTIONS.map((item, index) => {
           const Icon = icons[index]!;
           return (
@@ -37,7 +34,7 @@ export function TravelNavigation({
               type="button"
               aria-current={section === item.id ? "page" : undefined}
               onClick={() => onChange(item.id)}
-              className={`flex shrink-0 items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium transition sm:flex-1 ${section === item.id ? "bg-secondary text-secondary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted"}`}
+              className={`flex shrink-0 items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium transition-colors ${section === item.id ? "bg-secondary text-secondary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted"}`}
             >
               <Icon className="h-4 w-4" />
               {item.label}

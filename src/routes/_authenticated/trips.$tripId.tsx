@@ -9,10 +9,10 @@ import { TripBudgetDashboard } from "@/components/TripBudgetDashboard";
 import { FlightRecommendations } from "@/components/FlightRecommendations";
 import { HotelRecommendations } from "@/components/HotelRecommendations";
 import { LocalShopping } from "@/components/LocalShopping";
-import { TravelNavigation } from "@/components/TravelNavigation";
 import { flightCost, connectedBudget, type TravelSection } from "@/lib/travel-workspace";
 import { saveStayChoice } from "@/lib/stay-planning";
-import { CurrencyConverter } from "@/components/CurrencyConverter";
+import { TravelWorkspace, WorkspacePanel, BudgetSummary } from "@/components/TravelWorkspace";
+import { TravelTools } from "@/components/TravelTools";
 import { JourneyPlanner } from "@/components/JourneyPlanner";
 import { journeyQuery, journeyBudget, saveJourney, type Journey } from "@/lib/journey-planning";
 import { AccommodationPlanner } from "@/components/AccommodationPlanner";
@@ -21,7 +21,6 @@ import { tripQuery, tripDays, money, CATEGORIES } from "@/lib/trips";
 import { TripSuggestions } from "@/components/TripSuggestions";
 import { DailyBudget, DayBudgetSummary, dailyMoney } from "@/components/DailyBudget";
 import { DestinationExplorer } from "@/components/DestinationExplorer";
-import { TripWeather } from "@/components/TripWeather";
 import { ItineraryDay as DayCard } from "@/components/ItineraryDay";
 import { Button } from "@/components/ui/button";
 import { TravelShop } from "@/components/TravelShop";
@@ -115,6 +114,8 @@ function TripPage() {
     shop: "shopping",
     budget: "planner",
     places: "planner",
+    currency: "currency",
+    weather: "weather",
   };
   const tabMap: Record<TravelSection, string> = {
     planner: "ideas",
@@ -122,6 +123,8 @@ function TripPage() {
     hotels: "hotels",
     attractions: "itinerary",
     shopping: "shop",
+    currency: "currency",
+    weather: "weather",
   };
   function exportTrip() {
     const p = preferences.preference;
@@ -179,7 +182,7 @@ function TripPage() {
   return (
     <div className="min-h-screen">
       <AppHeader />
-      <main className="mx-auto max-w-5xl px-6 py-8">
+      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
         <Link
           to="/trips"
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
@@ -207,185 +210,203 @@ function TripPage() {
             </Button>
           </div>
         </div>
-        <div className="sticky top-0 z-20 my-5 bg-background/95 py-3 backdrop-blur">
-          <TravelNavigation
+        <div className="mt-6">
+          <TravelWorkspace
             section={sectionMap[tab] ?? "planner"}
             onChange={(next) => setTab(tabMap[next])}
-          />
-        </div>
-        {(journey.isError || stay.isError) && (
-          <p role="alert" className="my-4 rounded-xl border p-4 text-sm text-destructive">
-            Trip selections could not load. Refresh before changing your budget.
-          </p>
-        )}
-        {journey.data && !stay.isPending && !stay.isError && (
-          <fieldset disabled={selectionBusy} className="min-w-0">
-            <TripBudgetDashboard
-              brief={brief}
-              journey={journey.data}
-              stay={stay.data}
-              onChange={updateJourney}
-            />
-          </fieldset>
-        )}
-        {selectionBusy && (
-          <p role="status" className="mt-2 text-sm">
-            Saving your selection…
-          </p>
-        )}
-        {!journey.isPending && !journey.isError && !journey.data && (
-          <div className="my-5 rounded-xl border bg-card p-5">
-            <p className="text-sm">
-              This existing trip keeps its original budget. Enable connected planning to use
-              hotel-comfort allocations and the shared dashboard. Flights start as optional, with
-              zero cost.
-            </p>
-            <Button
-              disabled={selectionBusy}
-              className="mt-3"
-              onClick={() =>
-                updateJourney({
-                  departure: "",
-                  flightBudget: 0,
-                  flightsRequired: false,
-                  hotelComfort: "Comfortable",
-                })
-              }
-            >
-              Enable connected planning
-            </Button>
-          </div>
-        )}
-        <div className="mt-8">
-          <section hidden={tab !== "flights"} aria-label="Flights">
-            {journey.data && (
-              <fieldset
-                disabled={selectionBusy || stay.isPending || stay.isError}
-                className="min-w-0"
-              >
-                <FlightRecommendations
-                  brief={brief}
-                  journey={journey.data}
-                  onChange={updateJourney}
+            title={`${trip.destination} · ${brief.days} days`}
+            summary={
+              selectionBusy ? (
+                "Saving…"
+              ) : journey.data ? (
+                <BudgetSummary
+                  {...connectedBudget(brief, journey.data, stay.data)}
+                  currency={brief.currency}
                 />
-              </fieldset>
-            )}
-            {!journey.isPending && !journey.isError && (
-              <details className="mt-5 rounded-xl border bg-card p-4" open={!journey.data}>
+              ) : (
+                "Saved trip"
+              )
+            }
+          >
+            <WorkspacePanel active={tab === "flights"} label="Flights">
+              {journey.data && (
+                <fieldset
+                  disabled={selectionBusy || stay.isPending || stay.isError}
+                  className="min-w-0"
+                >
+                  <FlightRecommendations
+                    brief={brief}
+                    journey={journey.data}
+                    onChange={updateJourney}
+                  />
+                </fieldset>
+              )}
+              {!journey.isPending && !journey.isError && (
+                <details className="mt-5 rounded-xl border bg-card p-4" open={!journey.data}>
+                  <summary className="cursor-pointer text-sm font-medium">
+                    Edit route, flight requirement & allowance
+                  </summary>
+                  <JourneyPlanner
+                    brief={brief}
+                    journey={journey.data}
+                    stay={stay.data}
+                    tripId={trip.id}
+                  />
+                </details>
+              )}
+            </WorkspacePanel>
+            <WorkspacePanel active={tab === "hotels"} label="Hotels">
+              {journey.data && (
+                <fieldset
+                  disabled={selectionBusy || stay.isPending || stay.isError}
+                  className="min-w-0"
+                >
+                  <HotelRecommendations
+                    brief={brief}
+                    journey={journey.data}
+                    stay={stay.data}
+                    onChoose={updateStay}
+                    onComfort={(comfort) =>
+                      updateJourney({ ...journey.data!, hotelComfort: comfort })
+                    }
+                  />
+                </fieldset>
+              )}
+              <details className="rounded-xl border bg-card p-4" open={!journey.data}>
                 <summary className="cursor-pointer text-sm font-medium">
-                  Edit route, flight requirement & allowance
+                  Use a real hotel quote or browse providers
                 </summary>
-                <JourneyPlanner
-                  brief={brief}
-                  journey={journey.data}
-                  stay={stay.data}
+                <AccommodationPlanner
                   tripId={trip.id}
+                  brief={{
+                    ...brief,
+                    ...(journey.data
+                      ? {
+                          flightBudget: flightCost(brief, journey.data),
+                          hotelComfort: journey.data.hotelComfort,
+                        }
+                      : {}),
+                  }}
                 />
               </details>
-            )}
-          </section>
-          <section hidden={tab !== "hotels"} aria-label="Hotels">
-            {journey.data && (
-              <fieldset
-                disabled={selectionBusy || stay.isPending || stay.isError}
-                className="min-w-0"
-              >
-                <HotelRecommendations
-                  brief={brief}
-                  journey={journey.data}
-                  stay={stay.data}
-                  onChoose={updateStay}
-                  onComfort={(comfort) =>
-                    updateJourney({ ...journey.data!, hotelComfort: comfort })
-                  }
-                />
-              </fieldset>
-            )}
-            <AccommodationPlanner
-              tripId={trip.id}
-              brief={{
-                ...brief,
-                ...(journey.data
-                  ? {
-                      flightBudget: flightCost(brief, journey.data),
-                      hotelComfort: journey.data.hotelComfort,
-                    }
-                  : {}),
-              }}
-            />
-          </section>
-          <section hidden={tab !== "itinerary"} aria-label="Attractions & Activities">
-            <div className="my-5">
-              <TripWeather
-                key={`${trip.destination}-${trip.start_date}-${trip.end_date}`}
-                destination={trip.destination}
-                startDate={trip.start_date}
-                days={tripDays(trip.start_date, trip.end_date)}
+            </WorkspacePanel>
+            <WorkspacePanel active={tab === "itinerary"} label="Attractions & Activities">
+              <Itinerary data={data} refresh={refresh} stay={stay.data} journey={journey.data} />
+            </WorkspacePanel>
+            <WorkspacePanel active={tab === "budget"} label="Spending tracker">
+              <DailyBudget
+                trip={trip}
+                travelers={preferences.preference.travelers}
+                includesFlights={!!journey.data}
+                expenses={data.expenses}
               />
-            </div>
-            <Itinerary data={data} refresh={refresh} stay={stay.data} journey={journey.data} />
-          </section>
-          <section hidden={tab !== "budget"} aria-label="Spending tracker">
-            <DailyBudget
-              trip={trip}
-              travelers={preferences.preference.travelers}
-              includesFlights={!!journey.data}
-              expenses={data.expenses}
-            />
-            <Budget data={data} refresh={refresh} />
-          </section>
-          <section hidden={tab !== "ideas"} aria-label="AI Travel Planner">
-            <details className="mb-5 rounded-xl border bg-card p-4">
-              <summary className="cursor-pointer text-sm font-medium">
-                Trip details, budget & preferences
-              </summary>
-              <TripSettings key={trip.id} trip={trip} includesFlights={!!journey.data} />
-            </details>
-            <div className="mb-5 flex flex-wrap gap-2">
-              <Button variant="outline" size="sm" onClick={() => setTab("budget")}>
-                Spending tracker
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => setTab("places")}>
-                Explore place directory
-              </Button>
-            </div>
-            <TripSuggestions
-              key={tripId}
-              journey={journey.data}
-              stayChoice={stay.data}
-              trip={trip}
-              activities={data.activities}
-              autoGenerate={suggest === true && data.activities.length === 0}
-              onSaved={refresh}
-              onApplied={() => {
-                refresh();
-                setTab("itinerary");
-                void navigate({
-                  to: "/trips/$tripId",
-                  params: { tripId },
-                  search: {},
-                  replace: true,
-                });
-              }}
-            />
-          </section>
-          <section hidden={tab !== "places"} aria-label="Places directory">
-            <DestinationExplorer
-              tripId={tripId}
+              <Budget data={data} refresh={refresh} />
+            </WorkspacePanel>
+            <WorkspacePanel active={tab === "ideas"} label="AI Travel Planner">
+              {journey.data && !stay.isPending && !stay.isError && (
+                <fieldset disabled={selectionBusy} className="min-w-0">
+                  <TripBudgetDashboard
+                    brief={brief}
+                    journey={journey.data}
+                    stay={stay.data}
+                    onChange={updateJourney}
+                  />
+                </fieldset>
+              )}
+              {selectionBusy && (
+                <p role="status" className="mt-2 text-sm">
+                  Saving your selection…
+                </p>
+              )}
+              {!journey.isPending && !journey.isError && !journey.data && (
+                <div className="my-5 rounded-xl border bg-card p-5">
+                  <p className="text-sm">
+                    This existing trip keeps its original budget. Enable connected planning to use
+                    hotel-comfort allocations and the shared dashboard. Flights start as optional,
+                    with zero cost.
+                  </p>
+                  <Button
+                    disabled={selectionBusy}
+                    className="mt-3"
+                    onClick={() =>
+                      updateJourney({
+                        departure: "",
+                        flightBudget: 0,
+                        flightsRequired: false,
+                        hotelComfort: "Comfortable",
+                      })
+                    }
+                  >
+                    Enable connected planning
+                  </Button>
+                </div>
+              )}
+              {(journey.isError || stay.isError) && (
+                <p role="alert" className="text-sm text-destructive">
+                  Selections could not load. Refresh before changing your budget.
+                </p>
+              )}
+              <details className="mb-5 rounded-xl border bg-card p-4">
+                <summary className="cursor-pointer text-sm font-medium">
+                  Trip details, budget & preferences
+                </summary>
+                <TripSettings key={trip.id} trip={trip} includesFlights={!!journey.data} />
+              </details>
+              <div className="mb-5 flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" onClick={() => setTab("budget")}>
+                  Spending tracker
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setTab("places")}>
+                  Explore place directory
+                </Button>
+              </div>
+              <TripSuggestions
+                key={tripId}
+                journey={journey.data}
+                stayChoice={stay.data}
+                trip={trip}
+                activities={data.activities}
+                autoGenerate={suggest === true && data.activities.length === 0}
+                onSaved={refresh}
+                onApplied={() => {
+                  refresh();
+                  setTab("itinerary");
+                  void navigate({
+                    to: "/trips/$tripId",
+                    params: { tripId },
+                    search: {},
+                    replace: true,
+                    resetScroll: false,
+                  });
+                }}
+              />
+            </WorkspacePanel>
+            <WorkspacePanel active={tab === "places"} label="Places directory">
+              <DestinationExplorer
+                tripId={tripId}
+                destination={trip.destination}
+                days={tripDays(trip.start_date, trip.end_date)}
+                refresh={refresh}
+              />
+            </WorkspacePanel>
+            <WorkspacePanel active={tab === "shop"} label="Local Shopping">
+              <LocalShopping destination={trip.destination} />
+              <details className="mt-6 rounded-xl border bg-card p-4">
+                <summary className="cursor-pointer text-sm font-medium">
+                  Packing list & travel essentials
+                </summary>
+                <TravelShop tripId={tripId} destination={trip.destination} />
+              </details>
+            </WorkspacePanel>
+            <TravelTools
+              key={`${trip.destination}-${trip.start_date}-${brief.days}`}
+              section={sectionMap[tab] ?? "planner"}
               destination={trip.destination}
-              days={tripDays(trip.start_date, trip.end_date)}
-              refresh={refresh}
+              currency={trip.currency}
+              start={trip.start_date}
+              days={brief.days}
             />
-          </section>
-          <section hidden={tab !== "shop"} aria-label="Local Shopping">
-            <LocalShopping destination={trip.destination} />
-            <details className="mt-6 rounded-xl border bg-card p-4">
-              <summary className="cursor-pointer text-sm font-medium">
-                Packing list & travel essentials
-              </summary>
-              <TravelShop tripId={tripId} destination={trip.destination} />
-            </details>
-          </section>
+          </TravelWorkspace>
         </div>
       </main>
     </div>
@@ -403,6 +424,7 @@ function Itinerary({
   stay?: StayChoice | null | undefined;
   journey?: Journey | null | undefined;
 }) {
+  const [activeDay, setActiveDay] = useState(1);
   const days = tripDays(data.trip.start_date, data.trip.end_date);
   const preferences = useTripPreferences(data.trip.id);
   const connected = journey
@@ -457,10 +479,27 @@ function Itinerary({
   );
   return (
     <div className="mt-6 space-y-6">
+      <div>
+        <label htmlFor="saved-itinerary-day" className="mr-3 text-sm font-medium">
+          Explore a day
+        </label>
+        <select
+          id="saved-itinerary-day"
+          className="h-10 rounded-xl border bg-background px-3"
+          value={activeDay}
+          onChange={(e) => setActiveDay(Number(e.target.value))}
+        >
+          {Array.from({ length: days }, (_, i) => (
+            <option key={i} value={i + 1}>
+              Day {i + 1} · {daily[i]?.date}
+            </option>
+          ))}
+        </select>
+      </div>
       {Array.from({ length: days }, (_, i) => i + 1).map((day) => {
         const items = data.activities.filter((a) => a.day === day);
         return (
-          <div key={day}>
+          <div key={day} hidden={day !== activeDay}>
             <p className="mb-2 text-sm text-muted-foreground">{daily[day - 1]?.date}</p>
             <DayBudgetSummary
               afterStay={
