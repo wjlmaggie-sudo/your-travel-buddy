@@ -1,34 +1,45 @@
 import { z } from "zod";
+import {
+  flightChoiceSchema,
+  estimateSchema,
+  flightCost,
+  connectedBudget,
+} from "./travel-workspace";
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { endDate } from "./planning";
 import { stayBudget, type StayBrief, type StayChoice } from "./stay-planning";
 
-export const journeySchema = z.object({
-  departure: z.string().trim().min(1).max(200),
-  flightBudget: z.number().finite().min(0).max(1000000),
-  hotelComfort: z.enum(["Simple", "Comfortable", "Premium"]),
-});
+export const journeySchema = z
+  .object({
+    departure: z.string().trim().max(200),
+    flightsRequired: z.boolean().optional(),
+    selectedFlight: flightChoiceSchema.optional(),
+    estimates: estimateSchema.optional(),
+    flightBudget: z.number().finite().min(0).max(1000000),
+    hotelComfort: z.enum(["Simple", "Comfortable", "Premium"]),
+  })
+  .refine((value) => value.flightsRequired === false || value.departure.length > 0, {
+    message: "Enter a departure city when flights are required.",
+    path: ["departure"],
+  });
 export type Journey = z.infer<typeof journeySchema>;
 export const flightAllowance = (total: number) => Math.round(Math.max(0, total) * 25) / 100;
 export function journeyBudget(brief: StayBrief, journey: Journey, stay?: StayChoice | null) {
   const costs = stayBudget(
-    { ...brief, flightBudget: journey.flightBudget, hotelComfort: journey.hotelComfort },
+    { ...brief, flightBudget: flightCost(brief, journey), hotelComfort: journey.hotelComfort },
     stay,
   );
-  const cents = Math.round(Math.max(0, costs.remaining) * 100);
-  const food = Math.floor(cents * 0.4),
-    sights = Math.floor(cents * 0.25),
-    transport = Math.floor(cents * 0.2);
+  const planned = connectedBudget(brief, journey, stay);
   return {
     ...costs,
     parts: [
-      { label: "Flights · group return allowance", amount: journey.flightBudget },
-      { label: "Hotel / accommodation", amount: costs.accommodation },
-      { label: "Food", amount: food / 100 },
-      { label: "Tourist spots & tickets", amount: sights / 100 },
-      { label: "Local transport", amount: transport / 100 },
-      { label: "Shopping & buffer", amount: (cents - food - sights - transport) / 100 },
+      { label: "Flights · group return allowance", amount: planned.flight },
+      { label: "Hotel / accommodation", amount: planned.hotel },
+      { label: "Food", amount: planned.estimates.food },
+      { label: "Tourist spots & tickets", amount: planned.estimates.activities },
+      { label: "Local transport", amount: planned.estimates.transport },
+      { label: "Shopping & buffer", amount: planned.estimates.shopping },
     ],
   };
 }

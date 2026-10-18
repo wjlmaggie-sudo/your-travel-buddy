@@ -1,3 +1,4 @@
+import { selectedFlight } from "@/lib/travel-workspace";
 import { useEffect, useId, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Plane, Building2, MapPinned } from "lucide-react";
@@ -45,6 +46,7 @@ export function JourneyPlanner({
   }, [journey]);
   const active = journeySchema.safeParse(values);
   const costs = active.success ? journeyBudget(brief, active.data, stay) : null;
+  const selected = selectedFlight(brief, values);
   const money = (value: number) => dailyMoney(value, brief.currency);
   function change(next: Journey) {
     setValues(next);
@@ -65,7 +67,7 @@ export function JourneyPlanner({
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">
           {journey
-            ? `${journey.departure} → ${brief.destination} · ${brief.days} days · ${brief.travelers} people`
+            ? `${journey.flightsRequired === false ? "No flights · " : journey.departure + " → "}${brief.destination} · ${brief.days} days · ${brief.travelers} people`
             : "Add your departure to include flights in this trip’s total budget."}
         </p>
         <p className="mt-2 text-xs text-muted-foreground">
@@ -101,11 +103,27 @@ export function JourneyPlanner({
             }
           }}
         >
+          <label className="flex items-center gap-2 text-sm sm:col-span-2">
+            <input
+              type="checkbox"
+              checked={values.flightsRequired !== false}
+              onChange={(e) =>
+                change({
+                  ...values,
+                  flightsRequired: e.target.checked,
+                  flightBudget: e.target.checked ? flightAllowance(brief.budget) : 0,
+                  selectedFlight: undefined,
+                })
+              }
+            />
+            Flights required
+          </label>
           <div>
             <Label htmlFor={`${id}-departure`}>Departure city / airport</Label>
             <Input
               id={`${id}-departure`}
-              required
+              required={values.flightsRequired !== false}
+              disabled={values.flightsRequired === false}
               maxLength={200}
               value={values.departure}
               onChange={(e) => change({ ...values, departure: e.target.value })}
@@ -122,6 +140,7 @@ export function JourneyPlanner({
               max={1000000}
               step="0.01"
               required
+              disabled={values.flightsRequired === false}
               value={values.flightBudget}
               onChange={(e) => change({ ...values, flightBudget: Number(e.target.value) })}
             />
@@ -170,18 +189,25 @@ export function JourneyPlanner({
               <article className="rounded-xl border p-4">
                 <Plane className="h-4 w-4 text-primary" />
                 <h3 className="mt-2 font-medium">1 · Flights</h3>
-                <p className="mt-2 text-xl font-semibold">{money(values.flightBudget)}</p>
+                <p className="mt-2 text-xl font-semibold">{money(costs.flights)}</p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {money(values.flightBudget / brief.travelers)} / person, return allowance
+                  {money(costs.flights / brief.travelers)} / person ·{" "}
+                  {selected
+                    ? selected.evidence === "demo"
+                      ? "selected demo"
+                      : "entered quote"
+                    : "return allowance"}
                 </p>
-                <a
-                  className="mt-3 inline-block text-xs text-secondary underline"
-                  href={flightSearch(brief, values.departure)}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Compare flights for this route
-                </a>
+                {values.flightsRequired !== false && (
+                  <a
+                    className="mt-3 inline-block text-xs text-secondary underline"
+                    href={flightSearch(brief, values.departure)}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Compare flights for this route
+                  </a>
+                )}
               </article>
               <article className="rounded-xl border p-4">
                 <Building2 className="h-4 w-4 text-primary" />
@@ -190,7 +216,9 @@ export function JourneyPlanner({
                 <p className="mt-1 text-xs text-muted-foreground">
                   {costs.nights} nights ·{" "}
                   {costs.quoted !== null
-                    ? "your chosen quote"
+                    ? stay?.evidence === "demo"
+                      ? "selected DEMO price"
+                      : "your chosen quote"
                     : `${values.hotelComfort.toLowerCase()} allowance`}
                   {costs.nights
                     ? ` · ${money(costs.accommodation / costs.nights)} / group / night`
@@ -234,8 +262,8 @@ export function JourneyPlanner({
         )}
         <p className="text-xs leading-relaxed text-muted-foreground">
           Flight allowance starts at 25% of the total budget. It is a planning target, not an
-          airfare estimate based on this route. No airline, availability or journey time has been
-          retrieved. Check dates, passenger ages, baggage, transfers and full prices on the
+          airfare estimate based on this route. Live airline availability and schedules have not
+          been retrieved. Check dates, passenger ages, baggage, transfers and full prices on the
           provider’s site. Hotel comfort changes the allocation, not a star-rating guarantee. All
           amounts use {brief.currency}; no currency conversion is assumed.
         </p>

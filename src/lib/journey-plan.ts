@@ -1,3 +1,4 @@
+import { flightCost } from "./travel-workspace";
 import { createStarterIdeas } from "./starter-plan";
 import { journeyBudget, type Journey } from "./journey-planning";
 import type { StayBrief, StayChoice } from "./stay-planning";
@@ -23,7 +24,7 @@ export function createJourneyIdeas(
       destination: brief.destination,
       days: brief.days,
       travelers: brief.travelers,
-      budget: Math.max(0, brief.budget - journey.flightBudget),
+      budget: Math.max(0, brief.budget - flightCost(brief, journey)),
       currency: brief.currency,
       style,
       interests: brief.interest,
@@ -35,6 +36,7 @@ export function createJourneyIdeas(
     /Your total group spending cap is [\d.]+ [A-Z]{3}, excluding flights\./,
     `Your total group spending cap is ${brief.budget.toFixed(2)} ${brief.currency}, including the flight and hotel allowances shown above.`,
   );
+  if (journey.flightsRequired === false) return ideas;
   ideas.days[0]!.items[0] = {
     time: "",
     title: `Travel from ${journey.departure} to ${brief.destination}`.slice(0, 200),

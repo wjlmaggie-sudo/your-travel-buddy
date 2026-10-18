@@ -161,6 +161,11 @@ export function DayVisuals({
                   <p className="mt-2 line-clamp-3 text-xs leading-relaxed text-muted-foreground">
                     {place.description}
                   </p>
+                  {place.openingHours && (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Directory hours: {place.openingHours} · confirm before visiting.
+                    </p>
+                  )}
                   <PlaceStory place={place} />
                   <AdmissionDetails place={place} travelers={travelers} date={date} />
                   <div className="mt-3 flex gap-3 text-xs">
@@ -186,9 +191,10 @@ export function DayVisuals({
             ))}
           </div>
           <p className="text-xs text-muted-foreground">
-            Numbers match the map. Stops are suggestions, not bookings or a verified route. Check
-            tickets, access, travel time, and opening hours. Place information: Wikipedia /
-            OpenStreetMap.
+            Numbers match the map. Stops are grouped by neighborhood or straight-line proximity, not
+            verified travel times. Suggestions may repeat on longer trips; edit them to suit your
+            pace. Check tickets, access, travel time, and opening hours. Place information:
+            Wikipedia / OpenStreetMap.
           </p>
         </>
       ) : (

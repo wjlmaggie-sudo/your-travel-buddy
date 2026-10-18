@@ -3,6 +3,7 @@ import { Loader2, Sparkles, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 import { stayBudget, type StayChoice } from "@/lib/stay-planning";
+import { flightCost, connectedBudget } from "@/lib/travel-workspace";
 import { createJourneyIdeas } from "@/lib/journey-plan";
 import type { Journey } from "@/lib/journey-planning";
 import { createStarterIdeas } from "@/lib/starter-plan";
@@ -59,10 +60,39 @@ export function TripSuggestions({
     preferences.preference.travelers,
     trip.start_date,
   );
+  const connected = journey
+    ? connectedBudget(
+        {
+          destination: trip.destination,
+          start: trip.start_date,
+          days,
+          travelers: preferences.preference.travelers,
+          budget: Number(trip.budget),
+          currency: trip.currency,
+          style: preferences.preference.style,
+        },
+        journey,
+        stayChoice,
+      )
+    : null;
   const stayPlan = stayBudget(
     {
       ...(journey
-        ? { flightBudget: journey.flightBudget, hotelComfort: journey.hotelComfort }
+        ? {
+            flightBudget: flightCost(
+              {
+                destination: trip.destination,
+                start: trip.start_date,
+                days,
+                travelers: preferences.preference.travelers,
+                budget: Number(trip.budget),
+                currency: trip.currency,
+                style: preferences.preference.style,
+              },
+              journey,
+            ),
+            hotelComfort: journey.hotelComfort,
+          }
         : {}),
       destination: trip.destination,
       start: trip.start_date,
@@ -249,8 +279,11 @@ export function TripSuggestions({
         )}
         <p className="mt-4 text-xs text-muted-foreground">
           Free template planner · no AI API key or AI charges. Suggestions and daily spending limits
-          are estimates, excluding flights. Existing saved activities are kept. New activities are
-          added only when you save.
+          are estimates.{" "}
+          {journey
+            ? "The budget includes flight selections or allowances."
+            : "Flights are excluded until configured."}{" "}
+          Existing saved activities are kept. New activities are added only when you save.
         </p>
       </section>
       {draft.length > 0 && (
@@ -307,7 +340,7 @@ export function TripSuggestions({
                   <DayVisuals
                     ticketBudget={
                       trip.currency === "EUR" && journey
-                        ? (Math.max(0, stayPlan.remaining) * 0.25) / days
+                        ? (connected?.estimates.activities ?? 0) / days
                         : undefined
                     }
                     travelers={preferences.preference.travelers}
@@ -318,7 +351,7 @@ export function TripSuggestions({
                     foodPerPerson={
                       trip.currency === "EUR"
                         ? journey
-                          ? (Math.max(0, stayPlan.remaining) * 0.4) /
+                          ? (connected?.estimates.food ?? 0) /
                             days /
                             preferences.preference.travelers
                           : (budgetAllocation(budget.amount, preferences.preference.style).find(

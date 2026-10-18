@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { curatedDay, curatedRestaurants, loadCityGuide, dayGuide } from "@/lib/city-guides";
+import {
+  curatedDay,
+  curatedRestaurants,
+  loadCityGuide,
+  dayGuide,
+  groupNearbyStops,
+} from "@/lib/city-guides";
 describe("visual day guides", () => {
   it("groups the Lisbon, Belém, and Sintra stops separately, with real coordinates and credited photos", () => {
     for (let day = 1; day <= 5; day++) {
@@ -33,5 +39,25 @@ describe("visual day guides", () => {
       "Cantinho do Avillez",
     );
     expect(curatedDay("Kyoto, Japan", 1)).toBeNull();
+  });
+  it("groups nearby stops together even when directory order mixes neighborhoods", () => {
+    const stop = (name: string, lat: number, lon: number) => ({
+      name,
+      lat,
+      lon,
+      description: "",
+      source: "https://www.openstreetmap.org",
+    });
+    const groups = groupNearbyStops([
+      stop("West 1", 40, 1),
+      stop("East 1", 40, 2),
+      stop("West 2", 40.001, 1),
+      stop("East 2", 40.001, 2),
+      stop("West 3", 40.002, 1),
+      stop("East 3", 40.002, 2),
+    ]);
+    expect(groups[0]?.map((item) => item.name)).toEqual(["West 1", "West 2", "West 3"]);
+    expect(groups[1]?.map((item) => item.name)).toEqual(["East 1", "East 2", "East 3"]);
+    expect(groups.flat()).toHaveLength(6);
   });
 });

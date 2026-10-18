@@ -104,6 +104,12 @@ export function AccommodationPlanner({
       <h2 id={`${id}-title`} className="mt-2 text-2xl font-semibold">
         Choose your stay
       </h2>
+      {active?.evidence === "demo" && (
+        <p className="mt-3 rounded-lg bg-amber-100/40 p-3 text-sm">
+          <strong>Selected demonstration hotel.</strong> This fictional property and simulated price
+          are for budget exploration only, not a verified quote.
+        </p>
+      )}
       {!budget.nights ? (
         <p className="mt-3 text-sm">This is a day trip. No overnight accommodation is included.</p>
       ) : (
@@ -211,7 +217,9 @@ export function AccommodationPlanner({
                     key={JSON.stringify(quote)}
                     className={`rounded-xl border p-4 ${chosen ? "border-secondary bg-secondary/5" : "bg-background/40"}`}
                   >
-                    <p className="text-xs text-muted-foreground">{quote.type} · entered quote</p>
+                    <p className="text-xs text-muted-foreground">
+                      {quote.type} · {quote.evidence === "demo" ? "DEMO price" : "entered quote"}
+                    </p>
                     <h3 className="mt-1 font-semibold">{quote.name}</h3>
                     <p className="mt-2 text-2xl font-semibold">
                       {money(total)} <span className="text-xs font-normal">whole group / stay</span>
@@ -241,7 +249,7 @@ export function AccommodationPlanner({
           <details className="mt-4 rounded-xl border p-4" open={!!active || undefined}>
             <summary className="cursor-pointer text-sm font-medium">
               {active
-                ? `Chosen: ${active.name} · ${money(budget.quoted!)} whole stay`
+                ? `${active.evidence === "demo" ? "Demo selection" : "Chosen"}: ${active.name} · ${money(budget.quoted!)} whole stay`
                 : "Add a quote & choose this stay"}
             </summary>
             <form
@@ -376,7 +384,9 @@ export function AccommodationPlanner({
             {money(budget.accommodation / budget.nights)} / night for the group
             {budget.quoted === null
               ? " · spending target, not a hotel quote"
-              : " · based on your entered quote"}
+              : active?.evidence === "demo"
+                ? " · DEMONSTRATION price"
+                : " · based on your entered quote"}
           </p>
         )}
         <p className="mt-2 text-sm">

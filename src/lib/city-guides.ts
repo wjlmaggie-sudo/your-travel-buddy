@@ -1,3 +1,4 @@
+import { distanceKm } from "./visit-logistics";
 import lisbon from "./lisbon-places.json";
 import { nearbyPlaces, searchDestinations } from "./place-directory";
 import type { TravelStyle } from "./travel-data";
@@ -7,6 +8,7 @@ export type VisualPlace = {
   lat: number;
   lon: number;
   description: string;
+  openingHours?: string | undefined;
   source: string;
   image?: { url: string; credit: string; license: string; source: string };
 };
@@ -89,6 +91,23 @@ export function curatedRestaurants(
   if (index === 2) return [belem];
   return style === "Budget" ? [market, cantinho] : [cantinho, ramiro, market];
 }
+/** Nearby stop groups, using straight-line proximity rather than claiming a road-route optimizer. */
+export function groupNearbyStops(places: VisualPlace[], size = 3): VisualPlace[][] {
+  const remaining = [...places],
+    groups: VisualPlace[][] = [];
+  while (remaining.length) {
+    const group = [remaining.shift()!];
+    while (group.length < size && remaining.length) {
+      const last = group[group.length - 1]!;
+      let best = 0;
+      for (let i = 1; i < remaining.length; i++)
+        if (distanceKm(last, remaining[i]!) < distanceKm(last, remaining[best]!)) best = i;
+      group.push(remaining.splice(best, 1)[0]!);
+    }
+    groups.push(group);
+  }
+  return groups;
+}
 export async function loadCityGuide(destination: string): Promise<CityGuide> {
   if (curatedDay(destination, 1))
     return {
@@ -109,6 +128,7 @@ export async function loadCityGuide(destination: string): Promise<CityGuide> {
       lat: place.lat,
       lon: place.lon,
       description: place.kind,
+      openingHours: place.openingHours || undefined,
       source: place.source,
     }));
   const food = places
@@ -121,9 +141,7 @@ export async function loadCityGuide(destination: string): Promise<CityGuide> {
       price: "Prices unavailable · check menu",
     }));
   return {
-    days: Array.from({ length: Math.ceil(attractions.length / 3) }, (_, index) =>
-      attractions.slice(index * 3, index * 3 + 3),
-    ),
+    days: groupNearbyStops(attractions),
     restaurants: [food.slice(0, 3)],
     curated: false,
   };
