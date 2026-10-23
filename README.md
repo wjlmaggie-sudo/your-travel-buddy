@@ -12,8 +12,12 @@ is 20 provider requests. Private provider credentials stay in Supabase secrets.
 The public function URL is the build variable `VITE_HOTEL_SEARCH_URL`; local
 production builds use the ignored `.env.production.local` file. See
 [hotel provider setup](deployment/HOTEL_PROVIDER_PREVIEW.md) for deployment details.
-The free itinerary planner, main account/trip backend, demo comparison cards and
-PDF exports remain in place. Flight and car-rental APIs are not connected.
+Connected hotel views and PDF exports omit fictional hotel comparisons. The hotel
+allowance matches the overview budget; the redundant comfort selector has been removed
+from hotel results. Older saved demo selections remain clearly labeled and can be cleared.
+The free itinerary planner, main account/trip backend and PDF exports remain in place.
+Flights still use labeled demo comparisons and external search links; flight and
+car-rental APIs are not connected.
 
 build a app, including travel planning, user to need
 

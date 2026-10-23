@@ -1,3 +1,4 @@
+import { hotelSearchEndpoint } from "./hotel-search";
 import { streetMapWays, streetMapSvg } from "./pdf-street-map";
 import type { Content, TDocumentDefinitions } from "pdfmake/interfaces";
 import { dayGuide, loadCityGuide, type VisualPlace } from "./city-guides";
@@ -257,7 +258,7 @@ export async function buildTripPdf(
         ),
       ),
     );
-    if (journey) {
+    if (journey && !hotelSearchEndpoint()) {
       content.push(heading("Hotel comparison · FICTIONAL PROPERTIES"));
       demoHotels(b, journey).forEach((h) =>
         content.push(

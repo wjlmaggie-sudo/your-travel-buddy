@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { buildTripPdf, type PdfTrip } from "@/lib/trip-pdf";
+const hotelEndpoint = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/hotel-search", () => ({ hotelSearchEndpoint: hotelEndpoint }));
 vi.mock("@/lib/city-guides", () => ({
   loadCityGuide: vi.fn(async () => ({})),
   dayGuide: () => ({
@@ -58,7 +60,18 @@ const trip: PdfTrip = {
   expenses: [{ amount: 23.5, category: "food", note: "Lunch", spent_on: "2026-11-01" }],
 };
 describe("complete PDF document", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    hotelEndpoint.mockReturnValue(null);
+  });
+  it("omits fictional hotel comparisons from exports when the hotel provider is connected", async () => {
+    hotelEndpoint.mockReturnValue("https://test.supabase.co/functions/v1/search-hotels");
+    const { definition } = await buildTripPdf(trip);
+    const text = JSON.stringify(definition);
+    expect(text).not.toContain("Hotel comparison · FICTIONAL PROPERTIES");
+    expect(text).toContain("Search hotels for these dates and travelers");
+    expect(text).toContain("Complete history story including 1838.");
+  });
   it("exports every day, edits, full notes, stories, sources, tickets, restaurants and budget provenance", async () => {
     const { definition, missingPhotos } = await buildTripPdf(trip);
     const text = JSON.stringify(definition);

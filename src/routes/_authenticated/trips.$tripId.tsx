@@ -242,9 +242,6 @@ function TripPage() {
                     journey={journey.data}
                     stay={stay.data}
                     onChoose={updateStay}
-                    onComfort={(comfort) =>
-                      updateJourney({ ...journey.data!, hotelComfort: comfort })
-                    }
                   />
                 </fieldset>
               )}

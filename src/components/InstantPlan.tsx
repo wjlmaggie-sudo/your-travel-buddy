@@ -230,12 +230,6 @@ export function InstantPlan({
           brief={brief}
           journey={journey}
           stay={stay}
-          onComfort={(comfort) => {
-            const next = { ...journey, hotelComfort: comfort };
-            setJourney(next);
-            onEdited();
-            if (!activityEdited) setIdeas(createJourneyIdeas(brief, next, stay));
-          }}
           onChoose={(choice) => {
             setStay(choice);
             onEdited();

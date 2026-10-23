@@ -89,9 +89,9 @@ describe("guest workspace", () => {
       target: { value: "My arrival plan" },
     });
     go("Hotels");
-    go("Premium");
+    fireEvent.click(screen.getAllByRole("button", { name: "Try this demo hotel" })[0]!);
     go("AI Travel Planner");
-    expect(readGuestSimulation()?.journey?.hotelComfort).toBe("Premium");
+    expect(readGuestSimulation()?.stay?.evidence).toBe("demo");
     expect(readGuestSimulation()?.ideas?.days[0]?.items[0]?.title).toBe("My arrival plan");
     cleanup();
     setup();

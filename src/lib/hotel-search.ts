@@ -40,7 +40,7 @@ export async function searchHotelPreviews(input: HotelSearchInput, signal: Abort
         "Check your trip destination, dates and traveler details before trying again.",
       );
     throw new Error(
-      "Hotel previews are unavailable right now. Your plan is unchanged; the demo hotels and external search still work.",
+      "Hotel previews are unavailable right now. Your plan is unchanged; you can still search on Booking.com.",
     );
   }
   const result = hotelSearchResult.safeParse(await response.json());
