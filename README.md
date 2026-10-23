@@ -1,5 +1,17 @@
 # Your Travel Buddy
 
+## Current provider connection — 23 October 2026
+
+Hotel searches now connect to the Nuitee sandbox through a separate Supabase Edge
+Function. Guests can request up to three previews within the hotel allowance;
+all provider prices are test data, not bookable live offers. The shared daily limit
+is 20 provider requests. Private provider credentials stay in Supabase secrets.
+The public function URL is the build variable `VITE_HOTEL_SEARCH_URL`; local
+production builds use the ignored `.env.production.local` file. See
+[hotel provider setup](deployment/HOTEL_PROVIDER_PREVIEW.md) for deployment details.
+The free itinerary planner, main account/trip backend, demo comparison cards and
+PDF exports remain in place. Flight and car-rental APIs are not connected.
+
 build a app, including travel planning, user to need
 
 This project was built with [Lovable](https://lovable.dev).

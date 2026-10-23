@@ -1,7 +1,11 @@
 # Hotel provider preview — 23 October 2026
 
 This update prepares a **Nuitee Connect / LiteAPI hotel sandbox**, not live bookings.
-There is no provider account or key configured yet. Flights remain demonstrations;
+The owner-authorized sandbox account and private backend credential are configured.
+The `search-hotels` function and 20-request daily quota are deployed in Supabase
+project `xuvilqwfeiwfoigcvrsb`. A guest API test on 23 October 2026 returned three
+hotel previews successfully. This is a real provider connection with **test prices**,
+not verified production offers. Flights remain demonstrations;
 car-rental integration is still pending a suitable provider agreement. The existing
 free planner, guest sessions, saved trips, quotes, budget and PDF exports remain usable.
 
@@ -12,8 +16,11 @@ free planner, guest sessions, saved trips, quotes, budget and PDF exports remain
   the accommodation allowance. No requests run automatically on load or navigation.
 - Search specifies city, destination country, lead guest nationality, dates, currency
   and adult travelers. Rooms hold two adults, with a separate room for an odd traveler.
-- The adapter uses the documented whole-offer `offerRetailRate`, validates occupancy
-  and currency, and rejects responses unless `sandbox` is explicitly `true`.
+- The adapter uses the whole-offer `offerRetailRate`, validates occupancy and currency,
+  and accepts both documented array totals and the object totals observed in the sandbox.
+  Requests require a sandbox credential matching the observed `sand_` UUID format.
+  An explicit production flag is rejected. When the upstream sandbox omits its flag,
+  provenance comes from the verified server-side sandbox credential and sandbox-only mode.
 - Sandbox offers cannot be booked, selected as real quotes, saved or exported to PDF.
   They are only held in component memory. Editing criteria clears stale results.
 - A service-only database counter limits all guests together to 20 upstream requests
@@ -62,4 +69,4 @@ activates live flights nor implements car rental, payment, reservations or live 
 
 Official contract used for the adapter:
 [Hotel rates API](https://docs.liteapi.travel/reference/post_hotels-rates).
-Real provider validation remains pending account creation and backend deployment.
+Provider sandbox verification succeeded. Production integration remains unimplemented.

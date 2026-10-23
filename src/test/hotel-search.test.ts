@@ -4,6 +4,7 @@ import {
   hotelRateRequest,
   hotelSearchInput,
   normalizeHotelPreview,
+  isSandboxHotelKey,
 } from "../../supabase/functions/_shared/hotel-search";
 
 const input = {
@@ -16,6 +17,7 @@ const input = {
   currency: "EUR",
   budget: 500,
 };
+const testSandboxKey = "sand_00000000-0000-0000-0000-000000000000";
 function payload(amount = 400, currency = "EUR") {
   return {
     sandbox: true,
@@ -45,6 +47,32 @@ function payload(amount = 400, currency = "EUR") {
   };
 }
 describe("hotel provider adapter", () => {
+  it("accepts observed object totals and missing flags only with verified sandbox provenance", () => {
+    const response = {
+      ...payload(),
+      sandbox: undefined,
+      data: [
+        {
+          hotelId: "hotel1",
+          roomTypes: [
+            {
+              offerRetailRate: { amount: 400, currency: "EUR" },
+              rates: [
+                { adultCount: 2, childCount: 0 },
+                { adultCount: 1, childCount: 0 },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    expect(() => normalizeHotelPreview(response, input)).toThrow();
+    expect(normalizeHotelPreview(response, input, true).offers[0]?.amount).toBe(400);
+    expect(() => normalizeHotelPreview({ ...response, sandbox: false }, input, true)).toThrow();
+    expect(isSandboxHotelKey(testSandboxKey)).toBe(true);
+    expect(isSandboxHotelKey(`${testSandboxKey}Copy`)).toBe(false);
+    expect(isSandboxHotelKey(testSandboxKey.replace("sand_", "prod_"))).toBe(false);
+  });
   it("validates calendar dates and stay duration and builds the documented multi-room request", () => {
     expect(hotelSearchInput.safeParse({ ...input, checkin: "2030-02-30" }).success).toBe(false);
     expect(hotelSearchInput.safeParse({ ...input, checkout: input.checkin }).success).toBe(false);
@@ -83,7 +111,7 @@ describe("guest hotel endpoint", () => {
     const claim = vi.fn().mockResolvedValue(true);
     const handler = createHotelSearchHandler({
       enabled: true,
-      apiKey: "private-test-key",
+      apiKey: testSandboxKey,
       allowedOrigins: [origin],
       fetcher,
       claim,
@@ -92,7 +120,12 @@ describe("guest hotel endpoint", () => {
     return { handler, fetcher, claim };
   }
   it("makes no provider calls for disabled setup, missing key, invalid inputs or other origins", async () => {
-    for (const overrides of [{ enabled: false }, { apiKey: undefined }]) {
+    for (const overrides of [
+      { enabled: false },
+      { apiKey: undefined },
+      { apiKey: "not-a-sandbox-credential" },
+      { apiKey: `${testSandboxKey}Copy` },
+    ]) {
       const { handler, fetcher, claim } = setup(overrides);
       expect((await handler(request())).status).toBe(503);
       expect(fetcher).not.toHaveBeenCalled();
@@ -125,7 +158,7 @@ describe("guest hotel endpoint", () => {
     expect(response.headers.get("Access-Control-Allow-Origin")).toBe(origin);
     const body = await response.text();
     expect(JSON.parse(body).offers[0].amount).toBe(400);
-    expect(body).not.toContain("private-test-key");
+    expect(body).not.toContain(testSandboxKey);
     expect(claim).toHaveBeenCalledOnce();
     expect(fetcher.mock.calls[0]?.[0]).toBe("https://api.liteapi.travel/v3.0/hotels/rates");
   });

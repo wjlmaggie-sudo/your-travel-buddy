@@ -66,8 +66,17 @@ export function hotelRateRequest(input: HotelSearchInput) {
 }
 
 const money = z.object({ amount: z.number().finite().positive(), currency: z.string() });
+// The live sandbox returns one money object; the reference schema also permits an array.
+const offerPrices = z
+  .union([money, z.array(money)])
+  .transform((value) => (Array.isArray(value) ? value : [value]));
+export function isSandboxHotelKey(key: string) {
+  return /^sand_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(key);
+}
 const providerResponse = z.object({
-  sandbox: z.literal(true),
+  // Some sandbox responses omit this flag. Only a verified sandbox credential may
+  // establish provenance in that case; an explicit production response still fails.
+  sandbox: z.literal(true).optional(),
   hotels: z.array(
     z.object({
       id: z.string(),
@@ -83,7 +92,7 @@ const providerResponse = z.object({
       hotelId: z.string(),
       roomTypes: z.array(
         z.object({
-          offerRetailRate: z.array(money),
+          offerRetailRate: offerPrices,
           rates: z.array(z.object({ adultCount: z.number().int(), childCount: z.number().int() })),
         }),
       ),
@@ -92,8 +101,14 @@ const providerResponse = z.object({
 });
 
 /** Only documented whole-offer prices. Never substitute a single-room or other-currency rate. */
-export function normalizeHotelPreview(raw: unknown, input: HotelSearchInput): HotelSearchResult {
+export function normalizeHotelPreview(
+  raw: unknown,
+  input: HotelSearchInput,
+  sandboxKeyVerified = false,
+): HotelSearchResult {
   const response = providerResponse.parse(raw);
+  if (response.sandbox !== true && !sandboxKeyVerified)
+    throw new Error("Sandbox provenance could not be verified.");
   const offers = response.data.flatMap((hotel) => {
     const info = response.hotels.find((item) => item.id === hotel.hotelId);
     if (!info || info.country_code.toUpperCase() !== input.countryCode) return [];
@@ -156,7 +171,7 @@ export function createHotelSearchHandler(deps: SearchDependencies) {
     const reply = (body: unknown, status = 200) => Response.json(body, { status, headers });
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers });
     if (request.method !== "POST") return reply({ error: "Method not allowed." }, 405);
-    if (!deps.enabled || !deps.apiKey)
+    if (!deps.enabled || !deps.apiKey || !isSandboxHotelKey(deps.apiKey))
       return reply(
         {
           error:
@@ -203,8 +218,8 @@ export function createHotelSearchHandler(deps: SearchDependencies) {
           { error: "The hotel provider could not complete this preview. Please try later." },
           502,
         );
-      // Reject production responses, missing sandbox flags and incomplete totals.
-      return reply(normalizeHotelPreview(await response.json(), input.data));
+      // The credential is verified above. Reject explicit production flags and incomplete totals.
+      return reply(normalizeHotelPreview(await response.json(), input.data, true));
     } catch {
       // Do not return upstream bodies, credentials, booking tokens or internal database errors.
       return reply(
