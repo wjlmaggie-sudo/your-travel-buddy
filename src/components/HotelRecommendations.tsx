@@ -1,7 +1,15 @@
 import { Building2, Check, Star } from "lucide-react";
 import { demoHotels } from "@/lib/travel-workspace";
 import type { Journey } from "@/lib/journey-planning";
-import { bookingSearch, stayScope, type StayBrief, type StayChoice } from "@/lib/stay-planning";
+import {
+  bookingSearch,
+  stayBudget,
+  stayScope,
+  type StayBrief,
+  type StayChoice,
+} from "@/lib/stay-planning";
+import { flightCost } from "@/lib/travel-workspace";
+import { HotelSearchPreview } from "./HotelSearchPreview";
 import { dailyMoney } from "./DailyBudget";
 import { Button } from "./ui/button";
 export function HotelRecommendations({
@@ -17,6 +25,11 @@ export function HotelRecommendations({
   onChoose: (next: StayChoice | null) => void;
   onComfort?: (comfort: Journey["hotelComfort"]) => void;
 }) {
+  const allowance = stayBudget({
+    ...brief,
+    flightBudget: flightCost(brief, journey),
+    hotelComfort: journey.hotelComfort,
+  }).allowance;
   if (brief.days === 1)
     return (
       <div className="rounded-xl border p-5">
@@ -57,6 +70,11 @@ export function HotelRecommendations({
           </p>
         </fieldset>
       )}
+      <HotelSearchPreview
+        key={`${stayScope(brief)}:${allowance}`}
+        brief={brief}
+        allowance={allowance}
+      />
       <p className="rounded-xl border border-amber-600/30 bg-amber-100/30 p-4 text-sm">
         <strong>Demonstration hotels · fictional properties.</strong> Names, locations, ratings and
         prices are simulated. Illustrations are not property photographs. Use the booking search or

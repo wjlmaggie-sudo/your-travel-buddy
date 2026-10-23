@@ -1,3 +1,7 @@
 project_id = "secqnjmhobdbpalktkcb"
 [functions.generate-trip-ideas]
 verify_jwt = true
+
+# Guest sandbox previews use an origin allowlist and a service-only database quota.
+[functions.search-hotels]
+verify_jwt = false
