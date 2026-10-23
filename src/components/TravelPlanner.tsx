@@ -301,8 +301,9 @@ export function TravelPlanner() {
                 )}
               </div>
               <p className="text-xs leading-relaxed text-muted-foreground">
-                Free template suggestions · yours to edit. Live AI and provider offers are not
-                connected. Simulated flight and hotel offers are clearly labeled.
+                Free template suggestions · yours to edit. Check Hotels for provider connection
+                status. Live AI and live flight offers are not connected. Demo prices are clearly
+                labeled.
               </p>
             </form>
           </div>
