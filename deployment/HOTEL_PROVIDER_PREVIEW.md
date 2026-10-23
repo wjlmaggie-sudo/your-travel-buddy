@@ -12,10 +12,18 @@ free planner, guest sessions, saved trips, quotes, budget and PDF exports remain
 ## What this version supports
 
 - Hotels shows a connection-pending card and an external Booking.com search when unconfigured.
-- After setup, guests can explicitly request up to three sandbox hotel previews within
-  the accommodation allowance. No requests run automatically on load or navigation.
-- Search specifies city, destination country, lead guest nationality, dates, currency
-  and adult travelers. Rooms hold two adults, with a separate room for an odd traveler.
+- Opening Hotels automatically loads up to three sandbox previews within the planned
+  hotel allowance, using the trip destination, dates, travelers and currency. Other
+  sections do not trigger searches. Budget/comfort changes are debounced before searching.
+- Open-Meteo / GeoNames resolves the existing destination and country, with a named
+  optional selector for ambiguous matches. No destination or country code is retyped.
+  Sandbox pricing uses a disclosed US sample traveler nationality; an optional selector
+  shows full country names. Nationality is never inferred from departure or location.
+  Production booking would need accurate nationality before searching/confirming rates.
+- Identical searches share in-flight requests and five-minute, memory-only quote caches;
+  location matches cache for 30 minutes. Errors have a one-minute backoff. Reopening the
+  same view reuses results. Refresh is explicit. Rooms hold two adults, with a separate
+  room for an odd traveler. The global 20-request daily quota still applies.
 - The adapter uses the whole-offer `offerRetailRate`, validates occupancy and currency,
   and accepts both documented array totals and the object totals observed in the sandbox.
   Requests require a sandbox credential matching the observed `sand_` UUID format.

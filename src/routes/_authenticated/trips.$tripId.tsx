@@ -237,6 +237,7 @@ function TripPage() {
                   className="min-w-0"
                 >
                   <HotelRecommendations
+                    active={tab === "hotels" && !selectionBusy && !stay.isPending && !stay.isError}
                     brief={brief}
                     journey={journey.data}
                     stay={stay.data}

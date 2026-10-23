@@ -37,7 +37,7 @@ export async function searchHotelPreviews(input: HotelSearchInput, signal: Abort
       );
     if (response.status === 400)
       throw new Error(
-        "Check the city, country codes, dates and traveler details before searching again.",
+        "Check your trip destination, dates and traveler details before trying again.",
       );
     throw new Error(
       "Hotel previews are unavailable right now. Your plan is unchanged; the demo hotels and external search still work.",

@@ -226,6 +226,7 @@ export function InstantPlan({
       </WorkspacePanel>
       <WorkspacePanel active={section === "hotels"} label="Hotels">
         <HotelRecommendations
+          active={section === "hotels"}
           brief={brief}
           journey={journey}
           stay={stay}

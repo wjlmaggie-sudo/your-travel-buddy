@@ -3,7 +3,10 @@
 ## Current provider connection — 23 October 2026
 
 Hotel searches now connect to the Nuitee sandbox through a separate Supabase Edge
-Function. Guests can request up to three previews within the hotel allowance;
+Function. Opening Hotels automatically loads up to three previews within the planned
+hotel allowance, using the existing destination, dates, travelers and currency. Country
+information is resolved automatically. Optional sandbox preferences show named countries;
+no technical country/nationality code inputs are required. Repeated searches are cached;
 all provider prices are test data, not bookable live offers. The shared daily limit
 is 20 provider requests. Private provider credentials stay in Supabase secrets.
 The public function URL is the build variable `VITE_HOTEL_SEARCH_URL`; local
