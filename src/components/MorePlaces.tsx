@@ -14,6 +14,7 @@ export function MorePlaces({
   disabled = false,
   maxPerDay,
   unavailableDays = [],
+  openRequest = 0,
   onAdd,
 }: {
   destination: string;
@@ -24,10 +25,14 @@ export function MorePlaces({
   disabled?: boolean;
   maxPerDay?: number;
   unavailableDays?: number[];
+  openRequest?: number;
   onAdd: (place: VisualPlace, day: number) => boolean | Promise<boolean>;
 }) {
   const id = useId();
   const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (openRequest > 0) setOpen(true);
+  }, [openRequest]);
   const [search, setSearch] = useState("");
   const [targetDay, setTargetDay] = useState(day);
   const [limit, setLimit] = useState(6);
@@ -82,7 +87,12 @@ export function MorePlaces({
       open={open}
       onToggle={(e) => setOpen(e.currentTarget.open)}
     >
-      <summary className="cursor-pointer text-base font-semibold">More places to explore</summary>
+      <summary className="cursor-pointer text-base font-semibold">
+        <span>More places to explore</span>
+        <span className="mt-1 block text-xs font-normal text-muted-foreground">
+          Browse extra recommendations, choose a day and add your favorites.
+        </span>
+      </summary>
       {open && (
         <div className="mt-4 space-y-4">
           <p className="text-sm text-muted-foreground">

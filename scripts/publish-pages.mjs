@@ -1,5 +1,6 @@
+import { assertPagesRelease } from "./pages-release.mjs";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, existsSync, readdirSync, cpSync, rmSync } from "node:fs";
+import { mkdtempSync, existsSync, readdirSync, cpSync, rmSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -15,6 +16,19 @@ const git = (args, cwd = process.cwd()) =>
     stdio: ["pipe", "pipe", "pipe"],
   }).trim();
 const remote = git(["remote", "get-url", "github"]);
+git(["fetch", "github", "main"]);
+let release;
+try {
+  release = JSON.parse(readFileSync(path.join(output, "release.json"), "utf8"));
+} catch {
+  /* Missing metadata fails closed below. */
+}
+assertPagesRelease({
+  head: git(["rev-parse", "HEAD"]),
+  main: git(["rev-parse", "github/main"]),
+  dirty: !!git(["status", "--porcelain"]),
+  release,
+});
 const existing = git(["ls-remote", remote, "refs/heads/gh-pages"]);
 const checkout = mkdtempSync(path.join(tmpdir(), "ai-travel-pages-"));
 try {

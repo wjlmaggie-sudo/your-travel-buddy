@@ -440,11 +440,7 @@ export function TravelPlanner() {
             key={result.revision}
             section={section}
             overviewActive={!editing}
-            onEditBrief={() => {
-              const current = readGuestSimulation();
-              if (current) setDraft(current);
-              setEditing(true);
-            }}
+            onEditBrief={() => setEditing(true)}
             onSectionChange={setSection}
             brief={result.brief}
             initialIdeas={result.ideas}

@@ -55,6 +55,7 @@ export function InstantPlan({
       flightsRequired: false,
     },
   );
+  const [placesRequest, setPlacesRequest] = useState(0);
   const [activeDay, setActiveDay] = useState(1);
   const [activityEdited, setActivityEdited] = useState(false);
   const [stay, setStay] = useState<StayChoice | null>(brief.stay ?? null);
@@ -152,6 +153,16 @@ export function InstantPlan({
               Edit trip details
             </Button>
 
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setPlacesRequest((request) => request + 1);
+                onSectionChange?.("attractions");
+              }}
+            >
+              Browse more places
+            </Button>
             <SavePlanButton
               prepare={() => {
                 if (ideas.days.some((day) => day.items.some((item) => !item.title.trim()))) {
@@ -322,6 +333,7 @@ export function InstantPlan({
           days={brief.days}
           day={activeDay}
           active={section === "attractions"}
+          openRequest={placesRequest}
           maxPerDay={8}
           current={ideas.days.flatMap((day) =>
             day.items.map((item) => ({ ...item, day: day.day })),

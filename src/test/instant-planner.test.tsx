@@ -86,8 +86,7 @@ describe("guest workspace", () => {
     setup();
     go("Business");
     start("");
-    go("Attractions & Activities");
-    fireEvent.click(screen.getByText("More places to explore"));
+    go("Browse more places");
     await screen.findByLabelText("Find another place");
     fireEvent.change(screen.getByLabelText("Find another place"), {
       target: { value: "Oceanário" },
