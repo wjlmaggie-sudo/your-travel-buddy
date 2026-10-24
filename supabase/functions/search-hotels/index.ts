@@ -10,10 +10,15 @@ const database =
       })
     : null;
 
+const mode = Deno.env.get("HOTEL_SEARCH_MODE");
+
 Deno.serve(
   createHotelSearchHandler({
-    enabled: Deno.env.get("HOTEL_SEARCH_MODE") === "sandbox",
-    apiKey: Deno.env.get("NUITEE_SANDBOX_API_KEY"),
+    enabled: mode === "sandbox" || mode === "production",
+    mode: mode === "production" ? "production" : "sandbox",
+    apiKey: Deno.env.get(
+      mode === "production" ? "NUITEE_PRODUCTION_API_KEY" : "NUITEE_SANDBOX_API_KEY",
+    ),
     allowedOrigins: (Deno.env.get("HOTEL_ALLOWED_ORIGINS") ?? "")
       .split(",")
       .map((value) => value.trim())

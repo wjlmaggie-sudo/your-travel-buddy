@@ -64,3 +64,21 @@ it("rejects production, over-budget or mismatched-currency previews", async () =
     await expect(searchHotelPreviews(input, signal())).rejects.toThrow(/unsupported preview/);
   }
 });
+
+it("accepts production results only in a production frontend and rejects sandbox substitution", async () => {
+  vi.stubEnv("VITE_HOTEL_SEARCH_URL", "https://test.supabase.co/functions/v1/search-hotels");
+  vi.stubEnv("VITE_HOTEL_SEARCH_MODE", "production");
+  for (const sandbox of [false, true]) {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValue(
+          Response.json({ sandbox, checkedAt: "2030-01-01T12:00:00Z", offers: [] }),
+        ),
+    );
+    if (!sandbox)
+      expect(await searchHotelPreviews(input, signal())).toMatchObject({ sandbox: false });
+    else await expect(searchHotelPreviews(input, signal())).rejects.toThrow(/unsupported preview/);
+  }
+});

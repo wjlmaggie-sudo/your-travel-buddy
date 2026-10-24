@@ -12,3 +12,6 @@ verify_jwt = false
 
 [functions.search-flights]
 verify_jwt = true
+
+[functions.search-hotels-live]
+verify_jwt = true

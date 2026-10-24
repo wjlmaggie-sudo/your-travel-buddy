@@ -174,3 +174,57 @@ describe("guest hotel endpoint", () => {
     expect(await response.text()).not.toContain("private-upstream-value");
   });
 });
+
+describe("production hotel search", () => {
+  const key = "production_test_credential_123456";
+  const origin = "https://wjlmaggie-sudo.github.io";
+  it("returns real rates only when upstream explicitly confirms production", async () => {
+    for (const sandbox of [false, true, undefined]) {
+      const fetcher = vi.fn().mockResolvedValue(Response.json({ ...payload(), sandbox }));
+      const handler = createHotelSearchHandler({
+        enabled: true,
+        mode: "production",
+        apiKey: key,
+        allowedOrigins: [origin],
+        claim: async () => true,
+        fetcher,
+      });
+      const response = await handler(
+        new Request("https://example.com", {
+          method: "POST",
+          headers: { origin },
+          body: JSON.stringify(input),
+        }),
+      );
+      expect(response.status).toBe(sandbox === false ? 200 : 503);
+      if (sandbox === false)
+        expect(await response.json()).toMatchObject({ sandbox: false, offers: [{ amount: 400 }] });
+      expect(fetcher.mock.calls[0]?.[1].headers["X-API-Key"]).toBe(key);
+    }
+  });
+  it("never uses a sandbox credential for production or calls upstream after quota exhaustion", async () => {
+    for (const [apiKey, quota] of [
+      [testSandboxKey, true],
+      [key, false],
+    ] as const) {
+      const fetcher = vi.fn();
+      const handler = createHotelSearchHandler({
+        enabled: true,
+        mode: "production",
+        apiKey,
+        allowedOrigins: [origin],
+        claim: async () => quota,
+        fetcher,
+      });
+      const response = await handler(
+        new Request("https://example.com", {
+          method: "POST",
+          headers: { origin },
+          body: JSON.stringify(input),
+        }),
+      );
+      expect(response.status).toBe(quota ? 503 : 429);
+      expect(fetcher).not.toHaveBeenCalled();
+    }
+  });
+});
