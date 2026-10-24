@@ -101,7 +101,7 @@ If a selected quote exceeds an allowance, immediately update the overall remaini
 | 3 | Checkout and return travel; optional nearby activity only after confirming the airport deadline. | Flight half 120 + food 30 + transport 20 = **170** |
 | **Total scheduled costs** | Return flight split by day for display only; count it once in the trip total. | **735** |
 
-The EUR 30 activity amount is reserved, not a confirmed purchase; unused amounts remain unspent. The flight split is a display allocation, not two independent fare quotes. The contingency has no scheduled spending day. An average cap of EUR 300/day is not a claim that each day's actual spend is EUR 300.
+The EUR 30 activity amount is reserved, not a confirmed purchase; unused amounts remain unspent. The flight split is a display allocation, not two independent fare quotes. The contingency has no scheduled spending day. With that reserve included as an allocated category, the dashboard unallocated balance is EUR 0; the reserve is not an additional spendable balance. An average cap of EUR 300/day is not a claim that each day's actual spend is EUR 300.
 
 ## Editable experience and explanations
 
@@ -130,7 +130,7 @@ The EUR 30 activity amount is reserved, not a confirmed purchase; unused amounts
 2. Given fixed meetings, generation creates no overlapping activity; unknown commute feasibility is flagged rather than asserted.
 3. Given a lower-cost hotel farther away and a nearby option, comparisons expose whole-stay plus commute assumptions; neither exceeds the cap without an explicit warning.
 4. Given the EUR 900 example above, scheduled costs equal EUR 735 and unspent reserve equals EUR 165; the ledger totals exactly EUR 900 without counting the flight twice.
-5. Given a replacement hotel costing EUR 360 instead of EUR 300, scheduled costs become EUR 795 and remaining reserve EUR 105; the cap stays EUR 900.
+5. Given a replacement hotel costing EUR 360 instead of EUR 300, scheduled costs become EUR 795. Keeping the protected EUR 165 reserve gives EUR 960 allocated and a EUR 60 shortfall. Only after explicit approval to reduce the reserve to EUR 105 does the allocation fit the unchanged EUR 900 cap.
 6. Given a user-edited activity and fixed meeting, regenerating suggestions preserves both unless the user explicitly approves replacing them.
 7. Given an unavailable provider or unverified hotel amenities, the UI shows uncertainty and never claims live availability, reliable Wi-Fi, or invoice eligibility without evidence.
 8. Given a persona switch, the interface stays stable, keeps the current plan/quotes, and explains proposed changes to leisure priorities.
