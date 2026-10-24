@@ -186,6 +186,10 @@ attribution from the Wikipedia and Commons APIs. It downloads metadata, not
 image binaries.
 
 Destination weather is available on the public brief and saved itinerary.
+Activity day headings also show the matching daily forecast automatically, with
+conditions, high/low temperatures in Celsius and rain probability. Hidden days
+share cached forecasts without starting their own requests; unavailable dates
+and provider errors appear as compact messages beside the day.
 Open-Meteo geocoding resolves the destination (including a country qualifier),
 with a selector to correct ambiguous locations. On-demand forecasts show current
 temperature separately from daily highs/lows and rain probability for matching

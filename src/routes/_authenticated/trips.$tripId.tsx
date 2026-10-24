@@ -264,7 +264,13 @@ function TripPage() {
               </details>
             </WorkspacePanel>
             <WorkspacePanel active={tab === "itinerary"} label="Attractions & Activities">
-              <Itinerary data={data} refresh={refresh} stay={stay.data} journey={journey.data} />
+              <Itinerary
+                data={data}
+                refresh={refresh}
+                stay={stay.data}
+                journey={journey.data}
+                active={tab === "itinerary"}
+              />
             </WorkspacePanel>
             <WorkspacePanel active={tab === "budget"} label="Spending tracker">
               <DailyBudget
@@ -387,11 +393,13 @@ function TripPage() {
 }
 
 function Itinerary({
+  active,
   data,
   refresh,
   stay,
   journey,
 }: {
+  active: boolean;
   data: Data;
   refresh: () => void;
   stay?: StayChoice | null | undefined;
@@ -487,6 +495,7 @@ function Itinerary({
               style={preferences.preference.style}
             />
             <DayCard
+              active={active && day === activeDay}
               ticketBudget={
                 data.trip.currency === "EUR" && journey
                   ? (connected?.estimates.activities ?? 0) / days

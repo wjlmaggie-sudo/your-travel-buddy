@@ -18,6 +18,7 @@ import type { TripIdeas } from "../../supabase/functions/_shared/trip-ideas";
 import { savePlannerDraft, saveGuestSimulation, type PlannerDraft } from "@/lib/planner-draft";
 import { dailyBudgets, budgetAllocation } from "@/lib/planning";
 import { DayVisuals } from "./DayVisuals";
+import { DayWeather } from "./DayWeather";
 import { DayBudgetSummary } from "./DailyBudget";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -292,10 +293,17 @@ export function InstantPlan({
             key={day.day}
             className="rounded-2xl border bg-card p-5 shadow-card md:p-6"
           >
-            <h3 className="text-2xl font-semibold">
-              Day {day.day}{" "}
-              <span className="text-sm text-muted-foreground">· {budgets[dayIndex]?.date}</span>
-            </h3>
+            <div className="flex flex-wrap items-center gap-3">
+              <h3 className="text-2xl font-semibold">
+                Day {day.day}{" "}
+                <span className="text-sm text-muted-foreground">· {budgets[dayIndex]?.date}</span>
+              </h3>
+              <DayWeather
+                destination={brief.destination}
+                date={budgets[dayIndex]?.date}
+                active={section === "attractions" && day.day === activeDay}
+              />
+            </div>
             <DayBudgetSummary
               afterStay={
                 journey || stayPlan.quoted !== null || !stayPlan.nights

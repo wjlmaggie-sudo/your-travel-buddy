@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import type { TravelStyle } from "@/lib/travel-data";
 import { DayVisuals } from "./DayVisuals";
+import { DayWeather } from "./DayWeather";
 import { EditActivity } from "./EditActivity";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -20,7 +21,9 @@ export function ItineraryDay({
   ticketBudget,
   travelers,
   date,
+  active = true,
 }: {
+  active?: boolean;
   travelers?: number | undefined;
   date?: string | undefined;
   day: number;
@@ -78,7 +81,10 @@ export function ItineraryDay({
       id={day === 1 ? "trip-explore" : undefined}
       className="rounded-xl border bg-card p-6 shadow-card"
     >
-      <h2 className="text-2xl font-semibold">Day {day}</h2>
+      <div className="flex flex-wrap items-center gap-3">
+        <h2 className="text-2xl font-semibold">Day {day}</h2>
+        <DayWeather destination={destination} date={date} active={active} />
+      </div>
       <DayVisuals
         ticketBudget={ticketBudget}
         travelers={travelers}

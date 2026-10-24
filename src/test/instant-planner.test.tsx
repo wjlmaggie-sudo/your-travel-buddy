@@ -10,6 +10,7 @@ vi.mock("@/integrations/supabase/client", () => ({ supabase: { auth: { getSessio
 vi.mock("@/lib/ai.functions", () => ({ generateTripIdeas: paidAI }));
 vi.mock("@tanstack/react-router", () => ({ useNavigate: () => navigate }));
 vi.mock("@/components/TripWeather", () => ({ TripWeather: () => <div>Destination weather</div> }));
+vi.mock("@/components/DayWeather", () => ({ DayWeather: () => <span>Daily weather</span> }));
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TravelPlanner } from "@/components/TravelPlanner";
 import { readPlannerDraft, readGuestSimulation } from "@/lib/planner-draft";

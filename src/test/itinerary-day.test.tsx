@@ -6,6 +6,7 @@ vi.mock("@/components/DayVisuals", () => ({
   DayVisuals: () => <div>Suggested map stops and restaurants</div>,
 }));
 vi.mock("@/components/EditActivity", () => ({ EditActivity: () => null }));
+vi.mock("@/components/DayWeather", () => ({ DayWeather: () => null }));
 import { ItineraryDay } from "@/components/ItineraryDay";
 beforeEach(() => {
   insert.mockReset();
