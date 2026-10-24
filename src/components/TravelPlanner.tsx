@@ -1,3 +1,4 @@
+import { childCount } from "../../supabase/functions/_shared/travel-persona";
 import { PersonaPreferences } from "./PersonaPreferences";
 import { useEffect, useRef, useState } from "react";
 import { Compass, MapPin, SlidersHorizontal } from "lucide-react";
@@ -85,7 +86,7 @@ export function TravelPlanner() {
     });
     if (!parsed.success) {
       toast.error(
-        "Check the destination, dates, budget and group. Enter every child’s age (0–17) and include at least one adult.",
+        "Check the destination, dates, budget and group. Choose the children’s age ranges and include at least one adult.",
       );
       return;
     }
@@ -177,6 +178,18 @@ export function TravelPlanner() {
               A few details are all you need. Explore every section without an account.
             </p>
             <form className="mt-6 space-y-5" onSubmit={generate}>
+              <PersonaPreferences
+                value={draft}
+                travelers={draft.travelers}
+                onChange={(next) =>
+                  setDraft({
+                    ...draft,
+                    ...next,
+                    travelers: Math.max(draft.travelers, childCount(next) + 1),
+                  })
+                }
+              />
+
               <div>
                 <Label htmlFor="planner-destination">Where would you love to go?</Label>
                 <div className="relative mt-2">
@@ -257,11 +270,6 @@ export function TravelPlanner() {
                   />
                 </div>
               </div>
-              <PersonaPreferences
-                value={draft}
-                travelers={draft.travelers}
-                onChange={(next) => setDraft({ ...draft, ...next })}
-              />
               <div>
                 <Label htmlFor="planner-departure">Departure city / airport</Label>
                 <Input

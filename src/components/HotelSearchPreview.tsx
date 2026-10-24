@@ -1,3 +1,4 @@
+import { childCount, childAgeDescription } from "../../supabase/functions/_shared/travel-persona";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Building2, RefreshCw } from "lucide-react";
 import { hotelSearchEndpoint } from "@/lib/hotel-search";
@@ -45,7 +46,7 @@ export function HotelSearchPreview({
   const [view, setView] = useState<Preview | null>(null);
   const lastInput = useRef<HotelSearchInput | null>(null);
   const configured = !!hotelSearchEndpoint();
-  const hasChildren = !!brief.childrenAges?.length;
+  const hasChildren = childCount(brief) > 0;
   const context = useMemo(
     () => ({
       destination: brief.destination,
@@ -53,6 +54,7 @@ export function HotelSearchPreview({
       days: brief.days,
       travelers: brief.travelers,
       childrenAges: brief.childrenAges,
+      childrenAgeRanges: brief.childrenAgeRanges,
       currency: brief.currency,
       allowance,
       nationality,
@@ -63,6 +65,7 @@ export function HotelSearchPreview({
       brief.days,
       brief.travelers,
       brief.childrenAges,
+      brief.childrenAgeRanges,
       brief.currency,
       allowance,
       nationality,
@@ -138,7 +141,7 @@ export function HotelSearchPreview({
         <h3 className="text-lg font-semibold">A stay for your whole family</h3>
         <p className="mt-2 text-sm">
           Hotel budget: {dailyMoney(allowance, brief.currency)} for {brief.days - 1} nights and{" "}
-          {brief.travelers} travelers, including children aged {brief.childrenAges!.join(", ")}.
+          {brief.travelers} travelers, including children aged {childAgeDescription(brief)}.
         </p>
         <p className="mt-3 text-sm text-muted-foreground">
           Child occupancy is not supported by the current hotel test API. Your itinerary uses the

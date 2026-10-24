@@ -23,6 +23,7 @@ export function createJourneyIdeas(
     {
       persona: brief.persona,
       childrenAges: brief.childrenAges,
+      childrenAgeRanges: brief.childrenAgeRanges,
       destination: brief.destination,
       days: brief.days,
       travelers: brief.travelers,

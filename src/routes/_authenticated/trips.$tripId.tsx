@@ -86,6 +86,7 @@ function TripPage() {
     style: preferences.preference.style,
     persona: preferences.preference.persona,
     childrenAges: preferences.preference.childrenAges,
+    childrenAgeRanges: preferences.preference.childrenAgeRanges,
   };
   async function updateJourney(next: Journey) {
     setSelectionBusy(true);
@@ -426,6 +427,7 @@ function Itinerary({
           style: preferences.preference.style,
           persona: preferences.preference.persona,
           childrenAges: preferences.preference.childrenAges,
+          childrenAgeRanges: preferences.preference.childrenAgeRanges,
         },
         journey,
         stay,
@@ -446,6 +448,7 @@ function Itinerary({
                 style: preferences.preference.style,
                 persona: preferences.preference.persona,
                 childrenAges: preferences.preference.childrenAges,
+                childrenAgeRanges: preferences.preference.childrenAgeRanges,
               },
               journey,
             ),
@@ -461,6 +464,7 @@ function Itinerary({
       style: preferences.preference.style,
       persona: preferences.preference.persona,
       childrenAges: preferences.preference.childrenAges,
+      childrenAgeRanges: preferences.preference.childrenAgeRanges,
     },
     stay,
   );

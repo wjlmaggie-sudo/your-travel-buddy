@@ -72,6 +72,7 @@ export function TripSuggestions({
           style: preferences.preference.style,
           persona: preferences.preference.persona,
           childrenAges: preferences.preference.childrenAges,
+          childrenAgeRanges: preferences.preference.childrenAgeRanges,
         },
         journey,
         stayChoice,
@@ -92,6 +93,7 @@ export function TripSuggestions({
                 style: preferences.preference.style,
                 persona: preferences.preference.persona,
                 childrenAges: preferences.preference.childrenAges,
+                childrenAgeRanges: preferences.preference.childrenAgeRanges,
               },
               journey,
             ),
@@ -107,6 +109,7 @@ export function TripSuggestions({
       style: preferences.preference.style,
       persona: preferences.preference.persona,
       childrenAges: preferences.preference.childrenAges,
+      childrenAgeRanges: preferences.preference.childrenAgeRanges,
     },
     stayChoice,
   );
@@ -156,6 +159,7 @@ export function TripSuggestions({
         style: preferences.preference.style,
         persona: preferences.preference.persona,
         childrenAges: preferences.preference.childrenAges,
+        childrenAgeRanges: preferences.preference.childrenAgeRanges,
         places,
       };
       const ideas = journey

@@ -2,7 +2,7 @@
 
 Product and implementation specifications, prepared 24 October 2026. The initial
 local integration now provides optional persona cards in the guest planner and saved
-trip settings, children’s ages at travel, age-aware Family activities and breaks,
+trip settings, children’s age ranges at travel, age-aware Family activities and breaks,
 Business work placeholders, and Budget Travel activity alternatives. Persona and ages
 carry through guest refresh, account saving and PDF export without changing the budget.
 

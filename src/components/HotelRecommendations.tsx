@@ -1,3 +1,4 @@
+import { childCount } from "../../supabase/functions/_shared/travel-persona";
 import { Building2, Check, Star } from "lucide-react";
 import { connectedBudget, demoHotels } from "@/lib/travel-workspace";
 import type { Journey } from "@/lib/journey-planning";
@@ -45,7 +46,7 @@ export function HotelRecommendations({
         allowance={allowance}
         active={active}
       />
-      {!hotelSearchEndpoint() && !brief.childrenAges?.length && (
+      {!hotelSearchEndpoint() && !childCount(brief) && (
         <details open className="space-y-4">
           <summary className="cursor-pointer text-sm font-medium text-muted-foreground">
             Try demonstration hotels (optional)

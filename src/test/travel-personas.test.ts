@@ -21,6 +21,25 @@ const journey = {
   flightsRequired: false,
 };
 describe("persona-aware local planning", () => {
+  it("keeps range-based ages distinct from exact ages and adapts the youngest group", () => {
+    const family = {
+      ...brief,
+      persona: "family" as const,
+      childrenAgeRanges: ["0-3", "7-10"] as ("0-3" | "7-10")[],
+    };
+    expect(plannerDraftSchema.safeParse(family).success).toBe(true);
+    expect(
+      createJourneyIdeas(family, journey).days[1]!.items.some((i) => i.title.includes("nap break")),
+    ).toBe(true);
+    const url = new URL(bookingSearch(family, 1));
+    expect(url.searchParams.get("group_adults")).toBe("2");
+    expect(url.searchParams.get("group_children")).toBe("2");
+    expect(url.searchParams.getAll("age")).toEqual([]);
+    expect(stayScope(family)).not.toBe(
+      stayScope({ ...family, childrenAges: [0, 7], childrenAgeRanges: undefined }),
+    );
+    expect(plannerDraftSchema.safeParse({ ...family, childrenAges: [0, 7] }).success).toBe(false);
+  });
   it("changes activities and pace independently of the same budget", () => {
     const business = createJourneyIdeas({ ...brief, persona: "business" }, journey);
     const family = createJourneyIdeas(

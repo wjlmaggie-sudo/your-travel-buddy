@@ -76,7 +76,7 @@ it("stores persona and ages privately in account metadata without requiring new 
     ...DEFAULT_PREFERENCES,
     travelers: 4,
     persona: "family" as const,
-    childrenAges: [3, 9],
+    childrenAgeRanges: ["0-3", "7-10"] as ("0-3" | "7-10")[],
   };
   await saveTripPreferences("family-trip", family);
   expect(auth.upsert).toHaveBeenCalledWith(
@@ -93,7 +93,7 @@ it("merges persisted persona and ages back into database-backed preferences", as
     ...DEFAULT_PREFERENCES,
     travelers: 4,
     persona: "family" as const,
-    childrenAges: [3, 9],
+    childrenAgeRanges: ["0-3", "7-10"] as ("0-3" | "7-10")[],
   };
   auth.getUser.mockResolvedValue({
     data: { user: { user_metadata: { travel_preferences: { family } } } },

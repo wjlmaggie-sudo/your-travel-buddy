@@ -1,3 +1,4 @@
+import { childCount, childAgeDescription } from "../../supabase/functions/_shared/travel-persona";
 import { useId, useState } from "react";
 import { Plane, ArrowRight, Check } from "lucide-react";
 import { demoFlights, flightScope, flightCost, selectedFlight } from "@/lib/travel-workspace";
@@ -48,11 +49,11 @@ export function FlightRecommendations({
         and prices below are simulated to demonstrate comparison and budget changes. They are not
         validated for this route or time zone. Live flight search is not connected.
       </p>
-      {!!brief.childrenAges?.length && (
+      {childCount(brief) > 0 && (
         <p className="rounded-xl border p-4 text-sm">
-          Your group includes children aged {brief.childrenAges.join(", ")}. These demo totals do
-          not calculate child fares. Confirm ages, seating, baggage and the full group price with
-          the airline.
+          Your group includes children aged {childAgeDescription(brief)}. These demo totals do not
+          calculate child fares. Confirm ages, seating, baggage and the full group price with the
+          airline.
         </p>
       )}
       <div className="offer-grid grid gap-4">

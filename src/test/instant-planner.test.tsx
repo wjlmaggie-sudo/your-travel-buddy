@@ -48,23 +48,23 @@ describe("guest workspace", () => {
     fireEvent.change(screen.getByLabelText("How many people?"), { target: { value: "4" } });
     go("Family");
     fireEvent.change(screen.getByLabelText("Children in your group"), { target: { value: "2" } });
-    fireEvent.change(screen.getByLabelText("Child 1 age"), { target: { value: "3" } });
-    fireEvent.change(screen.getByLabelText("Child 2 age"), { target: { value: "9" } });
+    fireEvent.change(screen.getByLabelText("Child 1 age range"), { target: { value: "0-3" } });
+    fireEvent.change(screen.getByLabelText("Child 2 age range"), { target: { value: "7-10" } });
     start("");
-    expect(screen.getByText(/^Family planning.*3, 9/)).toBeVisible();
-    expect(readGuestSimulation()?.childrenAges).toEqual([3, 9]);
+    expect(screen.getByText(/^Family planning.*0–3, 7–10/)).toBeVisible();
+    expect(readGuestSimulation()?.childrenAgeRanges).toEqual(["0-3", "7-10"]);
     expect(
       readGuestSimulation()?.ideas?.days[0]?.items.some((i) => i.title.includes("nap break")),
     ).toBe(true);
     expect(readGuestSimulation()?.budget).toBe(1500);
     cleanup();
     setup();
-    expect(screen.getByText(/^Family planning.*3, 9/)).toBeVisible();
+    expect(screen.getByText(/^Family planning.*0–3, 7–10/)).toBeVisible();
     go("Save my whole plan");
     await screen.findByRole("button", { name: "Sign in or create an account" });
     go("Sign in or create an account");
     expect(readPlannerDraft()?.persona).toBe("family");
-    expect(readPlannerDraft()?.childrenAges).toEqual([3, 9]);
+    expect(readPlannerDraft()?.childrenAgeRanges).toEqual(["0-3", "7-10"]);
     expect(paidAI).not.toHaveBeenCalled();
   }, 15000);
 

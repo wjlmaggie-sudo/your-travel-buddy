@@ -1,3 +1,7 @@
+import {
+  activityAgeBands,
+  childAgeDescription,
+} from "../../supabase/functions/_shared/travel-persona";
 import type { PersonaDetails } from "../../supabase/functions/_shared/travel-persona";
 import type { TripIdeas } from "../../supabase/functions/_shared/trip-ideas";
 export type { PersonaDetails };
@@ -12,10 +16,12 @@ export const PERSONAS = [
 ] as const;
 export function personaSummary(value: PersonaDetails) {
   const label = PERSONAS.find((p) => p.id === value.persona)?.label;
-  const ages = value.childrenAges ?? [];
+  const ages = activityAgeBands(value);
   return [
     label ? `${label} planning` : "",
-    ages.length ? `Children's ages at travel: ${ages.join(", ")}` : "",
+    ages.length
+      ? `Children's ${value.childrenAgeRanges?.length ? "age ranges" : "ages"} at travel: ${childAgeDescription(value)}`
+      : "",
   ]
     .filter(Boolean)
     .join(" · ");
@@ -24,9 +30,9 @@ export function personaSummary(value: PersonaDetails) {
 /** Local preference rules, not venue age certification, live availability or a paid model. */
 export function applyPersona(plan: TripIdeas, input: PersonaDetails & { destination: string }) {
   if (!input.persona) return plan;
-  const ages = input.childrenAges ?? [];
-  const young = ages.some((age) => age <= 5);
-  const school = ages.some((age) => age >= 6 && age <= 11);
+  const ages = activityAgeBands(input);
+  const young = ages.some((age) => age === "0-3" || age === "4-6");
+  const school = ages.some((age) => age === "7-10");
   const location = input.destination;
   const note =
     "Suggested outline: check opening hours, access, admission and travel time before visiting.";
@@ -98,7 +104,7 @@ export function applyPersona(plan: TripIdeas, input: PersonaDetails & { destinat
                 200,
               ),
             location: original.location,
-            notes: `${young ? "Favor a short visit with frequent breaks; skip strenuous or long ticketed visits if unsuitable." : school ? "Look for shapes, colors and stories together; choose a hands-on option only after checking age suitability." : ages.length ? "Let teenagers choose a theme, take photos and explore local stories together." : "Choose one main experience together and adapt to everyone's interests and mobility."} ${ages.length ? `Suggested for the entered ages ${ages.join(", ")}; venue age restrictions and child prices are unverified.` : "No children assumed. Add ages if children are traveling."} ${note}`,
+            notes: `${young ? "Favor a short visit with frequent breaks; skip strenuous or long ticketed visits if unsuitable." : school ? "Look for shapes, colors and stories together; choose a hands-on option only after checking age suitability." : ages.length ? "Let teenagers choose a theme, take photos and explore local stories together." : "Choose one main experience together and adapt to everyone's interests and mobility."} ${ages.length ? `Suggested for the entered ages ${childAgeDescription(input)}; venue age restrictions and child prices are unverified.` : "No children assumed. Add ages if children are traveling."} ${note}`,
           },
           {
             time: "12:00",
