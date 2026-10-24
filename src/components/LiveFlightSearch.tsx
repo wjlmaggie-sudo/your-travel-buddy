@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
+import { resolveFlightAirport, type FlightAirport } from "@/lib/flight-airports";
 import { flightEndpoint, searchFlights } from "@/lib/flight-search";
 import type { FlightResult } from "../../supabase/functions/_shared/flight-search";
 import type { StayBrief } from "@/lib/stay-planning";
@@ -8,10 +9,12 @@ import { childCount } from "../../supabase/functions/_shared/travel-persona";
 
 export function LiveFlightSearch({ brief, departure }: { brief: StayBrief; departure: string }) {
   const id = useId();
-  const [origin, setOrigin] = useState(/^[A-Z]{3}$/.test(departure) ? departure : "");
-  const [destination, setDestination] = useState(
-    /^[A-Z]{3}$/.test(brief.destination) ? brief.destination : "",
-  );
+  const [origin, setOrigin] = useState(departure);
+  const [destination, setDestination] = useState(brief.destination);
+  const [resolved, setResolved] = useState<{
+    origin: FlightAirport;
+    destination: FlightAirport;
+  } | null>(null);
   const [adults, setAdults] = useState(brief.travelers - childCount(brief));
   const [children, setChildren] = useState(childCount(brief));
   const [infants, setInfants] = useState(0);
@@ -32,10 +35,11 @@ export function LiveFlightSearch({ brief, departure }: { brief: StayBrief; depar
   useEffect(() => {
     controller.current?.abort();
     setResult(null);
+    setResolved(null);
     setError("");
     setBusy(false);
-    setOrigin(/^[A-Z]{3}$/.test(departure) ? departure : "");
-    setDestination(/^[A-Z]{3}$/.test(brief.destination) ? brief.destination : "");
+    setOrigin(departure);
+    setDestination(brief.destination);
     setAdults(brief.travelers - childCount(brief));
     setChildren(childCount(brief));
     setInfants(0);
@@ -45,6 +49,7 @@ export function LiveFlightSearch({ brief, departure }: { brief: StayBrief; depar
     controller.current?.abort();
     setBusy(false);
     setResult(null);
+    setResolved(null);
     setError("");
   };
   if (!flightEndpoint()) return null;
@@ -55,12 +60,13 @@ export function LiveFlightSearch({ brief, departure }: { brief: StayBrief; depar
           Search real flights
         </h3>
         <p className="mt-1 text-sm text-muted-foreground">
-          {departure} → {brief.destination} · {brief.start} to {endDate(brief.start, brief.days)} ·
-          Economy · {brief.currency}
+          {origin} → {destination} · {brief.start} to {endDate(brief.start, brief.days)} · Economy ·{" "}
+          {brief.currency}
         </p>
         <p className="mt-2 text-sm">
-          Confirm the airport codes and passenger ages below. Infants travel in their own seat;
-          lap-infant searches are not supported here.
+          Your trip’s departure and destination are filled in. Change either city or airport below
+          if you prefer. Infants travel in their own seat; lap-infant searches are not supported
+          here.
         </p>
       </div>
       <form
@@ -74,10 +80,18 @@ export function LiveFlightSearch({ brief, departure }: { brief: StayBrief; depar
           setError("");
           setResult(null);
           try {
+            const [from, to] = await Promise.all([
+              resolveFlightAirport(origin, current.signal),
+              resolveFlightAirport(destination, current.signal),
+            ]);
+            if (current.signal.aborted) return;
+            if (from.code === to.code)
+              throw new Error("Choose different departure and arrival airports.");
+            setResolved({ origin: from, destination: to });
             const data = await searchFlights(
               {
-                origin,
-                destination,
+                origin: from.code,
+                destination: to.code,
                 outbound: brief.start,
                 returning: endDate(brief.start, brief.days),
                 adults,
@@ -98,8 +112,8 @@ export function LiveFlightSearch({ brief, departure }: { brief: StayBrief; depar
       >
         {(
           [
-            ["origin", "Departure airport code", origin, setOrigin],
-            ["destination", "Arrival airport code", destination, setDestination],
+            ["origin", "Departure city or airport", origin, setOrigin],
+            ["destination", "Destination city or airport", destination, setDestination],
           ] as const
         ).map(([key, label, value, setter]) => (
           <label key={key} htmlFor={`${id}-${key}`} className="text-sm">
@@ -108,13 +122,12 @@ export function LiveFlightSearch({ brief, departure }: { brief: StayBrief; depar
               id={`${id}-${key}`}
               className="mt-1 w-full rounded-lg border bg-background p-2"
               value={value}
-              placeholder={key === "origin" ? "e.g. BER" : "e.g. NRT"}
+              placeholder={key === "origin" ? "e.g. Berlin or BER" : "e.g. Lisbon or LIS"}
               required
-              pattern="[A-Z]{3}"
-              maxLength={3}
+              maxLength={120}
               onChange={(e) => {
                 edit();
-                setter(e.target.value.toUpperCase().replace(/[^A-Z]/g, ""));
+                setter(e.target.value);
               }}
             />
           </label>
@@ -168,6 +181,13 @@ export function LiveFlightSearch({ brief, departure }: { brief: StayBrief; depar
           <p className="text-sm">Choose at least two travel days for a return-flight search.</p>
         )}
       </form>
+      {resolved && (
+        <p className="rounded-xl bg-muted/40 p-3 text-sm" role="status">
+          Airports used: {resolved.origin.name} ({resolved.origin.code}) →{" "}
+          {resolved.destination.name} ({resolved.destination.code}). Change either city or enter
+          another airport code above to search a different route.
+        </p>
+      )}
       {error && (
         <p role="alert" className="rounded-xl border p-3 text-sm">
           {error}

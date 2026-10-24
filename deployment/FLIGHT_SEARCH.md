@@ -21,9 +21,12 @@ Store `SERPAPI_API_KEY` only in Supabase Edge Function secrets. Never add it to 
 configuration: `VITE_FLIGHT_SEARCH_URL` and the existing `VITE_AI_GATEWAY_KEY`.
 The original accounts/trips backend remains unchanged.
 
-Searches run only on an explicit button press. Airport codes and passenger age
-categories are confirmed in the form; no city-to-airport guessing or extra paid
-lookup calls. Infants use their own seat; lap-infant searches are unsupported.
+Searches run only on an explicit button press. Departure and destination default to the trip and remain editable. City or airport
+inputs resolve against a bundled public-domain scheduled-airport directory; an
+unmatched city uses the existing geocoder to find a nearby airport within 150 km.
+The chosen airport names/codes are displayed, and users can override them. No
+SerpApi searches are used for location resolution. Passenger age categories remain
+editable in the form. Infants use their own seat; lap-infant searches are unsupported.
 Identical requests share an in-flight request and a ten-minute memory cache.
 SerpApi may also serve its own cached results. Each upstream search uses one
 request; there is no automatic return-flight or booking-option lookup.
