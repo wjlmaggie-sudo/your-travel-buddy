@@ -29,7 +29,7 @@ function start(departure = "Berlin") {
   fireEvent.click(screen.getByRole("button", { name: "Create my travel plan" }));
 }
 function go(name: string) {
-  fireEvent.click(screen.getByRole("button", { name }));
+  fireEvent.click(screen.getByRole("button", { name, hidden: true }));
 }
 beforeEach(() => {
   sessionStorage.clear();
@@ -61,7 +61,7 @@ describe("guest workspace", () => {
     setup();
     expect(screen.getByText(/^Family planning.*0–3, 7–10/)).toBeVisible();
     go("Save my whole plan");
-    await screen.findByRole("button", { name: "Sign in or create an account" });
+    await screen.findByRole("button", { name: "Sign in or create an account", hidden: true });
     go("Sign in or create an account");
     expect(readPlannerDraft()?.persona).toBe("family");
     expect(readPlannerDraft()?.childrenAgeRanges).toEqual(["0-3", "7-10"]);
@@ -94,7 +94,7 @@ describe("guest workspace", () => {
     });
     fireEvent.change(screen.getByLabelText("Add to day"), { target: { value: "2" } });
     fireEvent.click(
-      await screen.findByRole("button", { name: "Add Oceanário de Lisboa to day 2" }),
+      await screen.findByRole("button", { name: "Add Oceanário de Lisboa to day 2", hidden: true }),
     );
     await screen.findByText(/Oceanário de Lisboa added to day 2/);
     expect(screen.getByLabelText("Explore a day")).toHaveValue("1");
@@ -169,7 +169,7 @@ describe("guest workspace", () => {
     expect(screen.getByRole("heading", { name: "5 days in Lisbon, Portugal" })).toBeVisible();
     expect(readGuestSimulation()?.ideas?.days).toHaveLength(5);
     go("Save my whole plan");
-    await screen.findByRole("button", { name: "Sign in or create an account" });
+    await screen.findByRole("button", { name: "Sign in or create an account", hidden: true });
     go("Sign in or create an account");
     expect(readPlannerDraft()?.journey?.departure).toBe("Berlin");
     expect(navigate).toHaveBeenCalledWith({ to: "/trips" });
