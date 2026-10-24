@@ -1,9 +1,19 @@
 # Travel planning personas
 
-Product and implementation specifications, prepared 24 October 2026. **These documents
-propose future behavior; this documentation change does not activate personas in the app.**
+Product and implementation specifications, prepared 24 October 2026. The initial
+local integration now provides optional persona cards in the guest planner and saved
+trip settings, children’s ages at travel, age-aware Family activities and breaks,
+Business work placeholders, and Budget Travel activity alternatives. Persona and ages
+carry through guest refresh, account saving and PDF export without changing the budget.
+
+The detailed specifications also describe **future work**, including verified venue
+age restrictions, routing/meeting feasibility, per-activity locks, protected contingency
+and child-aware provider occupancy. Current rules provide editable suggestions, not
+certified suitability or live child fares. Groups with children do not request adult-only
+hotel sandbox quotes; their external hotel search includes the entered ages.
+
 Three subagents independently developed one persona each; the parent agent reviewed the
-shared constraints and integration guidance.
+shared constraints and integrated the first local planning rules.
 
 | Persona | Main planning goal | Activity and schedule emphasis | Specification |
 | --- | --- | --- | --- |
@@ -64,14 +74,14 @@ be collected before issuing any future child-aware provider search.
   three test previews. Flights remain labeled demos/external search links. No real-time
   multi-site hotel comparison or production booking is activated by this work.
 
-## Suggested delivery order
+## Further delivery order
 
-1. Agree on the three persona specifications and their acceptance scenarios.
-2. Add an optional validated persona field and minimal preference data to draft/saved-trip
-   flows, preserving old plans and avoiding sensitive employer/child identity data.
-3. Implement shared feasibility checks and persona ranking in the local planner; keep
+1. Review the initial local persona rules against the detailed acceptance scenarios.
+2. Extend optional persona preferences with work commitments, pace and explicit room
+   arrangements, preserving old plans and avoiding sensitive identity data.
+3. Extend shared feasibility checks and structured venue ranking in the local planner; keep
    destination knowledge separate from preference rules.
-4. Add reason labels, controlled regeneration and persona context in PDF output.
+4. Extend reason labels and per-activity preservation; PDF output already includes persona context.
 5. Verify the same trip under each persona: distinguish activity choices/pace, preserve
    exact budget arithmetic and edits, and disclose missing provider/occupancy data.
 

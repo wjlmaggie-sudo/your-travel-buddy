@@ -47,7 +47,7 @@ export function flightSearch(brief: StayBrief, departure: string) {
   return (
     "https://www.google.com/travel/flights?" +
     new URLSearchParams({
-      q: `Return flights from ${departure} to ${brief.destination}, departing ${brief.start}, returning ${endDate(brief.start, brief.days)}, ${brief.travelers} adults`,
+      q: `Return flights from ${departure} to ${brief.destination}, departing ${brief.start}, returning ${endDate(brief.start, brief.days)}, ${brief.travelers - (brief.childrenAges?.length ?? 0)} adults${brief.childrenAges?.length ? ` and ${brief.childrenAges.length} children ages ${brief.childrenAges.join(", ")}` : ""}`,
     })
   );
 }

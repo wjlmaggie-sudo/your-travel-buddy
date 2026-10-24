@@ -1,3 +1,4 @@
+import { personaSummary } from "./travel-personas";
 import { hotelSearchEndpoint } from "./hotel-search";
 import { streetMapWays, streetMapSvg } from "./pdf-street-map";
 import type { Content, TDocumentDefinitions } from "pdfmake/interfaces";
@@ -188,6 +189,14 @@ export async function buildTripPdf(
     paragraph(
       `${b.start} to ${endDate(b.start, b.days)} · ${b.days} days · ${b.travelers} travelers · ${b.style}`,
     ),
+    paragraph(personaSummary(b)),
+    ...(b.childrenAges?.length
+      ? [
+          paragraph(
+            "Child ages inform activity ideas, not verified venue suitability or child fares. Check room occupancy, age restrictions and the complete family price before booking.",
+          ),
+        ]
+      : []),
     paragraph(trip.interest ?? ""),
     paragraph(trip.summary ?? "Your editable travel itinerary and destination reference guide."),
     {

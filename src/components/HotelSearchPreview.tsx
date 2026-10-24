@@ -45,12 +45,14 @@ export function HotelSearchPreview({
   const [view, setView] = useState<Preview | null>(null);
   const lastInput = useRef<HotelSearchInput | null>(null);
   const configured = !!hotelSearchEndpoint();
+  const hasChildren = !!brief.childrenAges?.length;
   const context = useMemo(
     () => ({
       destination: brief.destination,
       start: brief.start,
       days: brief.days,
       travelers: brief.travelers,
+      childrenAges: brief.childrenAges,
       currency: brief.currency,
       allowance,
       nationality,
@@ -60,6 +62,7 @@ export function HotelSearchPreview({
       brief.start,
       brief.days,
       brief.travelers,
+      brief.childrenAges,
       brief.currency,
       allowance,
       nationality,
@@ -72,7 +75,8 @@ export function HotelSearchPreview({
   const busy = current?.phase === "loading" || (active && configured && allowance > 0 && !current);
 
   useEffect(() => {
-    if (!active || !configured || context.allowance <= 0 || context.days <= 1) return;
+    if (!active || !configured || hasChildren || context.allowance <= 0 || context.days <= 1)
+      return;
     const controller = new AbortController();
     // Comfort/budget controls can change rapidly. Only the settled visible plan is searched.
     const timer = window.setTimeout(() => {
@@ -126,7 +130,31 @@ export function HotelSearchPreview({
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [active, configured, context, chosenId, key, attempt]);
+  }, [active, configured, hasChildren, context, chosenId, key, attempt]);
+
+  if (hasChildren)
+    return (
+      <section aria-label="Hotel provider preview" className="rounded-2xl border bg-card p-5">
+        <h3 className="text-lg font-semibold">A stay for your whole family</h3>
+        <p className="mt-2 text-sm">
+          Hotel budget: {dailyMoney(allowance, brief.currency)} for {brief.days - 1} nights and{" "}
+          {brief.travelers} travelers, including children aged {brief.childrenAges!.join(", ")}.
+        </p>
+        <p className="mt-3 text-sm text-muted-foreground">
+          Child occupancy is not supported by the current hotel test API. Your itinerary uses the
+          entered ages, but we will not show adult-only quotes as family prices. Confirm room
+          arrangements and the complete price with the booking provider.
+        </p>
+        <a
+          className="mt-3 inline-block text-sm text-secondary underline"
+          href={bookingSearch(brief, Math.ceil(brief.travelers / 2))}
+          target="_blank"
+          rel="noreferrer"
+        >
+          Search family hotels on Booking.com ↗
+        </a>
+      </section>
+    );
 
   return (
     <section aria-label="Hotel provider preview" className="rounded-2xl border bg-card p-5">
@@ -164,7 +192,7 @@ export function HotelSearchPreview({
               <p>
                 {result.offers.length
                   ? `${result.offers.length} sandbox hotel suggestions within your hotel budget.`
-                  : "No test hotels in the returned sample fit this hotel budget. Adjust hotel comfort or your trip budget, or compare on the external search."}
+                  : "No test hotels in the returned sample fit this hotel budget. Adjust your trip budget, or compare on the external search."}
               </p>
             ) : (
               <p>Suggestions load automatically when you open Hotels.</p>

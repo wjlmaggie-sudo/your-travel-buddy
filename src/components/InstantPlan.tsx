@@ -1,3 +1,4 @@
+import { personaSummary } from "@/lib/travel-personas";
 import { DownloadTripPdf } from "./DownloadTripPdf";
 import { WorkspacePanel, type BudgetSnapshot } from "./TravelWorkspace";
 import { SavePlanButton } from "./SavePlanButton";
@@ -113,6 +114,9 @@ export function InstantPlan({
           <p className="mt-3 text-sm text-muted-foreground">
             {brief.start} · {brief.travelers} travelers · an editable template plan
           </p>
+          {personaSummary(brief) && (
+            <p className="mt-3 text-sm font-medium text-secondary">{personaSummary(brief)}</p>
+          )}
           <details className="mt-3">
             <summary className="cursor-pointer text-xs text-muted-foreground">
               About these suggestions

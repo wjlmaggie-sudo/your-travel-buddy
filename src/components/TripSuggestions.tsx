@@ -70,6 +70,8 @@ export function TripSuggestions({
           budget: Number(trip.budget),
           currency: trip.currency,
           style: preferences.preference.style,
+          persona: preferences.preference.persona,
+          childrenAges: preferences.preference.childrenAges,
         },
         journey,
         stayChoice,
@@ -88,6 +90,8 @@ export function TripSuggestions({
                 budget: Number(trip.budget),
                 currency: trip.currency,
                 style: preferences.preference.style,
+                persona: preferences.preference.persona,
+                childrenAges: preferences.preference.childrenAges,
               },
               journey,
             ),
@@ -101,6 +105,8 @@ export function TripSuggestions({
       budget: Number(trip.budget),
       currency: trip.currency,
       style: preferences.preference.style,
+      persona: preferences.preference.persona,
+      childrenAges: preferences.preference.childrenAges,
     },
     stayChoice,
   );
@@ -148,6 +154,8 @@ export function TripSuggestions({
         budget: Number(trip.budget),
         currency: trip.currency,
         style: preferences.preference.style,
+        persona: preferences.preference.persona,
+        childrenAges: preferences.preference.childrenAges,
         places,
       };
       const ideas = journey

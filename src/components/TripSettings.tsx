@@ -1,9 +1,11 @@
+import { PersonaPreferences } from "./PersonaPreferences";
+import { personaSummary } from "@/lib/travel-personas";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
-import { useTripPreferences } from "@/lib/travel-preferences";
+import { useTripPreferences, type TripPreferences } from "@/lib/travel-preferences";
 import { budgetAllocation, STYLES, INTERESTS, estimatedBudget } from "@/lib/planning";
 import type { TravelStyle } from "@/lib/travel-data";
 import { tripDays, money } from "@/lib/trips";
@@ -19,11 +21,7 @@ export function TripSettings({
   includesFlights?: boolean;
 }) {
   const prefs = useTripPreferences(trip.id);
-  const [draft, setDraft] = useState<{
-    travelers: number;
-    style: TravelStyle;
-    interest: string;
-  } | null>(null);
+  const [draft, setDraft] = useState<TripPreferences | null>(null);
   const [budget, setBudget] = useState(Number(trip.budget));
   const [busy, setBusy] = useState(false);
   const qc = useQueryClient();
@@ -66,6 +64,9 @@ export function TripSettings({
             {money(Number(trip.budget) / prefs.preference.travelers / days, trip.currency)} per
             person / day
           </p>
+          {personaSummary(prefs.preference) && (
+            <p className="mt-2 text-sm text-secondary">{personaSummary(prefs.preference)}</p>
+          )}
           <form onSubmit={save} className="mt-5 grid items-end gap-4 sm:grid-cols-2 lg:grid-cols-5">
             <div>
               <Label htmlFor="settings-travelers">Travelers</Label>
@@ -120,6 +121,13 @@ export function TripSettings({
                 ))}
               </select>
             </div>
+            <div className="sm:col-span-2 lg:col-span-5">
+              <PersonaPreferences
+                value={value}
+                travelers={value.travelers}
+                onChange={(next) => setDraft({ ...value, ...next })}
+              />
+            </div>
             <Button disabled={busy || prefs.isPending}>{busy ? "Saving…" : "Save settings"}</Button>
           </form>
           {trip.currency === "EUR" && (
@@ -145,7 +153,8 @@ export function TripSettings({
           <p className="mt-3 text-xs text-muted-foreground">
             Suggested allocation, not actual spending.{" "}
             {includesFlights ? "Flights are included in the overview below." : "Flights excluded."}{" "}
-            Use the Budget tab to record expenses.
+            Use the Budget tab to record expenses. Persona or age changes apply when you generate a
+            new suggestion; saved activities are kept until you review and save replacements.
           </p>
         </>
       )}

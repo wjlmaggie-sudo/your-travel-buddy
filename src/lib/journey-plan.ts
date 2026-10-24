@@ -21,6 +21,8 @@ export function createJourneyIdeas(
       : brief.style;
   const ideas = createStarterIdeas(
     {
+      persona: brief.persona,
+      childrenAges: brief.childrenAges,
       destination: brief.destination,
       days: brief.days,
       travelers: brief.travelers,

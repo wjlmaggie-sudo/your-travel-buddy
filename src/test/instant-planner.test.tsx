@@ -44,6 +44,50 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 describe("guest workspace", () => {
+  it("uses child ages in family plans and retains them through refresh and save handoff", async () => {
+    setup();
+    fireEvent.change(screen.getByLabelText("How many people?"), { target: { value: "4" } });
+    go("Family");
+    fireEvent.change(screen.getByLabelText("Children in your group"), { target: { value: "2" } });
+    fireEvent.change(screen.getByLabelText("Child 1 age"), { target: { value: "3" } });
+    fireEvent.change(screen.getByLabelText("Child 2 age"), { target: { value: "9" } });
+    start("");
+    expect(screen.getByText(/^Family planning.*3, 9/)).toBeVisible();
+    expect(readGuestSimulation()?.childrenAges).toEqual([3, 9]);
+    expect(
+      readGuestSimulation()?.ideas?.days[0]?.items.some((i) => i.title.includes("nap break")),
+    ).toBe(true);
+    expect(readGuestSimulation()?.budget).toBe(1500);
+    cleanup();
+    setup();
+    expect(screen.getByText(/^Family planning.*3, 9/)).toBeVisible();
+    go("Save my whole plan");
+    await screen.findByRole("button", { name: "Sign in or create an account" });
+    go("Sign in or create an account");
+    expect(readPlannerDraft()?.persona).toBe("family");
+    expect(readPlannerDraft()?.childrenAges).toEqual([3, 9]);
+    expect(paidAI).not.toHaveBeenCalled();
+  }, 15000);
+
+  it("reviews a persona rebuild before replacing manually edited activities", () => {
+    setup();
+    start("");
+    fireEvent.change(screen.getAllByLabelText("Activity")[0]!, {
+      target: { value: "Keep my own activity" },
+    });
+    go("Edit trip details");
+    go("Business");
+    go("Create my travel plan");
+    expect(screen.getByRole("dialog", { name: "Rebuild this simulation?" })).toBeVisible();
+    go("Keep my edits");
+    expect(readGuestSimulation()?.ideas?.days[0]?.items[0]?.title).toBe("Keep my own activity");
+    go("Create my travel plan");
+    go("Rebuild and replace edits");
+    expect(readGuestSimulation()?.persona).toBe("business");
+    expect(
+      readGuestSimulation()?.ideas?.days[0]?.items.some((i) => i.title.includes("work or meeting")),
+    ).toBe(true);
+  }, 15000);
   it("generates a complete plan without auth or automatic scrolling and keeps tools separate", () => {
     setup();
     const focus = vi.spyOn(HTMLElement.prototype, "focus");

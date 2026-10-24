@@ -35,7 +35,7 @@ export function HotelRecommendations({
         </p>
         <h2 className="mt-2 text-3xl font-semibold">Find a stay that fits.</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          {brief.destination} · {brief.days - 1} nights · {brief.travelers} adults · whole-stay
+          {brief.destination} · {brief.days - 1} nights · {brief.travelers} travelers · whole-stay
           totals
         </p>
       </div>
@@ -45,7 +45,7 @@ export function HotelRecommendations({
         allowance={allowance}
         active={active}
       />
-      {!hotelSearchEndpoint() && (
+      {!hotelSearchEndpoint() && !brief.childrenAges?.length && (
         <details open className="space-y-4">
           <summary className="cursor-pointer text-sm font-medium text-muted-foreground">
             Try demonstration hotels (optional)

@@ -1,8 +1,9 @@
+import type { PersonaDetails } from "./travel-personas";
 import { z } from "zod";
 import { endDate, budgetAllocation, dailyBudgets } from "./planning";
 import type { TravelStyle } from "./travel-data";
 import { supabase } from "@/integrations/supabase/client";
-export type StayBrief = {
+export type StayBrief = PersonaDetails & {
   flightBudget?: number | undefined;
   hotelComfort?: "Simple" | "Comfortable" | "Premium" | undefined;
   destination: string;
@@ -31,6 +32,7 @@ export function stayScope(brief: StayBrief) {
     brief.days,
     brief.travelers,
     brief.currency,
+    ...(brief.childrenAges?.length ? [brief.childrenAges] : []),
   ]);
 }
 export function stayCost(choice: StayChoice, brief: StayBrief) {
@@ -74,11 +76,12 @@ export function bookingSearch(brief: StayBrief, rooms: number, property?: string
       ss: property ? `${property}, ${brief.destination}` : brief.destination,
       checkin: brief.start,
       checkout: endDate(brief.start, brief.days),
-      group_adults: String(brief.travelers),
-      group_children: "0",
+      group_adults: String(brief.travelers - (brief.childrenAges?.length ?? 0)),
+      group_children: String(brief.childrenAges?.length ?? 0),
       no_rooms: String(rooms),
       selected_currency: brief.currency,
-    })
+    }) +
+    (brief.childrenAges ?? []).map((age) => `&age=${age}`).join("")
   );
 }
 export async function readStayChoice(tripId: string) {

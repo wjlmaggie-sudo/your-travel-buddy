@@ -1,15 +1,19 @@
+import { personaFields, validParty } from "../../supabase/functions/_shared/travel-persona";
 import { queryOptions, useQuery, useQueryClient } from "@tanstack/react-query";
 import { collectPages } from "./pagination";
 import type { Tables } from "@/integrations/supabase/types";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 
-const preferencesSchema = z.object({
-  travelers: z.number().int().min(1).max(20).default(2),
-  style: z.enum(["Budget", "Balanced", "Luxury"]).default("Balanced"),
-  interest: z.string().default("Food & culture"),
-  packing: z.array(z.string()).default([]),
-});
+const preferencesSchema = z
+  .object({
+    ...personaFields,
+    travelers: z.number().int().min(1).max(20).default(2),
+    style: z.enum(["Budget", "Balanced", "Luxury"]).default("Balanced"),
+    interest: z.string().default("Food & culture"),
+    packing: z.array(z.string()).default([]),
+  })
+  .refine(validParty, { message: "Enter valid child ages and include at least one adult." });
 export type TripPreferences = z.infer<typeof preferencesSchema>;
 export const DEFAULT_PREFERENCES = preferencesSchema.parse({});
 const missingTable = (error: { code?: string } | null) =>
@@ -38,7 +42,19 @@ export const preferencesQuery = () =>
         });
         for (const row of rows) {
           const preference = preferencesSchema.safeParse(row);
-          if (preference.success) legacy[row.trip_id] = preference.data;
+          if (preference.success) {
+            const extra = legacy[row.trip_id];
+            const merged = preferencesSchema.safeParse({
+              ...preference.data,
+              persona: extra?.persona,
+              childrenAges: extra?.childrenAges,
+            });
+            if (!merged.success)
+              throw new Error(
+                "Your saved group details need review before searching. Please check travelers and child ages.",
+              );
+            legacy[row.trip_id] = merged.data;
+          }
         }
         return legacy;
       }
@@ -53,11 +69,20 @@ export async function saveTripPreferences(tripId: string, preference: TripPrefer
   );
   const all = parsed.success ? parsed.data : {};
   const checked = preferencesSchema.parse(preference);
+  const { persona, childrenAges, ...base } = checked;
   const database = await supabase
     .from("trip_preferences")
-    .upsert({ trip_id: tripId, ...checked }, { onConflict: "trip_id" });
-  if (!database.error) return;
-  if (!missingTable(database.error)) throw database.error;
+    .upsert({ trip_id: tripId, ...base }, { onConflict: "trip_id" });
+  // Existing table columns remain unchanged; optional persona/party data lives in account metadata.
+  if (database.error && !missingTable(database.error)) throw database.error;
+  if (
+    !database.error &&
+    !persona &&
+    !childrenAges?.length &&
+    !all[tripId]?.persona &&
+    !all[tripId]?.childrenAges?.length
+  )
+    return;
   const result = await supabase.auth.updateUser({
     data: { travel_preferences: { ...all, [tripId]: preferencesSchema.parse(preference) } },
   });

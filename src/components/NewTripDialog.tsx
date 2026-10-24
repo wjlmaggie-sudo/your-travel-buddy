@@ -1,3 +1,5 @@
+import { personaFields, validParty } from "../../supabase/functions/_shared/travel-persona";
+import { PersonaPreferences } from "./PersonaPreferences";
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
@@ -49,6 +51,8 @@ export function NewTripDialog({
     currency: "EUR",
     style: "Balanced" as TravelStyle,
     interest: template?.category ?? "Food & culture",
+    persona: imported?.persona,
+    childrenAges: imported?.childrenAges,
     ...imported,
   }));
   const [requestAi, setRequestAi] = useState(!template && !imported?.ideas);
@@ -58,6 +62,8 @@ export function NewTripDialog({
   async function create(event: React.FormEvent) {
     event.preventDefault();
     if (
+      !validParty(f) ||
+      !personaFields.childrenAges.safeParse(f.childrenAges).success ||
       !f.destination.trim() ||
       !Number.isInteger(f.days) ||
       f.days < 1 ||
@@ -68,7 +74,7 @@ export function NewTripDialog({
       !Number.isFinite(f.budget) ||
       f.budget < 0
     ) {
-      toast.error("Check your destination, days, travelers, and budget.");
+      toast.error("Check trip details and child ages (0–17); include at least one adult.");
       return;
     }
     setBusy(true);
@@ -96,6 +102,8 @@ export function NewTripDialog({
           travelers: f.travelers,
           style: f.style,
           interest: f.interest,
+          persona: f.persona,
+          childrenAges: f.childrenAges,
         });
       } catch {
         toast.error(
@@ -219,6 +227,13 @@ export function NewTripDialog({
                   />
                 </div>
               </div>
+              {!imported?.ideas && (
+                <PersonaPreferences
+                  value={f}
+                  travelers={f.travelers}
+                  onChange={(next) => setF({ ...f, ...next })}
+                />
+              )}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label htmlFor="new-travelers">Travelers</Label>

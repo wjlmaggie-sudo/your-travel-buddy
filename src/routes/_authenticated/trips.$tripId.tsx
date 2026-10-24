@@ -84,6 +84,8 @@ function TripPage() {
     budget: Number(trip.budget),
     currency: trip.currency,
     style: preferences.preference.style,
+    persona: preferences.preference.persona,
+    childrenAges: preferences.preference.childrenAges,
   };
   async function updateJourney(next: Journey) {
     setSelectionBusy(true);
@@ -206,7 +208,13 @@ function TripPage() {
             <WorkspacePanel active={tab === "flights"} label="Flights">
               {journey.data && (
                 <fieldset
-                  disabled={selectionBusy || stay.isPending || stay.isError}
+                  disabled={
+                    selectionBusy ||
+                    stay.isPending ||
+                    stay.isError ||
+                    preferences.isPending ||
+                    preferences.isError
+                  }
                   className="min-w-0"
                 >
                   <FlightRecommendations
@@ -237,7 +245,14 @@ function TripPage() {
                   className="min-w-0"
                 >
                   <HotelRecommendations
-                    active={tab === "hotels" && !selectionBusy && !stay.isPending && !stay.isError}
+                    active={
+                      tab === "hotels" &&
+                      !selectionBusy &&
+                      !stay.isPending &&
+                      !stay.isError &&
+                      !preferences.isPending &&
+                      !preferences.isError
+                    }
                     brief={brief}
                     journey={journey.data}
                     stay={stay.data}
@@ -418,6 +433,8 @@ function Itinerary({
           budget: Number(data.trip.budget),
           currency: data.trip.currency,
           style: preferences.preference.style,
+          persona: preferences.preference.persona,
+          childrenAges: preferences.preference.childrenAges,
         },
         journey,
         stay,
@@ -436,6 +453,8 @@ function Itinerary({
                 budget: Number(data.trip.budget),
                 currency: data.trip.currency,
                 style: preferences.preference.style,
+                persona: preferences.preference.persona,
+                childrenAges: preferences.preference.childrenAges,
               },
               journey,
             ),
@@ -449,6 +468,8 @@ function Itinerary({
       budget: Number(data.trip.budget),
       currency: data.trip.currency,
       style: preferences.preference.style,
+      persona: preferences.preference.persona,
+      childrenAges: preferences.preference.childrenAges,
     },
     stay,
   );

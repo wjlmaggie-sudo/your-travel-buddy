@@ -1,3 +1,4 @@
+import { PersonaPreferences } from "./PersonaPreferences";
 import { useEffect, useRef, useState } from "react";
 import { Compass, MapPin, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
@@ -83,7 +84,9 @@ export function TravelPlanner() {
       stay: undefined,
     });
     if (!parsed.success) {
-      toast.error("Enter a destination, valid dates, days, people and budget.");
+      toast.error(
+        "Check the destination, dates, budget and group. Enter every child’s age (0–17) and include at least one adult.",
+      );
       return;
     }
     if (result && edited) {
@@ -255,6 +258,11 @@ export function TravelPlanner() {
                   />
                 </div>
               </div>
+              <PersonaPreferences
+                value={draft}
+                travelers={draft.travelers}
+                onChange={(next) => setDraft({ ...draft, ...next })}
+              />
               <div>
                 <Label htmlFor="planner-departure">Departure city / airport</Label>
                 <Input

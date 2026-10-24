@@ -3,8 +3,8 @@
 ## Travel planning personas
 
 See the [Business, Family and Budget Travel specifications](docs/personas/README.md)
-for proposed activity-selection and itinerary-planning behavior. These are design
-documents; persona controls are not yet implemented.
+for activity-selection and itinerary-planning behavior. Optional persona controls and
+child ages now adapt local itineraries; the documents also describe future extensions.
 
 ## Current provider connection — 23 October 2026
 

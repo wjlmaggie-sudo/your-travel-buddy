@@ -1,3 +1,4 @@
+import { applyPersona } from "./travel-personas";
 import { TEMPLATES, type TravelStyle } from "./travel-data";
 import { curatedDay, curatedRestaurants } from "./city-guides";
 import {
@@ -57,7 +58,7 @@ export function createStarterIdeas(
   const modest = style === "Budget";
   const luxury = style === "Luxury";
   const tight = input.budget === 0 || (input.currency === "EUR" && daily / input.travelers < 40);
-  return {
+  const plan: TripIdeas = {
     summary: `${input.days}-day ${style.toLowerCase()} starter itinerary for ${input.destination}, for ${input.travelers} ${input.travelers === 1 ? "person" : "people"}. ${template ? "Adapted from a curated destination template." : "A flexible planning outline; choose and verify local venues before visiting."} This is a template-based plan, not an AI-generated itinerary. Your total group spending cap is ${input.budget.toFixed(2)} ${input.currency}, excluding flights. Budget allocations are estimates, not booking prices.${tight ? " This allowance may not cover accommodation, meals, and transport; the outline prioritizes free activities, and paid costs need a separate affordability check." : ""}${input.currency !== "EUR" ? " The selected travel style is used without currency conversion." : ""}`,
     days: Array.from({ length: input.days }, (_, index) => {
       const highlight = template?.activities[index];
@@ -156,4 +157,5 @@ export function createStarterIdeas(
       };
     }),
   };
+  return applyPersona(plan, input);
 }

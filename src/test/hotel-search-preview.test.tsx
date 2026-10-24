@@ -130,3 +130,13 @@ it("does not search for a zero accommodation allowance", async () => {
   await new Promise((resolve) => setTimeout(resolve, 450));
   expect(api.budgetHotelPreviews).not.toHaveBeenCalled();
 });
+
+it("never requests an adult-only hotel quote for a group with children", async () => {
+  render(<HotelSearchPreview brief={{ ...brief, childrenAges: [3, 9] }} allowance={500} active />);
+  expect(screen.getByText(/Child occupancy is not supported/)).toBeVisible();
+  const link = screen.getByRole("link", { name: /Search family hotels/ });
+  expect(new URL(link.getAttribute("href")!).searchParams.getAll("age")).toEqual(["3", "9"]);
+  await new Promise((resolve) => setTimeout(resolve, 450));
+  expect(api.hotelDestinations).not.toHaveBeenCalled();
+  expect(api.budgetHotelPreviews).not.toHaveBeenCalled();
+});

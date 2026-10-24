@@ -116,8 +116,10 @@ export function AccommodationPlanner({
         <>
           <p className="mt-2 text-sm text-muted-foreground">
             {brief.start} → {brief.days > 1 ? budget.daily.at(-1)?.date : brief.start} ·{" "}
-            {budget.nights} nights · {brief.travelers} travelers. Search assumes all guests are
-            adults; change ages on the booking site.
+            {budget.nights} nights · {brief.travelers} travelers.{" "}
+            {brief.childrenAges?.length
+              ? "Children’s ages are included in the booking search; confirm room occupancy and final prices there."
+              : "Search assumes all guests are adults; update the party on the booking site if needed."}
           </p>
           <div className="mt-4 grid gap-3 sm:grid-cols-3">
             {[

@@ -44,6 +44,7 @@ export function flightScope(brief: StayBrief, departure: string) {
     brief.days,
     brief.travelers,
     brief.currency,
+    ...(brief.childrenAges?.length ? [brief.childrenAges] : []),
   ]);
 }
 export function selectedFlight(brief: StayBrief, journey: WorkspaceJourney) {

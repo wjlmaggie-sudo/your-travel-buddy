@@ -39,7 +39,7 @@ export function FlightRecommendations({
           Three ways to take off.
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          {journey.departure} → {brief.destination} · {brief.travelers} adults · group return
+          {journey.departure} → {brief.destination} · {brief.travelers} travelers · group return
           allowance {money(journey.flightBudget)}
         </p>
       </div>
@@ -48,6 +48,13 @@ export function FlightRecommendations({
         and prices below are simulated to demonstrate comparison and budget changes. They are not
         validated for this route or time zone. Live flight search is not connected.
       </p>
+      {!!brief.childrenAges?.length && (
+        <p className="rounded-xl border p-4 text-sm">
+          Your group includes children aged {brief.childrenAges.join(", ")}. These demo totals do
+          not calculate child fares. Confirm ages, seating, baggage and the full group price with
+          the airline.
+        </p>
+      )}
       <div className="offer-grid grid gap-4">
         {demoFlights(brief, journey).map((option) => (
           <article

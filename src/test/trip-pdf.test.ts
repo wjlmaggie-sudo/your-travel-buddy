@@ -60,6 +60,16 @@ const trip: PdfTrip = {
   expenses: [{ amount: 23.5, category: "food", note: "Lunch", spent_on: "2026-11-01" }],
 };
 describe("complete PDF document", () => {
+  it("includes the selected persona and child ages in the downloaded guide", async () => {
+    const { definition } = await buildTripPdf({
+      ...trip,
+      brief: { ...trip.brief, travelers: 4, persona: "family", childrenAges: [3, 9] },
+    });
+    const text = JSON.stringify(definition);
+    expect(text).toContain("Family planning");
+    expect(text).toContain("Children's ages at travel: 3, 9");
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     hotelEndpoint.mockReturnValue(null);

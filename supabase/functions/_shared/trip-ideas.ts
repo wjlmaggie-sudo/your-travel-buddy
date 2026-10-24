@@ -1,23 +1,30 @@
+import { personaFields, validParty } from "./travel-persona.ts";
 import { z } from "zod";
 
-export const tripIdeaInput = z.object({
-  destination: z.string().trim().min(1).max(200),
-  days: z.number().int().min(1).max(30),
-  startDate: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/)
-    .optional(),
-  accommodationTotal: z.number().finite().min(0).max(1000000).optional(),
-  interests: z.string().max(500),
-  travelers: z.number().int().min(1).max(20),
-  budget: z.number().min(0).max(1000000),
-  currency: z.string().regex(/^[A-Z]{3}$/),
-  style: z.enum(["Budget", "Balanced", "Luxury"]),
-  places: z
-    .array(z.object({ name: z.string().max(200), kind: z.string().max(100) }))
-    .max(20)
-    .optional(),
-});
+export const tripIdeaInput = z
+  .object({
+    ...personaFields,
+    destination: z.string().trim().min(1).max(200),
+    days: z.number().int().min(1).max(30),
+    startDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .optional(),
+    accommodationTotal: z.number().finite().min(0).max(1000000).optional(),
+    interests: z.string().max(500),
+    travelers: z.number().int().min(1).max(20),
+    budget: z.number().min(0).max(1000000),
+    currency: z.string().regex(/^[A-Z]{3}$/),
+    style: z.enum(["Budget", "Balanced", "Luxury"]),
+    places: z
+      .array(z.object({ name: z.string().max(200), kind: z.string().max(100) }))
+      .max(20)
+      .optional(),
+  })
+  .refine(validParty, {
+    message: "Include at least one adult; children must be fewer than total travelers.",
+    path: ["travelers"],
+  });
 export const ideaSchema = z.object({
   summary: z.string().max(1200).optional(),
   days: z
