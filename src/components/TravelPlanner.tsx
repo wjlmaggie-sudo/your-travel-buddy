@@ -316,9 +316,8 @@ export function TravelPlanner() {
                 )}
               </div>
               <p className="text-xs leading-relaxed text-muted-foreground">
-                Free template suggestions · yours to edit. Check Hotels for provider connection
-                status. Live AI and live flight offers are not connected. Demo prices are clearly
-                labeled.
+                Free template suggestions · yours to edit. Check Flights and Hotels for provider
+                connection status. Live AI is not connected. Demo prices are clearly labeled.
               </p>
             </form>
           </div>

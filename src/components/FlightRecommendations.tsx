@@ -1,3 +1,4 @@
+import { LiveFlightSearch } from "./LiveFlightSearch";
 import { childCount, childAgeDescription } from "../../supabase/functions/_shared/travel-persona";
 import { useId, useState } from "react";
 import { Plane, ArrowRight, Check } from "lucide-react";
@@ -37,106 +38,114 @@ export function FlightRecommendations({
           Find your way there
         </p>
         <h2 id={`${id}-title`} className="mt-2 text-3xl font-semibold">
-          Three ways to take off.
+          Find your flight.
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">
           {journey.departure} → {brief.destination} · {brief.travelers} travelers · group return
           allowance {money(journey.flightBudget)}
         </p>
       </div>
-      <p role="note" className="rounded-xl border border-amber-600/30 bg-amber-100/30 p-4 text-sm">
-        <strong>Demonstration data · not real flight offers.</strong> Airlines, schedules, durations
-        and prices below are simulated to demonstrate comparison and budget changes. They are not
-        validated for this route or time zone. Live flight search is not connected.
-      </p>
-      {childCount(brief) > 0 && (
-        <p className="rounded-xl border p-4 text-sm">
-          Your group includes children aged {childAgeDescription(brief)}. These demo totals do not
-          calculate child fares. Confirm ages, seating, baggage and the full group price with the
-          airline.
+      <LiveFlightSearch brief={brief} departure={journey.departure} />
+      <details className="rounded-xl border p-4">
+        <summary className="cursor-pointer text-sm">Explore simulated flight comparisons</summary>
+        <p
+          role="note"
+          className="rounded-xl border border-amber-600/30 bg-amber-100/30 p-4 text-sm"
+        >
+          <strong>Demonstration data · not real flight offers.</strong> Airlines, schedules,
+          durations and prices below are simulated to demonstrate comparison and budget changes.
+          They are not validated for this route or time zone. Use the real flight search above when
+          available.
         </p>
-      )}
-      <div className="offer-grid grid gap-4">
-        {demoFlights(brief, journey).map((option) => (
-          <article
-            key={option.id}
-            className={`flex flex-col rounded-2xl border bg-card p-5 shadow-card ${active?.id === option.id && active.amount === option.amount ? "ring-2 ring-secondary" : ""}`}
-          >
-            <span className="text-xs font-semibold uppercase tracking-wide text-secondary">
-              {option.label}
-            </span>
-            <span className="mt-3 w-fit rounded-full bg-amber-100 px-2 py-1 text-[10px] text-amber-950">
-              DEMO · simulated offer
-            </span>
-            <div className="my-4 flex items-center gap-2">
-              <Plane className="h-5 w-5 text-primary" />
-              <h3 className="font-sans text-base font-semibold">{option.airline}</h3>
-            </div>
-            <div className="flex items-center justify-between rounded-xl bg-muted/40 p-3">
-              <strong>{option.depart}</strong>
-              <ArrowRight className="h-4 w-4" />
-              <strong>{option.arrive}</strong>
-            </div>
-            <p className="mt-3 text-sm">
-              Outbound {option.duration} · {option.route}
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Return {option.inbound} · simulated times
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">{option.dates}</p>
-            <div className="mt-5 flex-1">
-              <p className="text-2xl font-semibold">{money(option.amount)}</p>
-              <p className="text-xs text-muted-foreground">
-                Whole group · return · simulated total
+        {childCount(brief) > 0 && (
+          <p className="rounded-xl border p-4 text-sm">
+            Your group includes children aged {childAgeDescription(brief)}. These demo totals do not
+            calculate child fares. Confirm ages, seating, baggage and the full group price with the
+            airline.
+          </p>
+        )}
+        <div className="offer-grid grid gap-4">
+          {demoFlights(brief, journey).map((option) => (
+            <article
+              key={option.id}
+              className={`flex flex-col rounded-2xl border bg-card p-5 shadow-card ${active?.id === option.id && active.amount === option.amount ? "ring-2 ring-secondary" : ""}`}
+            >
+              <span className="text-xs font-semibold uppercase tracking-wide text-secondary">
+                {option.label}
+              </span>
+              <span className="mt-3 w-fit rounded-full bg-amber-100 px-2 py-1 text-[10px] text-amber-950">
+                DEMO · simulated offer
+              </span>
+              <div className="my-4 flex items-center gap-2">
+                <Plane className="h-5 w-5 text-primary" />
+                <h3 className="font-sans text-base font-semibold">{option.airline}</h3>
+              </div>
+              <div className="flex items-center justify-between rounded-xl bg-muted/40 p-3">
+                <strong>{option.depart}</strong>
+                <ArrowRight className="h-4 w-4" />
+                <strong>{option.arrive}</strong>
+              </div>
+              <p className="mt-3 text-sm">
+                Outbound {option.duration} · {option.route}
               </p>
-              <p
-                className={`mt-2 text-xs ${option.amount > journey.flightBudget ? "text-primary" : "text-secondary"}`}
+              <p className="mt-1 text-xs text-muted-foreground">
+                Return {option.inbound} · simulated times
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">{option.dates}</p>
+              <div className="mt-5 flex-1">
+                <p className="text-2xl font-semibold">{money(option.amount)}</p>
+                <p className="text-xs text-muted-foreground">
+                  Whole group · return · simulated total
+                </p>
+                <p
+                  className={`mt-2 text-xs ${option.amount > journey.flightBudget ? "text-primary" : "text-secondary"}`}
+                >
+                  {option.amount > journey.flightBudget
+                    ? `${money(option.amount - journey.flightBudget)} above flight allowance`
+                    : `${money(journey.flightBudget - option.amount)} below flight allowance`}
+                </p>
+              </div>
+              <Button
+                className="mt-4"
+                variant={
+                  active?.id === option.id && active.amount === option.amount
+                    ? "secondary"
+                    : "outline"
+                }
+                onClick={() =>
+                  onChange({
+                    ...journey,
+                    selectedFlight: {
+                      id: option.id,
+                      label: option.label,
+                      scope: option.scope,
+                      amount: option.amount,
+                      evidence: "demo",
+                    },
+                  })
+                }
               >
-                {option.amount > journey.flightBudget
-                  ? `${money(option.amount - journey.flightBudget)} above flight allowance`
-                  : `${money(journey.flightBudget - option.amount)} below flight allowance`}
-              </p>
-            </div>
-            <Button
-              className="mt-4"
-              variant={
-                active?.id === option.id && active.amount === option.amount
-                  ? "secondary"
-                  : "outline"
-              }
-              onClick={() =>
-                onChange({
-                  ...journey,
-                  selectedFlight: {
-                    id: option.id,
-                    label: option.label,
-                    scope: option.scope,
-                    amount: option.amount,
-                    evidence: "demo",
-                  },
-                })
-              }
-            >
-              {active?.id === option.id && active.amount === option.amount ? (
-                <>
-                  <Check className="mr-2 h-4 w-4" />
-                  Selected demo flight
-                </>
-              ) : (
-                "Try this demo flight"
-              )}
-            </Button>
-            <a
-              className="mt-3 text-center text-xs text-secondary underline"
-              href={flightSearch(brief, journey.departure)}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Search real flights on Google ↗
-            </a>
-          </article>
-        ))}
-      </div>
+                {active?.id === option.id && active.amount === option.amount ? (
+                  <>
+                    <Check className="mr-2 h-4 w-4" />
+                    Selected demo flight
+                  </>
+                ) : (
+                  "Try this demo flight"
+                )}
+              </Button>
+              <a
+                className="mt-3 text-center text-xs text-secondary underline"
+                href={flightSearch(brief, journey.departure)}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Search real flights on Google ↗
+              </a>
+            </article>
+          ))}
+        </div>
+      </details>
       {active && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-secondary/10 p-4">
           <p className="text-sm">

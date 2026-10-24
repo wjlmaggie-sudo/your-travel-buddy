@@ -9,3 +9,6 @@ verify_jwt = false
 # Guest routing uses an origin allowlist and a service-only atomic daily quota.
 [functions.transport-routes]
 verify_jwt = false
+
+[functions.search-flights]
+verify_jwt = true
