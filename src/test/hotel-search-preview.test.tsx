@@ -140,3 +140,11 @@ it("never requests an adult-only hotel quote for a group with children", async (
   expect(api.hotelDestinations).not.toHaveBeenCalled();
   expect(api.budgetHotelPreviews).not.toHaveBeenCalled();
 });
+
+it("does not send age ranges as guessed adult-only provider quotes", async () => {
+  render(
+    <HotelSearchPreview brief={{ ...brief, childrenAgeRanges: ["4-6"] }} allowance={500} active />,
+  );
+  expect(screen.getByText(/Child occupancy is not supported/)).toBeVisible();
+  expect(api.budgetHotelPreviews).not.toHaveBeenCalled();
+});

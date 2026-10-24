@@ -1,3 +1,4 @@
+import { childCount } from "../../supabase/functions/_shared/travel-persona";
 import { PersonaPreferences } from "./PersonaPreferences";
 import { personaSummary } from "@/lib/travel-personas";
 import { useState } from "react";
@@ -68,6 +69,19 @@ export function TripSettings({
             <p className="mt-2 text-sm text-secondary">{personaSummary(prefs.preference)}</p>
           )}
           <form onSubmit={save} className="mt-5 grid items-end gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            <div className="sm:col-span-2 lg:col-span-5">
+              <PersonaPreferences
+                value={value}
+                travelers={value.travelers}
+                onChange={(next) =>
+                  setDraft({
+                    ...value,
+                    ...next,
+                    travelers: Math.max(value.travelers, childCount(next) + 1),
+                  })
+                }
+              />
+            </div>
             <div>
               <Label htmlFor="settings-travelers">Travelers</Label>
               <Input
@@ -120,13 +134,6 @@ export function TripSettings({
                   <option key={s}>{s}</option>
                 ))}
               </select>
-            </div>
-            <div className="sm:col-span-2 lg:col-span-5">
-              <PersonaPreferences
-                value={value}
-                travelers={value.travelers}
-                onChange={(next) => setDraft({ ...value, ...next })}
-              />
             </div>
             <Button disabled={busy || prefs.isPending}>{busy ? "Saving…" : "Save settings"}</Button>
           </form>

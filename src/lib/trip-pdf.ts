@@ -1,3 +1,4 @@
+import { childCount } from "../../supabase/functions/_shared/travel-persona";
 import { personaSummary } from "./travel-personas";
 import { hotelSearchEndpoint } from "./hotel-search";
 import { streetMapWays, streetMapSvg } from "./pdf-street-map";
@@ -190,7 +191,7 @@ export async function buildTripPdf(
       `${b.start} to ${endDate(b.start, b.days)} · ${b.days} days · ${b.travelers} travelers · ${b.style}`,
     ),
     paragraph(personaSummary(b)),
-    ...(b.childrenAges?.length
+    ...(childCount(b)
       ? [
           paragraph(
             "Child ages inform activity ideas, not verified venue suitability or child fares. Check room occupancy, age restrictions and the complete family price before booking.",

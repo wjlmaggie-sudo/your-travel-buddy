@@ -9,7 +9,6 @@ const session = vi.hoisted(() => vi.fn());
 vi.mock("@/integrations/supabase/client", () => ({ supabase: { auth: { getSession: session } } }));
 vi.mock("@/lib/ai.functions", () => ({ generateTripIdeas: paidAI }));
 vi.mock("@tanstack/react-router", () => ({ useNavigate: () => navigate }));
-vi.mock("@/components/TripWeather", () => ({ TripWeather: () => <div>Destination weather</div> }));
 vi.mock("@/components/DayWeather", () => ({ DayWeather: () => <span>Daily weather</span> }));
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TravelPlanner } from "@/components/TravelPlanner";
@@ -49,23 +48,23 @@ describe("guest workspace", () => {
     fireEvent.change(screen.getByLabelText("How many people?"), { target: { value: "4" } });
     go("Family");
     fireEvent.change(screen.getByLabelText("Children in your group"), { target: { value: "2" } });
-    fireEvent.change(screen.getByLabelText("Child 1 age"), { target: { value: "3" } });
-    fireEvent.change(screen.getByLabelText("Child 2 age"), { target: { value: "9" } });
+    fireEvent.change(screen.getByLabelText("Child 1 age range"), { target: { value: "0-3" } });
+    fireEvent.change(screen.getByLabelText("Child 2 age range"), { target: { value: "7-10" } });
     start("");
-    expect(screen.getByText(/^Family planning.*3, 9/)).toBeVisible();
-    expect(readGuestSimulation()?.childrenAges).toEqual([3, 9]);
+    expect(screen.getByText(/^Family planning.*0–3, 7–10/)).toBeVisible();
+    expect(readGuestSimulation()?.childrenAgeRanges).toEqual(["0-3", "7-10"]);
     expect(
       readGuestSimulation()?.ideas?.days[0]?.items.some((i) => i.title.includes("nap break")),
     ).toBe(true);
     expect(readGuestSimulation()?.budget).toBe(1500);
     cleanup();
     setup();
-    expect(screen.getByText(/^Family planning.*3, 9/)).toBeVisible();
+    expect(screen.getByText(/^Family planning.*0–3, 7–10/)).toBeVisible();
     go("Save my whole plan");
     await screen.findByRole("button", { name: "Sign in or create an account" });
     go("Sign in or create an account");
     expect(readPlannerDraft()?.persona).toBe("family");
-    expect(readPlannerDraft()?.childrenAges).toEqual([3, 9]);
+    expect(readPlannerDraft()?.childrenAgeRanges).toEqual(["0-3", "7-10"]);
     expect(paidAI).not.toHaveBeenCalled();
   }, 15000);
 
@@ -103,8 +102,11 @@ describe("guest workspace", () => {
     go("Currency");
     expect(screen.getByRole("region", { name: "Currency converter" })).toBeVisible();
     expect(screen.queryByRole("region", { name: "Connected trip budget" })).not.toBeInTheDocument();
-    go("Weather");
-    expect(screen.getByLabelText("Weather destination")).toHaveValue("Lisbon, Portugal");
+    expect(screen.queryByRole("button", { name: /^Weather$/ })).not.toBeInTheDocument();
+    go("Attractions & Activities");
+    expect(screen.getAllByText("Daily weather").some((item) => !item.closest("[hidden]"))).toBe(
+      true,
+    );
     expect(session).not.toHaveBeenCalled();
   }, 15000);
   it("prompts only at Save and keeps the guest simulation after dismissing", async () => {

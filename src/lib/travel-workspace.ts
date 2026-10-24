@@ -1,3 +1,4 @@
+import { childAgeDescription } from "../../supabase/functions/_shared/travel-persona";
 import { z } from "zod";
 import { endDate } from "./planning";
 import { stayBudget, stayCost, type StayBrief, type StayChoice } from "./stay-planning";
@@ -9,7 +10,6 @@ export const SECTIONS = [
   { id: "attractions", label: "Attractions & Activities" },
   { id: "shopping", label: "Local Shopping" },
   { id: "currency", label: "Currency" },
-  { id: "weather", label: "Weather" },
 ] as const;
 export type TravelSection = (typeof SECTIONS)[number]["id"];
 export const flightChoiceSchema = z.object({
@@ -44,7 +44,11 @@ export function flightScope(brief: StayBrief, departure: string) {
     brief.days,
     brief.travelers,
     brief.currency,
-    ...(brief.childrenAges?.length ? [brief.childrenAges] : []),
+    ...(brief.childrenAgeRanges?.length
+      ? [{ ageRanges: brief.childrenAgeRanges }]
+      : brief.childrenAges?.length
+        ? [brief.childrenAges]
+        : []),
   ]);
 }
 export function selectedFlight(brief: StayBrief, journey: WorkspaceJourney) {

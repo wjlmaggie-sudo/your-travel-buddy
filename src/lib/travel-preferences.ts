@@ -48,6 +48,7 @@ export const preferencesQuery = () =>
               ...preference.data,
               persona: extra?.persona,
               childrenAges: extra?.childrenAges,
+              childrenAgeRanges: extra?.childrenAgeRanges,
             });
             if (!merged.success)
               throw new Error(
@@ -69,7 +70,7 @@ export async function saveTripPreferences(tripId: string, preference: TripPrefer
   );
   const all = parsed.success ? parsed.data : {};
   const checked = preferencesSchema.parse(preference);
-  const { persona, childrenAges, ...base } = checked;
+  const { persona, childrenAges, childrenAgeRanges, ...base } = checked;
   const database = await supabase
     .from("trip_preferences")
     .upsert({ trip_id: tripId, ...base }, { onConflict: "trip_id" });
@@ -79,8 +80,10 @@ export async function saveTripPreferences(tripId: string, preference: TripPrefer
     !database.error &&
     !persona &&
     !childrenAges?.length &&
+    !childrenAgeRanges?.length &&
     !all[tripId]?.persona &&
-    !all[tripId]?.childrenAges?.length
+    !all[tripId]?.childrenAges?.length &&
+    !all[tripId]?.childrenAgeRanges?.length
   )
     return;
   const result = await supabase.auth.updateUser({

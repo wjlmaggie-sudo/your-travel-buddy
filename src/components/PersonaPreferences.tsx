@@ -1,3 +1,7 @@
+import {
+  activityAgeBands,
+  CHILD_AGE_RANGES,
+} from "../../supabase/functions/_shared/travel-persona";
 import { useId } from "react";
 import { PERSONAS, type PersonaDetails } from "@/lib/travel-personas";
 import { Button } from "./ui/button";
@@ -11,7 +15,7 @@ export function PersonaPreferences({
   onChange: (next: PersonaDetails) => void;
 }) {
   const id = useId();
-  const ages = value.childrenAges ?? [];
+  const ages = activityAgeBands(value);
   return (
     <fieldset className="space-y-3 rounded-xl border bg-card p-4">
       <legend className="px-2 text-sm font-semibold">How do you like to travel?</legend>
@@ -48,31 +52,23 @@ export function PersonaPreferences({
             onChange={(e) =>
               onChange({
                 ...value,
-                childrenAges: Array.from(
+                childrenAges: undefined,
+                childrenAgeRanges: Array.from(
                   { length: Number(e.target.value) },
-                  (_, index) => ages[index] ?? -1,
+                  (_, index) => ages[index] ?? ("" as (typeof ages)[number]),
                 ),
               })
             }
           >
-            {Array.from(
-              {
-                length: Math.min(
-                  20,
-                  Math.max(1, Number.isFinite(travelers) ? travelers : 1, ages.length + 1),
-                ),
-              },
-              (_, n) => (
-                <option key={n} value={n}>
-                  {n}
-                  {n === 0 ? " · adults only" : ""}
-                </option>
-              ),
-            )}
+            {[0, 1, 2, 3, ...(ages.length > 3 ? [ages.length] : [])].map((n) => (
+              <option key={n} value={n}>
+                {n === 0 ? "No children" : n}
+              </option>
+            ))}
           </select>
           <p className="text-xs text-muted-foreground">
-            Included in the total travelers above. At least one adult is required. Enter ages on the
-            travel date; no names or birth dates needed.
+            Included in the total travelers below. At least one adult is required. Choose age ranges
+            at travel; exact ages can be confirmed on the booking website.
           </p>
           <p className="text-sm font-medium">
             {Math.max(0, travelers - ages.length)} adults + {ages.length} children · {travelers}{" "}
@@ -88,35 +84,40 @@ export function PersonaPreferences({
             {ages.map((age, index) => (
               <div key={index}>
                 <label htmlFor={`${id}-age-${index}`} className="text-sm">
-                  Child {index + 1} age
+                  Child {index + 1} age range
                 </label>
                 <select
                   id={`${id}-age-${index}`}
                   required
                   className="mt-1 h-10 w-full rounded-md border bg-background px-3"
-                  value={age < 0 ? "" : age}
+                  value={age}
                   onChange={(e) =>
                     onChange({
                       ...value,
-                      childrenAges: ages.map((a, i) => (i === index ? Number(e.target.value) : a)),
+                      childrenAges: undefined,
+                      childrenAgeRanges: ages.map((a, i) =>
+                        i === index ? (e.target.value as typeof age) : a,
+                      ),
                     })
                   }
                 >
                   <option value="" disabled>
-                    Select age
+                    Select age range
                   </option>
-                  {Array.from({ length: 18 }, (_, n) => (
-                    <option key={n} value={n}>
-                      {n === 0 ? "Under 1" : n}
-                    </option>
-                  ))}
+                  {CHILD_AGE_RANGES.filter((range) => range !== "16-17" || age === "16-17").map(
+                    (range) => (
+                      <option key={range} value={range}>
+                        {range.replace("-", "–")} years
+                      </option>
+                    ),
+                  )}
                 </select>
               </div>
             ))}
           </div>
           {ages.length > 0 && (
             <p className="text-xs text-muted-foreground">
-              Child ages adapt the itinerary. Hotel test quotes and flight demos do not provide
+              Age ranges adapt the itinerary. Hotel test quotes and flight demos do not provide
               verified child prices.
             </p>
           )}

@@ -1,3 +1,4 @@
+import { childCount } from "../../supabase/functions/_shared/travel-persona";
 import type { PersonaDetails } from "./travel-personas";
 import { z } from "zod";
 import { endDate, budgetAllocation, dailyBudgets } from "./planning";
@@ -32,7 +33,11 @@ export function stayScope(brief: StayBrief) {
     brief.days,
     brief.travelers,
     brief.currency,
-    ...(brief.childrenAges?.length ? [brief.childrenAges] : []),
+    ...(brief.childrenAgeRanges?.length
+      ? [{ ageRanges: brief.childrenAgeRanges }]
+      : brief.childrenAges?.length
+        ? [brief.childrenAges]
+        : []),
   ]);
 }
 export function stayCost(choice: StayChoice, brief: StayBrief) {
@@ -76,8 +81,8 @@ export function bookingSearch(brief: StayBrief, rooms: number, property?: string
       ss: property ? `${property}, ${brief.destination}` : brief.destination,
       checkin: brief.start,
       checkout: endDate(brief.start, brief.days),
-      group_adults: String(brief.travelers - (brief.childrenAges?.length ?? 0)),
-      group_children: String(brief.childrenAges?.length ?? 0),
+      group_adults: String(brief.travelers - (childCount(brief) ?? 0)),
+      group_children: String(childCount(brief) ?? 0),
       no_rooms: String(rooms),
       selected_currency: brief.currency,
     }) +

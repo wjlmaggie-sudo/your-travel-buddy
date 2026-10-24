@@ -1,3 +1,4 @@
+import { childCount } from "../../supabase/functions/_shared/travel-persona";
 import { personaFields, validParty } from "../../supabase/functions/_shared/travel-persona";
 import { PersonaPreferences } from "./PersonaPreferences";
 import { useState } from "react";
@@ -53,6 +54,7 @@ export function NewTripDialog({
     interest: template?.category ?? "Food & culture",
     persona: imported?.persona,
     childrenAges: imported?.childrenAges,
+    childrenAgeRanges: imported?.childrenAgeRanges,
     ...imported,
   }));
   const [requestAi, setRequestAi] = useState(!template && !imported?.ideas);
@@ -64,6 +66,7 @@ export function NewTripDialog({
     if (
       !validParty(f) ||
       !personaFields.childrenAges.safeParse(f.childrenAges).success ||
+      !personaFields.childrenAgeRanges.safeParse(f.childrenAgeRanges).success ||
       !f.destination.trim() ||
       !Number.isInteger(f.days) ||
       f.days < 1 ||
@@ -104,6 +107,7 @@ export function NewTripDialog({
           interest: f.interest,
           persona: f.persona,
           childrenAges: f.childrenAges,
+          childrenAgeRanges: f.childrenAgeRanges,
         });
       } catch {
         toast.error(
@@ -176,6 +180,15 @@ export function NewTripDialog({
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={create} className="space-y-4">
+          {!imported?.ideas && (
+            <PersonaPreferences
+              value={f}
+              travelers={f.travelers}
+              onChange={(next) =>
+                setF({ ...f, ...next, travelers: Math.max(f.travelers, childCount(next) + 1) })
+              }
+            />
+          )}
           {imported?.ideas && (
             <p className="text-sm text-muted-foreground">
               {f.destination} · {f.days} days · {f.travelers} travelers · {f.start} · {f.budget}{" "}
@@ -227,13 +240,6 @@ export function NewTripDialog({
                   />
                 </div>
               </div>
-              {!imported?.ideas && (
-                <PersonaPreferences
-                  value={f}
-                  travelers={f.travelers}
-                  onChange={(next) => setF({ ...f, ...next })}
-                />
-              )}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label htmlFor="new-travelers">Travelers</Label>
