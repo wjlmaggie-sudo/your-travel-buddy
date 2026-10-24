@@ -7,7 +7,11 @@ const api = vi.hoisted(() => ({
   hotelDestinations: vi.fn(),
   forgetHotelPreviews: vi.fn(),
 }));
-vi.mock("@/lib/hotel-search", () => ({ hotelSearchEndpoint: api.hotelSearchEndpoint }));
+vi.mock("@/lib/hotel-search", () => ({
+  hotelSearchEndpoint: api.hotelSearchEndpoint,
+  hotelSearchMode: () =>
+    import.meta.env["VITE_HOTEL_SEARCH_MODE"] === "production" ? "production" : "sandbox",
+}));
 vi.mock("@/lib/hotel-suggestions", () => ({
   budgetHotelPreviews: api.budgetHotelPreviews,
   hotelDestinations: api.hotelDestinations,
@@ -37,7 +41,10 @@ beforeEach(() => {
   ]);
   api.budgetHotelPreviews.mockResolvedValue(quote());
 });
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.unstubAllEnvs();
+});
 it("keeps unconfigured guest planning usable without any provider request", () => {
   api.hotelSearchEndpoint.mockReturnValue(null);
   render(<HotelSearchPreview brief={brief} allowance={500} active />);
@@ -159,4 +166,20 @@ it("refreshes automatic hotel searches and external links for requested rooms", 
   expect(api.budgetHotelPreviews).toHaveBeenLastCalledWith(
     expect.objectContaining({ rooms: 3, travelers: 3, budget: 500 }),
   );
+});
+it("requires actual nationality before a production request and labels returned live rates", async () => {
+  vi.stubEnv("VITE_HOTEL_SEARCH_MODE", "production");
+  api.budgetHotelPreviews.mockResolvedValue({ ...quote("Live Hotel"), sandbox: false });
+  render(<HotelSearchPreview brief={brief} allowance={500} active />);
+  await new Promise((resolve) => setTimeout(resolve, 450));
+  expect(api.budgetHotelPreviews).not.toHaveBeenCalled();
+  fireEvent.change(screen.getByLabelText("Lead traveler’s nationality"), {
+    target: { value: "DE" },
+  });
+  expect(await screen.findByText("Live Hotel")).toBeVisible();
+  expect(api.budgetHotelPreviews).toHaveBeenCalledWith(
+    expect.objectContaining({ guestNationality: "DE" }),
+  );
+  expect(screen.getByText("LIVE · Nuitee")).toBeVisible();
+  expect(screen.queryByText(/SANDBOX/)).not.toBeInTheDocument();
 });

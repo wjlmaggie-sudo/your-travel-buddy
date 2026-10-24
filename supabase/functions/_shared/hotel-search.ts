@@ -41,7 +41,7 @@ export const hotelPreviewSchema = z.object({
   currency: z.string(),
 });
 export const hotelSearchResult = z.object({
-  sandbox: z.literal(true),
+  sandbox: z.boolean(),
   rooms: z.number().int().positive().optional(),
   checkedAt: z.string().datetime(),
   offers: z.array(hotelPreviewSchema).max(3),
@@ -80,7 +80,7 @@ export function isSandboxHotelKey(key: string) {
 const providerResponse = z.object({
   // Some sandbox responses omit this flag. Only a verified sandbox credential may
   // establish provenance in that case; an explicit production response still fails.
-  sandbox: z.literal(true).optional(),
+  sandbox: z.boolean().optional(),
   hotels: z.array(
     z.object({
       id: z.string(),
@@ -109,10 +109,14 @@ export function normalizeHotelPreview(
   raw: unknown,
   input: HotelSearchInput,
   sandboxKeyVerified = false,
+  mode: "sandbox" | "production" = "sandbox",
 ): HotelSearchResult {
   const response = providerResponse.parse(raw);
-  if (response.sandbox !== true && !sandboxKeyVerified)
+  if (mode === "production") {
+    if (response.sandbox !== false) throw new Error("Production provenance could not be verified.");
+  } else if (response.sandbox === false || (response.sandbox !== true && !sandboxKeyVerified)) {
     throw new Error("Sandbox provenance could not be verified.");
+  }
   const offers = response.data.flatMap((hotel) => {
     const info = response.hotels.find((item) => item.id === hotel.hotelId);
     if (!info || info.country_code.toUpperCase() !== input.countryCode) return [];
@@ -152,7 +156,7 @@ export function normalizeHotelPreview(
   });
   const unique = [...new Map(offers.map((offer) => [offer.id, offer])).values()];
   return {
-    sandbox: true,
+    sandbox: mode === "sandbox",
     rooms: input.rooms ?? Math.ceil(input.travelers / 2),
     checkedAt: new Date().toISOString(),
     offers: unique.sort((a, b) => a.amount - b.amount).slice(0, 3),
@@ -161,13 +165,19 @@ export function normalizeHotelPreview(
 
 type SearchDependencies = {
   enabled: boolean;
+  mode?: "sandbox" | "production";
   apiKey: string | undefined;
   allowedOrigins: string[];
   claim: () => Promise<boolean>;
   fetcher?: typeof fetch;
 };
 
+export function isProductionHotelKey(key: string) {
+  return !key.toLowerCase().startsWith("sand_") && /^[A-Za-z0-9_-]{16,256}$/.test(key);
+}
+
 export function createHotelSearchHandler(deps: SearchDependencies) {
+  const mode = deps.mode ?? "sandbox";
   return async (request: Request): Promise<Response> => {
     const origin = request.headers.get("origin") ?? "";
     if (!origin || !deps.allowedOrigins.includes(origin))
@@ -182,11 +192,14 @@ export function createHotelSearchHandler(deps: SearchDependencies) {
     const reply = (body: unknown, status = 200) => Response.json(body, { status, headers });
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers });
     if (request.method !== "POST") return reply({ error: "Method not allowed." }, 405);
-    if (!deps.enabled || !deps.apiKey || !isSandboxHotelKey(deps.apiKey))
+    if (
+      !deps.enabled ||
+      !deps.apiKey ||
+      !(mode === "production" ? isProductionHotelKey(deps.apiKey) : isSandboxHotelKey(deps.apiKey))
+    )
       return reply(
         {
-          error:
-            "Hotel previews are not connected yet. You can still use the demo hotels or search on Booking.com.",
+          error: "Hotel search is not connected yet. You can still search on Booking.com.",
         },
         503,
       );
@@ -211,7 +224,7 @@ export function createHotelSearchHandler(deps: SearchDependencies) {
         return reply(
           {
             error:
-              "Hotel preview limit reached for today. Try again tomorrow or use the external hotel search.",
+              "Hotel search limit reached for today. Try again tomorrow or use the external hotel search.",
           },
           429,
         );
@@ -226,15 +239,15 @@ export function createHotelSearchHandler(deps: SearchDependencies) {
       );
       if (!response.ok)
         return reply(
-          { error: "The hotel provider could not complete this preview. Please try later." },
+          { error: "The hotel provider could not complete this search. Please try later." },
           502,
         );
       // The credential is verified above. Reject explicit production flags and incomplete totals.
-      return reply(normalizeHotelPreview(await response.json(), input.data, true));
+      return reply(normalizeHotelPreview(await response.json(), input.data, true, mode));
     } catch {
       // Do not return upstream bodies, credentials, booking tokens or internal database errors.
       return reply(
-        { error: "Hotel previews are unavailable right now. Your plan is unchanged." },
+        { error: "Hotel search is unavailable right now. Your plan is unchanged." },
         503,
       );
     }

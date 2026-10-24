@@ -82,6 +82,8 @@ Provider sandbox verification succeeded. Production integration remains unimplem
 
 ## Requested rooms — 24 October 2026
 
+The active live hotel frontend now uses SerpApi; see `HOTEL_SERPAPI_SETUP.md` for its single-room limitation. The following applies to the separate Nuitee sandbox.
+
 Room count is saved in the existing journey settings and guest session. Hotel search,
 cache keys, external Booking.com links, quote scope and PDF use that count. Changing
 rooms invalidates earlier selected quotes without altering the total hotel allowance.

@@ -4,6 +4,10 @@ import {
   type HotelSearchInput,
 } from "../../supabase/functions/_shared/hotel-search";
 
+export function hotelSearchMode(): "sandbox" | "production" {
+  return import.meta.env["VITE_HOTEL_SEARCH_MODE"] === "production" ? "production" : "sandbox";
+}
+
 export function hotelSearchEndpoint() {
   const endpoint = import.meta.env["VITE_HOTEL_SEARCH_URL"] as string | undefined;
   if (!endpoint) return null;
@@ -50,6 +54,7 @@ export async function searchHotelPreviews(input: HotelSearchInput, signal: Abort
       body.rooms !== undefined &&
       body.rooms !== Math.ceil(body.travelers / 2) &&
       result.data.rooms !== body.rooms) ||
+    result.data.sandbox !== (hotelSearchMode() === "sandbox") ||
     result.data.offers.some(
       (offer) => offer.currency !== body.currency || offer.amount > body.budget,
     )
