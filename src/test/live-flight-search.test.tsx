@@ -125,3 +125,13 @@ describe("guided flight selection", () => {
     expect(searchFlights).not.toHaveBeenCalled();
   });
 });
+
+it("can resume a search after an edited route is reverted to the original city", async () => {
+  render(<LiveFlightSearch brief={brief} departure="Berlin" active />);
+  await screen.findByRole("button", { name: "Choose cheapest" });
+  const destination = screen.getByRole("combobox", { name: "Destination" });
+  fireEvent.change(destination, { target: { value: "Rome" } });
+  fireEvent.change(destination, { target: { value: "Lisbon" } });
+  fireEvent.click(screen.getByRole("button", { name: "Update flights" }));
+  await screen.findByRole("button", { name: "Choose cheapest" });
+});

@@ -189,7 +189,7 @@ export function LiveFlightSearch({
           onChange={(v) => edit(setDestination, v)}
           onSelect={(v) => commit(origin, v)}
         />
-        {(dirty || error) && (
+        {(dirty || error || (!result && !busy)) && (
           <Button type="submit" className="sm:col-span-2" disabled={busy}>
             Update flights
           </Button>
