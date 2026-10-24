@@ -1,5 +1,11 @@
 # Your Travel Buddy
 
+## Travel planning personas
+
+See the [Business, Family and Budget Travel specifications](docs/personas/README.md)
+for proposed activity-selection and itinerary-planning behavior. These are design
+documents; persona controls are not yet implemented.
+
 ## Current provider connection — 23 October 2026
 
 Hotel searches now connect to the Nuitee sandbox through a separate Supabase Edge
