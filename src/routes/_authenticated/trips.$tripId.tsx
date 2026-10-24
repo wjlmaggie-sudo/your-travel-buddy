@@ -258,9 +258,6 @@ function TripPage() {
                     brief={brief}
                     journey={journey.data}
                     stay={stay.data}
-                    onRoomsChange={(hotelRooms) => {
-                      if (journey.data) void updateJourney({ ...journey.data, hotelRooms });
-                    }}
                     onChoose={updateStay}
                   />
                 </fieldset>

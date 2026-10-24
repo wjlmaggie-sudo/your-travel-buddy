@@ -62,7 +62,7 @@ SerpApi frontend configuration.
 
 ## Room count integration
 
-The Hotels section now lets users choose rooms needed. The current Google Hotels
+The Hotels section displays a suggested room setup based on group size. The room-count selector has been removed at the owner’s request. Existing saved room counts remain intact. The current Google Hotels
 adapter supports a single-room lookup. For multiple requested rooms, the app
 keeps that selection in the journey and PDF, suppresses single-room offers and
 provides a Booking.com search for all requested rooms and travelers. It never

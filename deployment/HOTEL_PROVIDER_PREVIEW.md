@@ -22,7 +22,7 @@ free planner, guest sessions, saved trips, quotes, budget and PDF exports remain
   Production booking would need accurate nationality before searching/confirming rates.
 - Identical searches share in-flight requests and five-minute, memory-only quote caches;
   location matches cache for 30 minutes. Errors have a one-minute backoff. Reopening the
-  same view reuses results. Refresh is explicit. The Hotels section asks for rooms needed; the default is two adults per room.
+  same view reuses results. Refresh is explicit. Room requirements default to two adults per room; the room-count selector has been removed.
   Adults are distributed evenly across the selected rooms (at least one adult per room).
   The same total hotel allowance covers every room for the full stay. The global 20-request daily quota still applies.
 - The adapter uses the whole-offer `offerRetailRate`, validates occupancy and currency,
@@ -84,7 +84,7 @@ Provider sandbox verification succeeded. Production integration remains unimplem
 
 The active live hotel frontend now uses SerpApi; see `HOTEL_SERPAPI_SETUP.md` for its single-room limitation. The following applies to the separate Nuitee sandbox.
 
-Room count is saved in the existing journey settings and guest session. Hotel search,
+Existing room counts are retained in journey settings and guest sessions. New plans use automatic room requirements. Hotel search,
 cache keys, external Booking.com links, quote scope and PDF use that count. Changing
 rooms invalidates earlier selected quotes without altering the total hotel allowance.
 The sandbox adapter validates the requested per-room adult distribution and returns

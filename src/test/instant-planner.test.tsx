@@ -271,17 +271,10 @@ describe("guest workspace", () => {
   }, 25000);
 });
 
-it("keeps requested hotel rooms through guest refresh and editing the trip", () => {
+it("shows room setup advice without asking guests for a room count", () => {
   setup();
   start("");
   go("Hotels");
-  fireEvent.change(screen.getByLabelText("Rooms needed"), { target: { value: "2" } });
-  expect(readGuestSimulation()?.journey?.hotelRooms).toBe(2);
-  cleanup();
-  setup();
-  go("Hotels");
-  expect(screen.getByLabelText("Rooms needed")).toHaveValue("2");
-  go("AI Travel Planner");
-  go("Edit trip details");
-  expect(readGuestSimulation()?.journey?.hotelRooms).toBe(2);
+  expect(screen.queryByLabelText("Rooms needed")).not.toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: "Double or twin room", hidden: true })).toBeVisible();
 }, 15000);

@@ -261,10 +261,6 @@ export function InstantPlan({
           brief={brief}
           journey={journey}
           stay={stay}
-          onRoomsChange={(hotelRooms) => {
-            setJourney((previous) => ({ ...previous, hotelRooms }));
-            onEdited();
-          }}
           onChoose={(choice) => {
             setStay(choice);
             onEdited();
