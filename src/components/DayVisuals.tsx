@@ -8,6 +8,7 @@ import { AdmissionDetails, RouteLogistics } from "./VisitLogistics";
 import { PlaceStory } from "./PlaceStory";
 import { DayRouteMap } from "./DayRouteMap";
 import { fetchPlacePhoto } from "@/lib/place-photos";
+import { TransportComparison } from "./TransportComparison";
 
 function Photo({ place }: { place: VisualPlace }) {
   const [failed, setFailed] = useState(false);
@@ -154,6 +155,7 @@ export function DayVisuals({
               )}
           </div>
           <RouteLogistics places={guide.places} destination={destination} day={day} />
+          <TransportComparison places={guide.places} destination={destination} day={day} />
           <div className="offer-grid grid gap-3">
             {guide.places.map((place, index) => (
               <article
