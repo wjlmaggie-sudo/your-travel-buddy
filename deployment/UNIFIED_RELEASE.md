@@ -1,10 +1,12 @@
 # One combined Travel Buddy release
 
 On 24 October 2026, Pages had been overwritten by an artifact from branch commit
-`67e41b3`. That branch contained newer flight-city defaults but did not contain
-main's optional-place recommendations, hotel room guidance, or removal of the room
-selector. The flight change is now merged with those main features. Other remote
-feature/team branches were already ancestors of the combined source.
+`67e41b3`. That branch contained newer flight-city defaults and the optional-place
+recommendations, but not main's hotel room guidance and removal of the room
+selector. The extra-place list was present but collapsed under Attractions and
+hard to find from the overview. The flight change is now merged with main's hotel
+changes, and the overview opens the list directly. Other remote feature/team
+branches were already ancestors of the combined source.
 
 The combined product retains guest planning, Business/Family/Budget personas and
 child age ranges, itinerary edits, extra places with add-to-day, maps/stories/PDF,
