@@ -22,15 +22,15 @@ The provider's 250-search free plan is the final account-wide limit, including
 manual searches and other integrations. UTC month boundaries and provider billing
 resets can differ. This is a bounded pilot, not per-user abuse protection.
 
-Searches require an explicit button press. Identical concurrent requests share
+The guided flow searches automatically when Hotels opens. Identical concurrent requests share
 one upstream call, and completed results are cached in server memory for ten
 minutes. SerpApi may also return cached results. The app displays source and
 retrieval times, uses only returned whole-stay `total_rate` amounts, prefers
 `extracted_after_taxes_fees`, and labels unknown tax inclusion. Missing whole-stay
 prices are excluded; nightly prices are never multiplied into invented totals.
 Budget filtering happens locally, so adjusting the allowance does not spend
-another provider request. Results remain in memory and cannot be saved as confirmed
-hotel quotes or exported as confirmed prices.
+another provider request. Selected advertised prices can be saved as planning estimates, never as confirmed
+bookings or guaranteed prices. See GUIDED_TRAVEL_FLOW.md.
 
 This is a one-room search for 1–6 adults, with exact child ages when available,
 and stays of 1–29 nights. Child age ranges are not converted into guessed ages:
@@ -47,7 +47,7 @@ accounts/trips backend or run historical migrations on the hotel function projec
 
 Validation: adapter, client and UI tests cover whole-stay totals, mismatched
 searches, exact child occupancy, safe links and secret redaction, quota failures,
-caching, explicit search, budget filtering and stale results. TypeScript and the
+caching, automatic step entry, selections, budget filtering and stale results. TypeScript and the
 production Pages build passed. The deployed API returned HTTP 200 from an
 allowed-origin request with the existing public gateway JWT.
 

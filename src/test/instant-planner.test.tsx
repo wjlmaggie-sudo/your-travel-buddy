@@ -26,10 +26,12 @@ function start(departure = "Berlin") {
       target: { value: departure },
     });
   fireEvent.click(screen.getByRole("button", { name: "Lisbon" }));
-  fireEvent.click(screen.getByRole("button", { name: "Create my travel plan" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Continue to (flights|hotels)/ }));
+  go("AI Travel Planner");
 }
 function go(name: string) {
-  fireEvent.click(screen.getByRole("button", { name, hidden: true }));
+  const buttons = screen.getAllByRole("button", { name, hidden: true });
+  fireEvent.click(buttons.find((button) => !button.closest("[hidden]")) ?? buttons[0]!);
 }
 beforeEach(() => {
   sessionStorage.clear();
@@ -120,11 +122,11 @@ describe("guest workspace", () => {
     });
     go("Edit trip details");
     go("Business");
-    go("Rebuild my whole trip");
+    go("Update trip & continue");
     expect(screen.getByRole("dialog", { name: "Rebuild this simulation?" })).toBeVisible();
     go("Keep my edits");
     expect(readGuestSimulation()?.ideas?.days[0]?.items[0]?.title).toBe("Keep my own activity");
-    go("Rebuild my whole trip");
+    go("Update trip & continue");
     go("Rebuild and replace edits");
     expect(readGuestSimulation()?.persona).toBe("business");
     expect(
@@ -180,9 +182,7 @@ describe("guest workspace", () => {
       target: { value: "My arrival plan" },
     });
     go("Hotels");
-    fireEvent.click(screen.getAllByRole("button", { name: "Try this demo hotel" })[0]!);
     go("AI Travel Planner");
-    expect(readGuestSimulation()?.stay?.evidence).toBe("demo");
     expect(readGuestSimulation()?.ideas?.days[0]?.items[0]?.title).toBe("My arrival plan");
     cleanup();
     setup();
@@ -210,33 +210,21 @@ describe("guest workspace", () => {
       }),
     );
     go("Done");
-    go("Rebuild my whole trip");
+    go("Update trip & continue");
     expect(screen.getAllByText(/A leisurely regional lunch/)).toHaveLength(3);
     expect(readGuestSimulation()?.budget).toBe(1800);
   }, 15000);
-  it("updates one budget without silently reducing other estimates, and preserves demo labels on save", async () => {
-    session.mockResolvedValue({ data: { session: { user: { id: "test-user" } } }, error: null });
+  it("keeps operating estimates stable while the budget is edited", () => {
     setup();
     start();
+    expect(screen.queryByText("Your journey at a glance")).not.toBeInTheDocument();
+    const before = readGuestSimulation()!;
     go("Flights");
-    fireEvent.click(screen.getAllByRole("button", { name: "Try this demo flight" })[2]!);
+    expect(screen.queryByText("Explore simulated flight comparisons")).not.toBeInTheDocument();
+    expect(screen.queryByText("Use a real quote you found")).not.toBeInTheDocument();
+    expect(screen.queryByText("Edit route & flight allowance")).not.toBeInTheDocument();
     go("AI Travel Planner");
-    expect(screen.getByRole("status", { name: "Trip budget summary" })).toHaveTextContent(
-      "€90.00 over budget",
-    );
-    let dashboard = screen.getByRole("region", { name: "Connected trip budget" });
-    expect(within(dashboard).getByText("€465.00")).toBeVisible();
-    expect(within(dashboard).getByText("€90.00")).toBeVisible();
-    go("Hotels");
-    fireEvent.click(screen.getAllByRole("button", { name: "Try this demo hotel" })[2]!);
-    go("AI Travel Planner");
-    dashboard = screen.getByRole("region", { name: "Connected trip budget" });
-    expect(within(dashboard).getByText("€648.00")).toBeVisible();
-    expect(within(dashboard).getByText("€231.75")).toBeVisible();
-    go("Save my whole plan");
-    await waitFor(() => expect(navigate).toHaveBeenCalled());
-    expect(readPlannerDraft()?.journey?.selectedFlight?.evidence).toBe("demo");
-    expect(readPlannerDraft()?.stay?.amount).toBe(648);
+    expect(readGuestSimulation()?.budget).toBe(before.budget);
   }, 15000);
   it("allows departure to be omitted and requires it only when adding flights", () => {
     setup();
@@ -255,14 +243,14 @@ describe("guest workspace", () => {
     fireEvent.change(screen.getByLabelText("Total group budget (EUR)"), {
       target: { value: "2000" },
     });
-    go("Rebuild my whole trip");
+    go("Update trip & continue");
     expect(screen.getByRole("dialog", { name: "Rebuild this simulation?" })).toBeVisible();
     go("Keep my edits");
     go("Back to overview");
     expect(readGuestSimulation()?.budget).toBe(1500);
     expect(screen.getAllByLabelText("Activity")[0]).toHaveValue("Keep my special stop");
     go("Edit trip details");
-    go("Rebuild my whole trip");
+    go("Update trip & continue");
     go("Rebuild and replace edits");
     expect(readGuestSimulation()?.budget).toBe(2000);
     expect(screen.getAllByLabelText("Activity")[0]).not.toHaveValue("Keep my special stop");
@@ -275,5 +263,7 @@ it("shows room setup advice without asking guests for a room count", () => {
   start("");
   go("Hotels");
   expect(screen.queryByLabelText("Rooms needed")).not.toBeInTheDocument();
-  expect(screen.getByRole("heading", { name: "Double or twin room", hidden: true })).toBeVisible();
+  expect(
+    screen.getByRole("heading", { name: "Three stays. Your choice.", hidden: true }),
+  ).toBeVisible();
 }, 15000);

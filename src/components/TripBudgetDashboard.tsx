@@ -26,14 +26,14 @@ export function TripBudgetDashboard({
         journey.flightsRequired === false
           ? "Not required"
           : costs.flightChoice
-            ? `${costs.flightChoice.evidence === "demo" ? "Selected demo" : "Entered quote"} · group return`
+            ? `${costs.flightChoice.evidence === "demo" ? "Selected demo" : costs.flightChoice.evidence === "live-search" ? "Live search estimate" : "Entered quote"} · group return`
             : "Allowance · no flight selected",
     },
     {
       label: "Hotel cost",
       value: costs.hotel,
       note: costs.hotelChosen
-        ? `${stay?.evidence === "demo" ? "Selected demo" : "Entered quote"} · whole stay`
+        ? `${stay?.evidence === "demo" ? "Selected demo" : stay?.evidence === "live-search" ? "Live search estimate" : "Entered quote"} · whole stay`
         : "Allowance · no hotel selected",
     },
     {

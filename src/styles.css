@@ -210,7 +210,7 @@ html {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
-@container (min-width: 720px) {
+@container (min-width: 640px) {
   .offer-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }

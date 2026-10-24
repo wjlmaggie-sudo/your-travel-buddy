@@ -18,7 +18,8 @@ export type StayBrief = PersonaDetails & {
 };
 export const stayChoiceSchema = z.object({
   name: z.string().trim().min(1).max(200),
-  evidence: z.enum(["demo", "entered"]).optional(),
+  evidence: z.enum(["demo", "entered", "live-search"]).optional(),
+  checkedAt: z.string().datetime().optional(),
   type: z.enum(["Hotel", "Hostel", "Apartment"]),
   amount: z.number().finite().min(0).max(1000000),
   unit: z.enum(["stay", "room-night", "person-night"]),

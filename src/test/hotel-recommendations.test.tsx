@@ -1,17 +1,17 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import { HotelRecommendations } from "@/components/HotelRecommendations";
-import { connectedBudget, demoFlights, demoHotels } from "@/lib/travel-workspace";
-const endpoint = vi.hoisted(() => vi.fn());
-vi.mock("@/lib/hotel-search", () => ({ hotelSearchEndpoint: endpoint }));
-vi.mock("@/components/HotelSearchPreview", () => ({
-  HotelSearchPreview: ({ allowance }: { allowance: number }) => (
-    <p>Provider allowance: {allowance}</p>
-  ),
+import { connectedBudget } from "@/lib/travel-workspace";
+const capture = vi.hoisted(() => vi.fn());
+vi.mock("@/components/LiveHotelSearch", () => ({
+  LiveHotelSearch: (props: { allowance: number }) => {
+    capture(props);
+    return <p>Provider allowance: {props.allowance}</p>;
+  },
 }));
 const brief = {
   destination: "Lisbon",
-  start: "2026-11-01",
+  start: "2030-11-01",
   days: 5,
   travelers: 2,
   budget: 1500,
@@ -19,43 +19,46 @@ const brief = {
   style: "Balanced" as const,
 };
 const journey = { departure: "Berlin", flightBudget: 375, hotelComfort: "Comfortable" as const };
-afterEach(cleanup);
-it("uses the overview hotel allowance after a flight upgrade and hides fictional hotels when connected", () => {
-  endpoint.mockReturnValue("https://test.supabase.co/functions/v1/search-hotels");
-  const changed = { ...journey, selectedFlight: demoFlights(brief, journey)[2]! };
-  render(<HotelRecommendations brief={brief} journey={changed} onChoose={vi.fn()} active />);
-  expect(
-    screen.getByText(`Provider allowance: ${connectedBudget(brief, changed).original.allowance}`),
-  ).toBeVisible();
-  expect(screen.queryByText(/Hotel comfort & allowance/)).not.toBeInTheDocument();
-  expect(screen.queryByText(/Try demonstration hotels/)).not.toBeInTheDocument();
-  expect(screen.queryByRole("button", { name: "Try this demo hotel" })).not.toBeInTheDocument();
+afterEach(() => {
+  cleanup();
+  vi.clearAllMocks();
 });
-it("lets users clear a previously saved demo without suggesting new fictional hotels", () => {
-  endpoint.mockReturnValue("https://test.supabase.co/functions/v1/search-hotels");
-  const onChoose = vi.fn();
+it("uses money left after the chosen flight and operating estimates for hotel recommendations", () => {
+  const changed = { ...journey, flightBudget: 465 };
+  const costs = connectedBudget(brief, changed);
+  render(<HotelRecommendations brief={brief} journey={changed} onChoose={vi.fn()} active />);
+  expect(capture).toHaveBeenCalledWith(
+    expect.objectContaining({
+      allowance: Math.max(0, brief.budget - costs.flight - costs.estimated),
+      active: true,
+    }),
+  );
+  expect(screen.queryByText(/demo|fictional/i)).not.toBeInTheDocument();
+});
+it("carries the requested room count and chosen estimate to the hotel step", () => {
+  const onChoose = vi.fn(),
+    onContinue = vi.fn();
   render(
     <HotelRecommendations
       brief={brief}
-      journey={journey}
-      stay={demoHotels(brief, journey)[0]!}
+      journey={{ ...journey, hotelRooms: 2 }}
       onChoose={onChoose}
+      onContinue={onContinue}
+      active
     />,
   );
-  expect(screen.getByText(/previous demo selection/)).toBeVisible();
-  fireEvent.click(screen.getByRole("button", { name: "Clear demo hotel selection" }));
-  expect(onChoose).toHaveBeenCalledWith(null);
+  expect(capture).toHaveBeenCalledWith(
+    expect.objectContaining({
+      brief: expect.objectContaining({ hotelRooms: 2 }),
+      onChoose,
+      onContinue,
+    }),
+  );
 });
-it("keeps the explicitly labeled comparison available for installations without a provider", () => {
-  endpoint.mockReturnValue(null);
-  render(<HotelRecommendations brief={brief} journey={journey} onChoose={vi.fn()} />);
-  expect(screen.getAllByRole("button", { name: "Try this demo hotel" })).toHaveLength(3);
-});
-it("shows a suggested family room setup without a room-count selector", () => {
-  endpoint.mockReturnValue("https://test.supabase.co/functions/v1/search-hotels");
-  const family = { ...brief, travelers: 4, childrenAgeRanges: ["4-6" as const] };
-  render(<HotelRecommendations brief={family} journey={journey} onChoose={vi.fn()} />);
-  expect(screen.queryByLabelText("Rooms needed")).not.toBeInTheDocument();
-  expect(screen.getByRole("heading", { name: "Family rooms or connecting rooms" })).toBeVisible();
-  expect(screen.getByText(/not a confirmed offer/)).toBeVisible();
+it("skips hotel search for day trips", () => {
+  render(
+    <HotelRecommendations brief={{ ...brief, days: 1 }} journey={journey} onChoose={vi.fn()} />,
+  );
+  expect(screen.getByText("No overnight stay needed.")).toBeVisible();
+  expect(capture).not.toHaveBeenCalled();
 });
