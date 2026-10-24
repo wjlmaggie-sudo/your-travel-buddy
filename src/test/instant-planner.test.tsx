@@ -77,11 +77,11 @@ describe("guest workspace", () => {
     });
     go("Edit trip details");
     go("Business");
-    go("Create my travel plan");
+    go("Rebuild my whole trip");
     expect(screen.getByRole("dialog", { name: "Rebuild this simulation?" })).toBeVisible();
     go("Keep my edits");
     expect(readGuestSimulation()?.ideas?.days[0]?.items[0]?.title).toBe("Keep my own activity");
-    go("Create my travel plan");
+    go("Rebuild my whole trip");
     go("Rebuild and replace edits");
     expect(readGuestSimulation()?.persona).toBe("business");
     expect(
