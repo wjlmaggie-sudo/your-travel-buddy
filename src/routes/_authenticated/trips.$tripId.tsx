@@ -511,6 +511,7 @@ function Itinerary({
               style={preferences.preference.style}
             />
             <DayCard
+              personaDetails={preferences.preference}
               active={active && day === activeDay}
               ticketBudget={
                 data.trip.currency === "EUR" && journey

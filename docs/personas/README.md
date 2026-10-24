@@ -3,8 +3,33 @@
 Product and implementation specifications, prepared 24 October 2026. The initial
 local integration now provides optional persona cards in the guest planner and saved
 trip settings, children’s age ranges at travel, age-aware Family activities and breaks,
-Business work placeholders, and Budget Travel activity alternatives. Persona and ages
+Business work blocks with short optional stops, and Budget Travel public-space visits. Persona and ages
 carry through guest refresh, account saving and PDF export without changing the budget.
+
+Persona choices now select different named places, not just different wording. For Lisbon:
+
+- **Family:** Jardim da Estrela playground/garden first for ages 0–3, Oceanário first for
+  ages 4–6, hands-on Pavilhão do Conhecimento first for ages 7–10 and older, with rest
+  time and nearby outdoor breaks. Adult-only family groups are not given child activities.
+- **Budget Travel:** public Alfama streets, Praça do Comércio, Chiado, riverside gardens
+  and market browsing. Paid palaces, castle entry and lift rides are not the default.
+- **Business:** one short optional outdoor/market stop around work placeholders; no
+  day-long Sintra excursion or children's science itinerary by default.
+
+Maps, stories and PDF resolve the locations actually in the itinerary, including manual
+edits. Other destinations use matching directory categories (parks/playgrounds, science,
+aquariums, public-space visits) where available; absent matches remain explicitly
+unconfirmed instead of inventing a child-friendly venue. Venue suitability and total
+family fares still require checking with operators. Previously generated plans are kept
+and show a rebuild prompt so old suggestions are not silently overwritten.
+
+Sources checked 24 October 2026: [Lisbon tourism garden listing](https://www.visitlisboa.com/en/places/jardim-da-estrela),
+[Oceanário visitor information](https://oceanario.pt/en/plan-your-visit/),
+[science-centre visitor information](https://pavconhecimento.pt/en/visit-us/general-information),
+[Parque das Nações gardens](https://www.visitlisboa.com/en/places/jardim-parque-das-nacoes),
+and [municipal promenade information](https://www.lisboa.pt/pontos-de-interesse/detalhe/alameda-dos-oceanos).
+These are sourced suggestions, not live offers. Published 2026 science-centre closures
+are respected where known; future opening calendars remain unverified.
 
 The detailed specifications also describe **future work**, including verified venue
 age restrictions, routing/meeting feasibility, per-activity locks, protected contingency

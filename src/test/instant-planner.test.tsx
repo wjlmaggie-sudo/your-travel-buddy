@@ -12,7 +12,7 @@ vi.mock("@tanstack/react-router", () => ({ useNavigate: () => navigate }));
 vi.mock("@/components/DayWeather", () => ({ DayWeather: () => <span>Daily weather</span> }));
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TravelPlanner } from "@/components/TravelPlanner";
-import { readPlannerDraft, readGuestSimulation } from "@/lib/planner-draft";
+import { readPlannerDraft, readGuestSimulation, saveGuestSimulation } from "@/lib/planner-draft";
 function setup() {
   return render(
     <QueryClientProvider client={new QueryClient()}>
@@ -68,6 +68,20 @@ describe("guest workspace", () => {
     expect(paidAI).not.toHaveBeenCalled();
   }, 15000);
 
+  it("keeps an older persona plan and offers an explicit refresh instead of silently overwriting it", () => {
+    setup();
+    go("Business");
+    start("");
+    const saved = readGuestSimulation()!;
+    const ideas = { ...saved.ideas!, personaRevision: undefined };
+    cleanup();
+    saveGuestSimulation({ ...saved, ideas });
+    setup();
+    expect(
+      screen.getByRole("button", { name: "Review & rebuild this persona plan" }),
+    ).toBeVisible();
+    expect(readGuestSimulation()?.ideas?.days).toEqual(ideas.days);
+  }, 15000);
   it("reviews a persona rebuild before replacing manually edited activities", () => {
     setup();
     start("");

@@ -1,3 +1,5 @@
+import { personaReferences } from "@/lib/city-guides";
+import { curatedPersonaDay } from "@/lib/persona-stops";
 import { childCount } from "../../supabase/functions/_shared/travel-persona";
 import { PersonaPreferences } from "./PersonaPreferences";
 import { useEffect, useRef, useState } from "react";
@@ -30,6 +32,14 @@ import type { TripIdeas } from "../../supabase/functions/_shared/trip-ideas";
 
 export function TravelPlanner() {
   const preferencesTrigger = useRef<HTMLButtonElement>(null);
+  const planningRequest = useRef(0);
+  const [findingPlaces, setFindingPlaces] = useState(false);
+  useEffect(
+    () => () => {
+      planningRequest.current++;
+    },
+    [],
+  );
   const [draft, setDraft] = useState<PlannerDraft>(() => ({
     destination: "",
     start: new Date().toISOString().slice(0, 10),
@@ -97,7 +107,25 @@ export function TravelPlanner() {
     applyPlan(parsed.data);
   }
   function applyPlan(next: PlannerDraft) {
-    const ideas = createJourneyIdeas(next, next.journey!);
+    const request = ++planningRequest.current;
+    if (next.persona && !curatedPersonaDay(next.destination, 1, next)) {
+      setFindingPlaces(true);
+      setPendingPlan(null);
+      void personaReferences(next.destination, next.days, next.style, next)
+        .catch(() => [])
+        .then((places) => {
+          if (request === planningRequest.current) {
+            finishPlan(next, places);
+            setFindingPlaces(false);
+          }
+        });
+    } else finishPlan(next);
+  }
+  function finishPlan(
+    next: PlannerDraft,
+    places: { name: string; kind: string; day?: number }[] = [],
+  ) {
+    const ideas = createJourneyIdeas(next, next.journey!, undefined, places);
     setResult((current) => ({
       brief: { ...next, style: budgetTravelStyle(next) },
       ideas,
@@ -296,8 +324,12 @@ export function TravelPlanner() {
                 </p>
               </div>
               <div className="flex flex-wrap gap-3">
-                <Button type="submit" className="h-11">
-                  {result ? "Rebuild my whole trip" : "Create my travel plan"}
+                <Button disabled={findingPlaces} type="submit" className="h-11">
+                  {findingPlaces
+                    ? "Finding matching places…"
+                    : result
+                      ? "Rebuild my whole trip"
+                      : "Create my travel plan"}
                 </Button>
                 <Button
                   type="button"

@@ -104,6 +104,21 @@ export function InstantPlan({
   return (
     <div id="whole-trip-plan" className="contents">
       <WorkspacePanel active={section === "planner" && overviewActive} label="AI Travel Overview">
+        {brief.persona && ideas.personaRevision !== 2 && (
+          <div className="rounded-2xl border border-secondary bg-secondary/10 p-4 text-sm">
+            <p>
+              New persona recommendations now choose different places, including child-focused
+              stops. Your current activities are kept until you rebuild.
+            </p>
+            <Button
+              className="mt-3 h-auto whitespace-normal py-2"
+              variant="outline"
+              onClick={onEditBrief}
+            >
+              Review & rebuild this persona plan
+            </Button>
+          </div>
+        )}
         <div className="rounded-2xl border bg-card p-5">
           <span className="inline-flex items-center gap-2 rounded-full bg-secondary/10 px-3 py-1 text-xs font-medium text-secondary">
             <Check className="h-3 w-3" /> Your whole trip is ready · free template plan
@@ -193,7 +208,12 @@ export function InstantPlan({
                   Day {day.day}
                 </span>
                 <p className="mt-2 text-sm font-medium">
-                  {day.items[1]?.title ?? day.items[0]?.title}
+                  {(brief.persona
+                    ? day.items.find((item) => item.location !== brief.destination && item.location)
+                        ?.title
+                    : undefined) ??
+                    day.items[1]?.title ??
+                    day.items[0]?.title}
                 </p>
                 <p className="mt-2 text-xs text-muted-foreground">
                   {day.items.length} editable activities · see the map & stories ↗
@@ -322,6 +342,8 @@ export function InstantPlan({
             />
             <div className="space-y-3">
               <DayVisuals
+                personaDetails={brief}
+                activities={day.items}
                 ticketBudget={
                   brief.currency === "EUR" && journey
                     ? connected.estimates.activities / brief.days

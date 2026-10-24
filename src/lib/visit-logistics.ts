@@ -1,12 +1,54 @@
 import type { VisualPlace } from "./city-guides";
 export type Admission = {
   price?: number;
+  checkedAt?: string;
   label: string;
   note: string;
   url: string;
   closedDay?: number;
 };
 const tickets: Record<string, Admission> = {
+  "Oceanário de Lisboa": {
+    label: "Paid · age and time-dependent tickets",
+    note: "Buy through the official aquarium ticket link. Exact ages and the visit time determine the full family total; a 0–3 planning range crosses the free/paid age boundary. Check before booking.",
+    url: "https://oceanario.pt/en/plan-your-visit/",
+    checkedAt: "24 Oct 2026",
+  },
+  "Pavilhão do Conhecimento": {
+    label: "Paid · science centre",
+    note: "Use the official visit page for tickets, age conditions and the dated opening calendar. Some days are closed; do not assume an exhibition or child fare is available.",
+    url: "https://pavconhecimento.pt/en/visit-us/general-information",
+    checkedAt: "24 Oct 2026",
+  },
+  "Jardim da Estrela": {
+    price: 0,
+    label: "Public garden visit",
+    note: "A public-garden/playground visit; food and separately organized events are extra. Check access before visiting.",
+    url: "https://www.visitlisboa.com/en/places/jardim-da-estrela",
+    checkedAt: "24 Oct 2026",
+  },
+  "Jardim Parque das Nações": {
+    price: 0,
+    label: "Public riverside garden walk",
+    note: "A walk in the public gardens, not a ticket to nearby attractions. Closures, meals and transport are separate.",
+    url: "https://www.visitlisboa.com/en/places/jardim-parque-das-nacoes",
+    checkedAt: "24 Oct 2026",
+  },
+  "Alameda dos Oceanos": {
+    price: 0,
+    label: "Public promenade",
+    note: "Public-space walking and art viewing; food, transport and paid nearby attractions are separate.",
+    url: "https://www.lisboa.pt/pontos-de-interesse/detalhe/alameda-dos-oceanos",
+    checkedAt: "24 Oct 2026",
+  },
+  "Praça do Comércio": {
+    price: 0,
+    label: "Public square visit",
+    note: "Self-guided visit to the public square. The arch viewpoint, museums and tours are not included.",
+    url: "https://www.visitlisboa.com/pt-pt/locais/praca-do-comercio-terreiro-do-paco",
+    checkedAt: "24 Oct 2026",
+  },
+
   "São Jorge Castle": {
     price: 17,
     label: "Paid admission",

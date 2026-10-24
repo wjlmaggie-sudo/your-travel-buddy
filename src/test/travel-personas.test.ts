@@ -63,9 +63,9 @@ describe("persona-aware local planning", () => {
       JSON.stringify(
         createJourneyIdeas({ ...brief, persona: "family", childrenAges: ages }, journey),
       );
-    expect(plan([2, 13])).toContain("play break");
-    expect(plan([8])).toContain("discovery quest");
-    expect(plan([15])).toContain("photo challenge");
+    expect(plan([2, 13])).toContain("Jardim da Estrela");
+    expect(plan([8])).toContain("Pavilhão do Conhecimento");
+    expect(plan([15])).toContain("science and culture together");
     expect(plan([])).toContain("No children assumed");
     expect(plan([8])).toContain("child prices are unverified");
   });
