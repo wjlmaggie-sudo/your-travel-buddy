@@ -1,3 +1,4 @@
+import { curatedPersonaDay, personaReason } from "./persona-stops";
 import {
   activityAgeBands,
   childAgeDescription,
@@ -28,7 +29,14 @@ export function personaSummary(value: PersonaDetails) {
 }
 
 /** Local preference rules, not venue age certification, live availability or a paid model. */
-export function applyPersona(plan: TripIdeas, input: PersonaDetails & { destination: string }) {
+export function applyPersona(
+  plan: TripIdeas,
+  input: PersonaDetails & {
+    destination: string;
+    startDate?: string | undefined;
+    places?: { name: string; kind: string; day?: number | undefined }[] | undefined;
+  },
+) {
   if (!input.persona) return plan;
   const ages = activityAgeBands(input);
   const young = ages.some((age) => age === "0-3" || age === "4-6");
@@ -37,8 +45,16 @@ export function applyPersona(plan: TripIdeas, input: PersonaDetails & { destinat
   const note =
     "Suggested outline: check opening hours, access, admission and travel time before visiting.";
   const days = plan.days.map((day) => {
-    const original = day.items[1]!;
-    const landmark = original.location === location ? "a nearby cultural stop" : original.location;
+    const selected = curatedPersonaDay(input.destination, day.day, input);
+    const references = input.places?.filter((p) => p.day === day.day) ?? [];
+    const names = selected?.map((p) => p.name) ?? references.map((p) => p.name);
+    const landmark = names[0] ?? "a local place still to be confirmed";
+    const mainLocation = names[0] ?? location;
+    const extraLocation = names[1];
+    const choiceNote =
+      selected?.[0]?.description ??
+      "No matching sourced place is available yet. This is a flexible outline, not a named venue recommendation.";
+    const reason = personaReason(input);
     const short = day.day === 1 || day.day === plan.days.length;
     if (input.persona === "business")
       return {
@@ -72,9 +88,9 @@ export function applyPersona(plan: TripIdeas, input: PersonaDetails & { destinat
           },
           {
             time: "18:00",
-            title: `Optional nearby discovery: ${landmark}`.slice(0, 200),
-            location: original.location,
-            notes: `A short cultural visit only if it fits after work; check closing hours and return transport. ${note}`,
+            title: `After work: ${landmark}`.slice(0, 200),
+            location: mainLocation,
+            notes: `${reason} ${choiceNote} Check closing hours and return transport. ${note}`,
           },
           {
             time: "19:00",
@@ -99,17 +115,17 @@ export function applyPersona(plan: TripIdeas, input: PersonaDetails & { destinat
           {
             time: "10:00",
             title:
-              `${young ? "A short discovery walk and a play break" : school ? "A family discovery quest" : ages.length ? "A culture and photo challenge" : "A shared cultural discovery"}: ${landmark}`.slice(
+              `${landmark} · ${young ? "play and discovery" : school ? "hands-on family discovery" : ages.length ? "science and culture together" : "shared discovery"}`.slice(
                 0,
                 200,
               ),
-            location: original.location,
-            notes: `${young ? "Favor a short visit with frequent breaks; skip strenuous or long ticketed visits if unsuitable." : school ? "Look for shapes, colors and stories together; choose a hands-on option only after checking age suitability." : ages.length ? "Let teenagers choose a theme, take photos and explore local stories together." : "Choose one main experience together and adapt to everyone's interests and mobility."} ${ages.length ? `Suggested for the entered ages ${childAgeDescription(input)}; venue age restrictions and child prices are unverified.` : "No children assumed. Add ages if children are traveling."} ${note}`,
+            location: mainLocation,
+            notes: `${reason} ${choiceNote} ${young ? "Favor a short visit with frequent breaks; skip strenuous or long ticketed visits if unsuitable." : school ? "Look for shapes, colors and stories together; choose a hands-on option only after checking age suitability." : ages.length ? "Let teenagers choose a theme, take photos and explore local stories together." : "Choose one main experience together and adapt to everyone's interests and mobility."} ${ages.length ? `Suggested for the entered ages ${childAgeDescription(input)}; venue age restrictions and child prices are unverified.` : "No children assumed. Add ages if children are traveling."} ${note}`,
           },
           {
             time: "12:00",
             title: "An easy lunch nearby",
-            location: original.location,
+            location: mainLocation,
             notes:
               "Leave time for dietary needs, queues and an unhurried meal. Verify full-group prices; child discounts are not assumed.",
           },
@@ -122,15 +138,13 @@ export function applyPersona(plan: TripIdeas, input: PersonaDetails & { destinat
           },
           {
             time: "15:30",
-            title: short
-              ? "An optional short stop or travel buffer"
-              : young
-                ? "Optional nearby park or simple play time"
-                : school
-                  ? "Optional hands-on activity or a park"
-                  : "Optional local market, park or creative activity",
-            location: original.location,
-            notes: `${young ? "Keep it short and near your base; choose an indoor alternative if weather makes outdoor play unsuitable." : "Let the group choose or skip this second stop; avoid another cross-city journey."} This is an activity idea, not a verified venue recommendation. ${note}`,
+            title: extraLocation
+              ? `Optional nearby stop: ${extraLocation}`
+              : short
+                ? "Rest or your travel buffer"
+                : "Free time together · no extra attraction required",
+            location: extraLocation ?? location,
+            notes: `${reason} ${extraLocation ? "Stay in the same area and skip this stop if tired. Check weather and access." : "Keep this unscheduled rather than inventing another venue."} ${note}`,
           },
           {
             time: "18:00",
@@ -154,20 +168,22 @@ export function applyPersona(plan: TripIdeas, input: PersonaDetails & { destinat
         {
           time: "10:00",
           title: `Self-guided local stories: ${landmark}`.slice(0, 200),
-          location: original.location,
-          notes: `Prefer public areas or an exterior visit; do not assume the interior or a viewpoint is free. Check access and any mandatory fees. ${note}`,
+          location: mainLocation,
+          notes: `${reason} ${choiceNote} Prefer public areas or an exterior visit; do not assume the interior or a viewpoint is free. Check access and any mandatory fees. ${note}`,
         },
         {
           time: "12:30",
           title: "A picnic, market meal or simple café",
-          location: original.location,
+          location: mainLocation,
           notes:
             "Choose an adequate meal within your group food allowance, respecting dietary needs.",
         },
         {
           time: "14:30",
-          title: "A free public-space walk or a rest break",
-          location: original.location,
+          title: extraLocation
+            ? `Optional self-guided stop: ${extraLocation}`
+            : "A rest break · keep the saving",
+          location: extraLocation ?? location,
           notes:
             "Stay in the same area to limit travel costs; walk only where practical for your group. Verify public access. Choose a paid must-see only after checking the total group cost.",
         },
@@ -183,7 +199,15 @@ export function applyPersona(plan: TripIdeas, input: PersonaDetails & { destinat
   });
   return {
     ...plan,
-    days,
+    personaRevision: 2,
+    days: days.map((day) => ({
+      ...day,
+      items: day.items.map((item) => ({
+        ...item,
+        title: item.title.slice(0, 200),
+        notes: item.notes.slice(0, 1000),
+      })),
+    })),
     summary:
       `${plan.summary ?? ""} ${personaSummary(input)}. ${input.persona === "family" ? "Activities and breaks adapt to the youngest entered age; suitability and child fares need confirmation." : input.persona === "business" ? "Work blocks are editable placeholders, not confirmed meetings." : "Prioritizes public-space experiences and whole-trip costs; no free entry or live price is guaranteed."}`.slice(
         0,

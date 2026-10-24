@@ -1,3 +1,7 @@
+import { MorePlaces } from "./MorePlaces";
+import { extraActivity } from "@/lib/extra-places";
+import { personaReferences } from "@/lib/city-guides";
+import { curatedPersonaDay } from "@/lib/persona-stops";
 import { useEffect, useRef, useState } from "react";
 import { Loader2, Sparkles, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -124,7 +128,7 @@ export function TripSuggestions({
     setDirectoryNote("");
     setStatus("Planning your entire trip…");
     try {
-      let places: { name: string; kind: string }[] = [];
+      let places: { name: string; kind: string; day?: number }[] = [];
       if (useDirectory) {
         setStatus("Finding local places for your trip…");
         try {
@@ -148,9 +152,21 @@ export function TripSuggestions({
           );
         }
       }
+      if (
+        preferences.preference.persona &&
+        !curatedPersonaDay(trip.destination, 1, preferences.preference)
+      ) {
+        places = await personaReferences(
+          trip.destination,
+          days,
+          preferences.preference.style,
+          preferences.preference,
+        ).catch(() => []);
+      }
       setStatus(`Planning all ${days} days. This can take a minute…`);
       const input = {
         destination: trip.destination,
+        startDate: trip.start_date,
         days,
         interests: interests || preferences.preference.interest,
         travelers: preferences.preference.travelers,
@@ -317,6 +333,32 @@ export function TripSuggestions({
               </p>
             )}
           </section>
+          <MorePlaces
+            key={`${trip.id}-draft`}
+            destination={trip.destination}
+            days={days}
+            current={[...activities, ...draft]}
+            disabled={saving || loading}
+            unavailableDays={applied}
+            onAdd={(place, day) => {
+              if (saving || loading || applied.includes(day)) return false;
+              setDraft((current) => [
+                ...current,
+                {
+                  ...extraActivity(place),
+                  id: crypto.randomUUID(),
+                  trip_id: trip.id,
+                  day,
+                  position:
+                    Math.max(
+                      -1,
+                      ...current.filter((item) => item.day === day).map((item) => item.position),
+                    ) + 1,
+                },
+              ]);
+              return true;
+            }}
+          />
           {budgets.map((budget) => {
             const items = draft.filter((item) => item.day === budget.day);
             const saved = applied.includes(budget.day);
@@ -350,6 +392,8 @@ export function TripSuggestions({
                 />
                 <div className="space-y-4">
                   <DayVisuals
+                    personaDetails={preferences.preference}
+                    activities={items}
                     ticketBudget={
                       trip.currency === "EUR" && journey
                         ? (connected?.estimates.activities ?? 0) / days

@@ -3,7 +3,7 @@ import { personaSummary } from "./travel-personas";
 import { hotelSearchEndpoint } from "./hotel-search";
 import { streetMapWays, streetMapSvg } from "./pdf-street-map";
 import type { Content, TDocumentDefinitions } from "pdfmake/interfaces";
-import { dayGuide, loadCityGuide, type VisualPlace } from "./city-guides";
+import { itineraryGuide, loadCityGuide, type VisualPlace } from "./city-guides";
 import { curatedStory, fetchPlaceStory, type PlaceStory } from "./place-stories";
 import { fetchPlacePhoto } from "./place-photos";
 import { admissionFor, routeLegs } from "./visit-logistics";
@@ -137,7 +137,14 @@ export async function buildTripPdf(
   const directory = await loadCityGuide(b.destination).catch(() => null);
   const guides = Array.from({ length: b.days }, (_, i) =>
     directory
-      ? dayGuide(directory, b.destination, i + 1, b.style)
+      ? itineraryGuide(
+          directory,
+          b.destination,
+          i + 1,
+          b.style,
+          b,
+          trip.days.find((day) => day.day === i + 1)?.items,
+        )
       : { places: [], restaurants: [] },
   );
   const mapKey = (places: VisualPlace[]) => places.map(keyFor).join("|");
@@ -353,7 +360,9 @@ export async function buildTripPdf(
     content.push(
       heading("Destination references · suggested stops"),
       paragraph(
-        "These reference stops and restaurants are suggestions, separate from your edited itinerary above. Ticket estimates are EUR adult prices, not an additional automatic budget charge.",
+        b.persona
+          ? "Marked stops follow the named locations in your itinerary. Ticket figures are adult reference prices only; child fares need exact ages and current operator confirmation. They are not an automatic budget charge."
+          : "These reference stops and restaurants are suggestions, separate from your edited itinerary above. Ticket estimates are EUR adult prices, not an additional automatic budget charge.",
       ),
     );
     if (!guide.places.length)
@@ -410,7 +419,7 @@ export async function buildTripPdf(
       content.push(
         paragraph(
           admission
-            ? `${admission.label}${admission.price !== undefined ? ` · ${admission.price.toFixed(2)} EUR / adult · ${(admission.price * b.travelers).toFixed(2)} EUR / group` : " · current price unverified"}. ${admission.note}`
+            ? `${admission.label}${admission.price !== undefined ? ` · ${admission.price.toFixed(2)} EUR / adult · ${(admission.price * Math.max(1, b.travelers - childCount(b))).toFixed(2)} EUR / ${childCount(b) ? "adult subtotal only; child fares unverified" : "group"}` : " · current price unverified"}. ${admission.note}`
             : "Admission, ticket requirements and current opening status are unverified; check the venue before visiting.",
         ),
       );

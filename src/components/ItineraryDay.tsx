@@ -1,3 +1,4 @@
+import type { PersonaDetails } from "../../supabase/functions/_shared/travel-persona";
 import { useState } from "react";
 import { ArrowDown, ArrowUp, Trash2, MapPin } from "lucide-react";
 import { toast } from "sonner";
@@ -22,7 +23,9 @@ export function ItineraryDay({
   travelers,
   date,
   active = true,
+  personaDetails,
 }: {
+  personaDetails?: PersonaDetails;
   active?: boolean;
   travelers?: number | undefined;
   date?: string | undefined;
@@ -86,6 +89,8 @@ export function ItineraryDay({
         <DayWeather destination={destination} date={date} active={active} />
       </div>
       <DayVisuals
+        personaDetails={personaDetails ?? {}}
+        activities={items}
         ticketBudget={ticketBudget}
         travelers={travelers}
         date={date}

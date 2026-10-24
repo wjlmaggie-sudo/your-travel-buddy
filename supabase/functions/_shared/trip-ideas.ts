@@ -17,8 +17,14 @@ export const tripIdeaInput = z
     currency: z.string().regex(/^[A-Z]{3}$/),
     style: z.enum(["Budget", "Balanced", "Luxury"]),
     places: z
-      .array(z.object({ name: z.string().max(200), kind: z.string().max(100) }))
-      .max(20)
+      .array(
+        z.object({
+          name: z.string().max(200),
+          kind: z.string().max(100),
+          day: z.number().int().min(1).max(30).optional(),
+        }),
+      )
+      .max(60)
       .optional(),
   })
   .refine(validParty, {
@@ -26,6 +32,7 @@ export const tripIdeaInput = z
     path: ["travelers"],
   });
 export const ideaSchema = z.object({
+  personaRevision: z.number().int().min(1).max(100).optional(),
   summary: z.string().max(1200).optional(),
   days: z
     .array(

@@ -1,8 +1,10 @@
+import { childCount, type PersonaDetails } from "../../supabase/functions/_shared/travel-persona";
+import { personaReason } from "@/lib/persona-stops";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { MapPin, Utensils, ExternalLink, Loader2 } from "lucide-react";
 import { admissionEstimate } from "@/lib/visit-logistics";
-import { dayGuide, loadCityGuide, type VisualPlace } from "@/lib/city-guides";
+import { itineraryGuide, loadCityGuide, type VisualPlace } from "@/lib/city-guides";
 import type { TravelStyle } from "@/lib/travel-data";
 import { AdmissionDetails, RouteLogistics } from "./VisitLogistics";
 import { PlaceStory } from "./PlaceStory";
@@ -56,7 +58,11 @@ export function DayVisuals({
   ticketBudget,
   travelers = 1,
   date,
+  personaDetails = {},
+  activities,
 }: {
+  personaDetails?: PersonaDetails;
+  activities?: { location?: string | null | undefined; title?: string | null | undefined }[];
   travelers?: number | undefined;
   date?: string | undefined;
   destination: string;
@@ -93,8 +99,11 @@ export function DayVisuals({
     retry: false,
   });
   const guide = useMemo(
-    () => (query.data ? dayGuide(query.data, destination, day, style) : null),
-    [query.data, destination, day, style],
+    () =>
+      query.data
+        ? itineraryGuide(query.data, destination, day, style, personaDetails, activities)
+        : null,
+    [query.data, destination, day, style, personaDetails, activities],
   );
   const maps = (text: string) =>
     `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(text)}`;
@@ -128,6 +137,9 @@ export function DayVisuals({
           </a>
         )}
       </div>
+      {personaDetails.persona && (
+        <p className="rounded-xl bg-secondary/10 p-3 text-sm">{personaReason(personaDetails)}</p>
+      )}
       {!visible || query.isPending ? (
         <p className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" />
@@ -137,15 +149,24 @@ export function DayVisuals({
         <>
           <DayRouteMap places={guide.places} day={day} />
           <div className="rounded-lg bg-muted/50 p-3 text-xs leading-relaxed">
-            <p>
-              Standard entry at the marked stops with known tariffs:{" "}
-              <strong>€{admissionEstimate(guide.places, travelers).total.toFixed(2)}</strong> for{" "}
-              {travelers} adults, if you enter all of them and access is available.{" "}
-              {admissionEstimate(guide.places, travelers).unknown > 0
-                ? `${admissionEstimate(guide.places, travelers).unknown} stop(s) have unverified fees or opening status; those costs are not included.`
-                : "Food and transport are separate."}
-            </p>
-            {ticketBudget !== undefined &&
+            {childCount(personaDetails) ? (
+              <p>
+                Family ticket totals need exact ages and current venue prices. Age ranges select
+                activities; they do not establish a child fare. Use each attraction’s official
+                ticket link before buying.
+              </p>
+            ) : (
+              <p>
+                Standard entry at marked stops with known tariffs:{" "}
+                <strong>€{admissionEstimate(guide.places, travelers).total.toFixed(2)}</strong> for{" "}
+                {travelers} adults.
+                {admissionEstimate(guide.places, travelers).unknown > 0
+                  ? ` ${admissionEstimate(guide.places, travelers).unknown} stop(s) have unverified fees; these costs are not included.`
+                  : " Food and transport are separate."}
+              </p>
+            )}
+            {!childCount(personaDetails) &&
+              ticketBudget !== undefined &&
               admissionEstimate(guide.places, travelers).total > ticketBudget && (
                 <p className="mt-2 text-primary">
                   Above this day’s indicative ticket allowance (€{ticketBudget.toFixed(2)}). Choose
@@ -179,7 +200,11 @@ export function DayVisuals({
                     </p>
                   )}
                   <PlaceStory place={place} />
-                  <AdmissionDetails place={place} travelers={travelers} date={date} />
+                  <AdmissionDetails
+                    place={place}
+                    travelers={Math.max(1, travelers - childCount(personaDetails))}
+                    date={date}
+                  />
                   <div className="mt-3 flex gap-3 text-xs">
                     <a
                       href={maps(place.name + ", " + destination)}
@@ -205,8 +230,8 @@ export function DayVisuals({
           <p className="text-xs text-muted-foreground">
             Numbers match the map. Stops are grouped by neighborhood or straight-line proximity, not
             verified travel times. Suggestions may repeat on longer trips; edit them to suit your
-            pace. Check tickets, access, travel time, and opening hours. Place information:
-            Wikipedia / OpenStreetMap.
+            pace. Check tickets, access, travel time, and opening hours. Source links are shown on
+            each place card.
           </p>
         </>
       ) : (
@@ -264,7 +289,9 @@ export function DayVisuals({
           <p className="mt-2 text-xs text-muted-foreground">
             No verified restaurant names are available yet.{" "}
             <a
-              href={maps("restaurants in " + destination)}
+              href={maps(
+                "restaurants near " + (guide?.places[0]?.name ?? destination) + ", " + destination,
+              )}
               target="_blank"
               rel="noreferrer"
               className="underline"

@@ -4,7 +4,7 @@ const hotelEndpoint = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/hotel-search", () => ({ hotelSearchEndpoint: hotelEndpoint }));
 vi.mock("@/lib/city-guides", () => ({
   loadCityGuide: vi.fn(async () => ({})),
-  dayGuide: () => ({
+  itineraryGuide: () => ({
     places: [
       {
         name: "Pena Palace",

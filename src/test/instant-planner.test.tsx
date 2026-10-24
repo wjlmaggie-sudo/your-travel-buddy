@@ -12,7 +12,7 @@ vi.mock("@tanstack/react-router", () => ({ useNavigate: () => navigate }));
 vi.mock("@/components/DayWeather", () => ({ DayWeather: () => <span>Daily weather</span> }));
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TravelPlanner } from "@/components/TravelPlanner";
-import { readPlannerDraft, readGuestSimulation } from "@/lib/planner-draft";
+import { readPlannerDraft, readGuestSimulation, saveGuestSimulation } from "@/lib/planner-draft";
 function setup() {
   return render(
     <QueryClientProvider client={new QueryClient()}>
@@ -29,7 +29,7 @@ function start(departure = "Berlin") {
   fireEvent.click(screen.getByRole("button", { name: "Create my travel plan" }));
 }
 function go(name: string) {
-  fireEvent.click(screen.getByRole("button", { name }));
+  fireEvent.click(screen.getByRole("button", { name, hidden: true }));
 }
 beforeEach(() => {
   sessionStorage.clear();
@@ -61,13 +61,58 @@ describe("guest workspace", () => {
     setup();
     expect(screen.getByText(/^Family planning.*0–3, 7–10/)).toBeVisible();
     go("Save my whole plan");
-    await screen.findByRole("button", { name: "Sign in or create an account" });
+    await screen.findByRole("button", { name: "Sign in or create an account", hidden: true });
     go("Sign in or create an account");
     expect(readPlannerDraft()?.persona).toBe("family");
     expect(readPlannerDraft()?.childrenAgeRanges).toEqual(["0-3", "7-10"]);
     expect(paidAI).not.toHaveBeenCalled();
   }, 15000);
 
+  it("keeps an older persona plan and offers an explicit refresh instead of silently overwriting it", () => {
+    setup();
+    go("Business");
+    start("");
+    const saved = readGuestSimulation()!;
+    const ideas = { ...saved.ideas!, personaRevision: undefined };
+    cleanup();
+    saveGuestSimulation({ ...saved, ideas });
+    setup();
+    expect(
+      screen.getByRole("button", { name: "Review & rebuild this persona plan" }),
+    ).toBeVisible();
+    expect(readGuestSimulation()?.ideas?.days).toEqual(ideas.days);
+  }, 15000);
+  it("adds an outside recommendation to a chosen day without navigation or sign-in, and retains it on refresh", async () => {
+    setup();
+    go("Business");
+    start("");
+    go("Attractions & Activities");
+    fireEvent.click(screen.getByText("More places to explore"));
+    await screen.findByLabelText("Find another place");
+    fireEvent.change(screen.getByLabelText("Find another place"), {
+      target: { value: "Oceanário" },
+    });
+    fireEvent.change(screen.getByLabelText("Add to day"), { target: { value: "2" } });
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Add Oceanário de Lisboa to day 2", hidden: true }),
+    );
+    await screen.findByText(/Oceanário de Lisboa added to day 2/);
+    expect(screen.getByLabelText("Explore a day")).toHaveValue("1");
+    expect(
+      readGuestSimulation()?.ideas?.days[1]?.items.some(
+        (item) => item.location === "Oceanário de Lisboa",
+      ),
+    ).toBe(true);
+    expect(readGuestSimulation()?.budget).toBe(1500);
+    expect(session).not.toHaveBeenCalled();
+    cleanup();
+    setup();
+    expect(
+      readGuestSimulation()?.ideas?.days[1]?.items.some(
+        (item) => item.location === "Oceanário de Lisboa",
+      ),
+    ).toBe(true);
+  }, 30000);
   it("reviews a persona rebuild before replacing manually edited activities", () => {
     setup();
     start("");
@@ -124,7 +169,7 @@ describe("guest workspace", () => {
     expect(screen.getByRole("heading", { name: "5 days in Lisbon, Portugal" })).toBeVisible();
     expect(readGuestSimulation()?.ideas?.days).toHaveLength(5);
     go("Save my whole plan");
-    await screen.findByRole("button", { name: "Sign in or create an account" });
+    await screen.findByRole("button", { name: "Sign in or create an account", hidden: true });
     go("Sign in or create an account");
     expect(readPlannerDraft()?.journey?.departure).toBe("Berlin");
     expect(navigate).toHaveBeenCalledWith({ to: "/trips" });

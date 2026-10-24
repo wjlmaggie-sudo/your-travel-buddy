@@ -1,7 +1,7 @@
 vi.mock("@/components/DayVisuals", () => ({
   DayVisuals: () => <div>Day map and restaurants</div>,
 }));
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render as renderBase, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { randomUUID } from "node:crypto";
 const api = vi.hoisted(() => ({ generate: vi.fn(), save: vi.fn() }));
@@ -26,6 +26,10 @@ vi.mock("@/lib/stay-planning", async (importOriginal) => ({
   readStayChoice: async () => null,
   stayCost: () => null,
 }));
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+function render(ui: React.ReactNode) {
+  return renderBase(<QueryClientProvider client={new QueryClient()}>{ui}</QueryClientProvider>);
+}
 import { TripSuggestions } from "@/components/TripSuggestions";
 const trip = {
   id: "trip",

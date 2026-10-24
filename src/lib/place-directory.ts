@@ -103,7 +103,7 @@ export function parsePlaces(value: unknown): Place[] {
         : null);
     const category = element.tags["shop"]
       ? "Shops"
-      : element.tags["tourism"]
+      : element.tags["tourism"] || element.tags["leisure"]
         ? "Attractions"
         : "Food & drink";
     const key = `${name}:${coords?.lat.toFixed(3)}:${coords?.lon.toFixed(3)}`;
@@ -117,6 +117,7 @@ export function parsePlaces(value: unknown): Place[] {
         kind: (
           element.tags["shop"] ||
           element.tags["tourism"] ||
+          element.tags["leisure"] ||
           element.tags["amenity"] ||
           "place"
         ).replaceAll("_", " "),
@@ -138,7 +139,7 @@ export async function nearbyPlaces(destination: Destination): Promise<Place[]> {
   const coords = coordinate.parse(destination);
   return cached(`places:${coords.lat.toFixed(3)}:${coords.lon.toFixed(3)}`, async () => {
     const area = `(around:4000,${coords.lat},${coords.lon})`;
-    const query = `[out:json][timeout:20][maxsize:16777216];nwr${area}[tourism~"museum|attraction|gallery|viewpoint"][name];out center tags 35;nwr${area}[shop][name];out center tags 35;nwr${area}[amenity~"cafe|restaurant|food_court"][name];out center tags 25;`;
+    const query = `[out:json][timeout:20][maxsize:16777216];nwr${area}[tourism~"museum|attraction|gallery|viewpoint|aquarium|zoo"][name];out center tags 35;nwr${area}[leisure~"playground|park|garden"][name];out center tags 30;nwr${area}[shop][name];out center tags 35;nwr${area}[amenity~"cafe|restaurant|food_court"][name];out center tags 25;`;
     try {
       const response = await fetch(
         import.meta.env["VITE_OVERPASS_ENDPOINT"] ||

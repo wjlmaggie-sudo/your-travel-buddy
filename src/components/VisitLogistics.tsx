@@ -48,7 +48,8 @@ export function AdmissionDetails({
         Official tickets & how to buy
       </a>
       <p className="mt-1 text-[10px] text-muted-foreground">
-        Published tariff checked 17 Oct 2026 · reconfirm before buying.
+        Published visitor information checked {ticket.checkedAt ?? "17 Oct 2026"} · reconfirm before
+        buying.
       </p>
     </div>
   );

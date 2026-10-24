@@ -7,7 +7,7 @@ export function createJourneyIdeas(
   brief: StayBrief & { interest: string },
   journey: Journey,
   stay?: StayChoice | null,
-  places: { name: string; kind: string }[] = [],
+  places: { name: string; kind: string; day?: number | undefined }[] = [],
 ) {
   const costs = journeyBudget(brief, journey, stay);
   const spend = Math.max(0, costs.remaining) / brief.days / brief.travelers;
@@ -25,6 +25,7 @@ export function createJourneyIdeas(
       childrenAges: brief.childrenAges,
       childrenAgeRanges: brief.childrenAgeRanges,
       destination: brief.destination,
+      startDate: brief.start,
       days: brief.days,
       travelers: brief.travelers,
       budget: Math.max(0, brief.budget - flightCost(brief, journey)),

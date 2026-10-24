@@ -1,3 +1,5 @@
+import { curatedPersonaDay, rankPersonaPlaces, PERSONA_LISBON_PLACES } from "./persona-stops";
+import type { PersonaDetails } from "../../supabase/functions/_shared/travel-persona";
 import { distanceKm } from "./visit-logistics";
 import lisbon from "./lisbon-places.json";
 import { nearbyPlaces, searchDestinations } from "./place-directory";
@@ -9,6 +11,7 @@ export type VisualPlace = {
   lon: number;
   description: string;
   openingHours?: string | undefined;
+  kind?: string | undefined;
   source: string;
   image?: { url: string; credit: string; license: string; source: string };
 };
@@ -128,6 +131,7 @@ export async function loadCityGuide(destination: string): Promise<CityGuide> {
       lat: place.lat,
       lon: place.lon,
       description: place.kind,
+      kind: place.kind,
       openingHours: place.openingHours || undefined,
       source: place.source,
     }));
@@ -146,11 +150,66 @@ export async function loadCityGuide(destination: string): Promise<CityGuide> {
     curated: false,
   };
 }
-export function dayGuide(guide: CityGuide, destination: string, day: number, style: TravelStyle) {
+export function dayGuide(
+  guide: CityGuide,
+  destination: string,
+  day: number,
+  style: TravelStyle,
+  details: PersonaDetails & { start?: string | undefined; startDate?: string | undefined } = {},
+) {
+  const curated = curatedPersonaDay(destination, day, details);
+  if (curated) return { places: curated, restaurants: [] };
+  if (details.persona) {
+    const ranked = rankPersonaPlaces(guide.days.flat(), details);
+    const groups = groupNearbyStops(ranked, details.persona === "business" ? 1 : 2);
+    return { places: groups.length ? groups[(day - 1) % groups.length]! : [], restaurants: [] };
+  }
   return {
     places: guide.days.length ? guide.days[(day - 1) % guide.days.length]! : [],
     restaurants: guide.curated
       ? curatedRestaurants(destination, day, style)
       : (guide.restaurants[0] ?? []),
   };
+}
+
+/** Map the locations actually present in the itinerary, including saved/manual choices. */
+export function itineraryGuide(
+  guide: CityGuide,
+  destination: string,
+  day: number,
+  style: TravelStyle,
+  details: PersonaDetails & { start?: string | undefined; startDate?: string | undefined } = {},
+  items?: { location?: string | null | undefined; title?: string | null | undefined }[],
+) {
+  const base = dayGuide(guide, destination, day, style, details);
+  if (!items) return base;
+  const pool = [
+    ...guide.days.flat(),
+    ...base.places,
+    ...(/^(lisbon|lisboa)(,|$)/i.test(destination.trim()) ? PERSONA_LISBON_PLACES : []),
+  ];
+  const selected: VisualPlace[] = [];
+  for (const item of items) {
+    const place = pool.find((p) => p.name.toLowerCase() === item.location?.trim().toLowerCase());
+    if (place && !selected.some((p) => p.name === place.name)) selected.push(place);
+  }
+  return selected.length || details.persona ? { places: selected, restaurants: [] } : base;
+}
+
+export async function personaReferences(
+  destination: string,
+  days: number,
+  style: TravelStyle,
+  details: PersonaDetails,
+) {
+  const guide = await loadCityGuide(destination);
+  return Array.from({ length: days }, (_, index) =>
+    dayGuide(guide, destination, index + 1, style, details).places.map((p) => ({
+      name: p.name,
+      kind: (p.kind ?? p.description).slice(0, 100),
+      day: index + 1,
+    })),
+  )
+    .flat()
+    .slice(0, 60);
 }
