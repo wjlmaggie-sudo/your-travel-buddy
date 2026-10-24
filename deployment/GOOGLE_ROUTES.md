@@ -90,3 +90,11 @@ Official sources: [pricing](https://developers.google.com/maps/billing-and-prici
 [requests](https://developers.google.com/maps/documentation/routes/compute_route_directions),
 [transit](https://developers.google.com/maps/documentation/routes/transit-route),
 [policies](https://developers.google.com/maps/documentation/routes/policies).
+
+## Preview integration validation
+
+On 24 October 2026, 12 focused transport/itinerary checks passed, TypeScript
+checking passed, and the static production build passed. Browser verification
+confirmed the panel inside the guest Lisbon day view with the example-data label.
+The complete Vitest run stalled before reporting files and was stopped; no claim
+is made that the full suite passed. Google billing verification remains incomplete.
