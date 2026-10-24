@@ -181,8 +181,9 @@ export function HotelRecommendations({
       {hotelSearchEndpoint() && stay?.evidence === "demo" && (
         <div className="rounded-xl border bg-card p-4 text-sm">
           <p>
-            Your previous demo selection, {stay.name}, is still included in the budget. It is not a
-            provider offer.
+            {stay.scope === stayScope(brief)
+              ? `Your previous demo selection, ${stay.name}, is still included in the budget. It is not a provider offer.`
+              : `Your previous demo selection, ${stay.name}, no longer matches your requested rooms or trip details. The hotel allowance is used instead until you choose a matching quote.`}
           </p>
           <Button variant="ghost" onClick={() => onChoose(null)}>
             Clear demo hotel selection
