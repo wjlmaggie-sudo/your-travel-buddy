@@ -36,6 +36,7 @@ jobs:
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
           # Optional public URL only. Private provider credentials belong in Edge Function secrets.
           VITE_HOTEL_SEARCH_URL: ${{ vars.VITE_HOTEL_SEARCH_URL }}
+          VITE_TRANSPORT_ROUTES_URL: ${{ vars.VITE_TRANSPORT_ROUTES_URL }}
           PAGES_BASE_PATH: /${{ github.event.repository.name }}/
       - name: Configure Pages
         uses: actions/configure-pages@v5

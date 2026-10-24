@@ -6,7 +6,7 @@ await writeFile("dist/.nojekyll", "");
 for (const name of await readdir("dist/assets")) {
   if (!name.endsWith(".js")) continue;
   const source = await readFile(path.join("dist/assets", name), "utf8");
-  if (/SUPABASE_SERVICE_ROLE_KEY|LOVABLE_API_KEY|ai\.gateway\.lovable\.dev/.test(source)) {
+  if (/SUPABASE_SERVICE_ROLE_KEY|LOVABLE_API_KEY|GOOGLE_ROUTES_API_KEY|ai\.gateway\.lovable\.dev/.test(source)) {
     throw new Error(
       "The static build contains a private server module. Do not publish this artifact.",
     );
