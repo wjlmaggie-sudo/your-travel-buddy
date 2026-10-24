@@ -1,3 +1,5 @@
+import { MorePlaces } from "./MorePlaces";
+import { extraActivity } from "@/lib/extra-places";
 import { personaSummary } from "@/lib/travel-personas";
 import { DownloadTripPdf } from "./DownloadTripPdf";
 import { WorkspacePanel, type BudgetSnapshot } from "./TravelWorkspace";
@@ -310,6 +312,30 @@ export function InstantPlan({
             ))}
           </select>
         </div>
+        <MorePlaces
+          key={brief.destination}
+          destination={brief.destination}
+          days={brief.days}
+          day={activeDay}
+          active={section === "attractions"}
+          maxPerDay={8}
+          current={ideas.days.flatMap((day) =>
+            day.items.map((item) => ({ ...item, day: day.day })),
+          )}
+          onAdd={(place, targetDay) => {
+            const target = ideas.days.find((day) => day.day === targetDay);
+            if (!target || target.items.length >= 8) return false;
+            editIdeas((current) => ({
+              ...current,
+              days: current.days.map((day) =>
+                day.day === targetDay
+                  ? { ...day, items: [...day.items, extraActivity(place)] }
+                  : day,
+              ),
+            }));
+            return true;
+          }}
+        />
         {ideas.days.map((day, dayIndex) => (
           <section
             hidden={day.day !== activeDay}

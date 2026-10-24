@@ -1,3 +1,5 @@
+import { MorePlaces } from "@/components/MorePlaces";
+import { extraActivity } from "@/lib/extra-places";
 import { DownloadTripPdf } from "@/components/DownloadTripPdf";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useSuspenseQuery, useQueryClient, useQuery } from "@tanstack/react-query";
@@ -493,6 +495,30 @@ function Itinerary({
           ))}
         </select>
       </div>
+      <MorePlaces
+        key={data.trip.id}
+        destination={data.trip.destination}
+        days={days}
+        day={activeDay}
+        active={active}
+        current={data.activities}
+        disabled={preferences.isPending || preferences.isError}
+        onAdd={async (place, day) => {
+          const { error } = await supabase.from("activities").insert({
+            ...extraActivity(place),
+            trip_id: data.trip.id,
+            day,
+            position:
+              Math.max(
+                -1,
+                ...data.activities.filter((item) => item.day === day).map((item) => item.position),
+              ) + 1,
+          });
+          if (error) throw error;
+          refresh();
+          return true;
+        }}
+      />
       {Array.from({ length: days }, (_, i) => i + 1).map((day) => {
         const items = data.activities.filter((a) => a.day === day);
         return (

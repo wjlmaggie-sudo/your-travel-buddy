@@ -112,3 +112,18 @@ be collected before issuing any future child-aware provider search.
 
 Provider access and production pricing are separate work. Do not present a new persona
 as evidence that live flights, child rates, room suitability or hotel comparison exist.
+
+## Optional additions beyond recommendations
+
+The Attractions view includes a collapsed **More places to explore** section. It uses
+the existing sourced destination guide plus the Lisbon persona-place catalogue, excludes
+places already present anywhere in the itinerary, and lets the traveler search and select
+a target day. This catalogue is not restricted to their selected persona. Guest additions
+use tab-session storage; signed-in travelers can add to saved itineraries or an unsaved
+suggestion. Saved suggestion days are edited from the saved itinerary instead.
+
+Adds preserve existing activities and the active view, and follow the guest eight-item
+per-day limit. Failed saves leave the option available for retry. Maps and PDF use the
+added place's name/location and include the source in its notes. Ticket figures are
+reference information, not live availability or a verified group quote; adding a place
+does not reserve tickets, spend money or silently change the activity budget allowance.

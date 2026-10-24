@@ -182,7 +182,7 @@ export function itineraryGuide(
   items?: { location?: string | null | undefined; title?: string | null | undefined }[],
 ) {
   const base = dayGuide(guide, destination, day, style, details);
-  if (!details.persona || !items) return base;
+  if (!items) return base;
   const pool = [
     ...guide.days.flat(),
     ...base.places,
@@ -193,7 +193,7 @@ export function itineraryGuide(
     const place = pool.find((p) => p.name.toLowerCase() === item.location?.trim().toLowerCase());
     if (place && !selected.some((p) => p.name === place.name)) selected.push(place);
   }
-  return { places: selected, restaurants: [] };
+  return selected.length || details.persona ? { places: selected, restaurants: [] } : base;
 }
 
 export async function personaReferences(

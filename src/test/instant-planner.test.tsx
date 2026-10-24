@@ -82,6 +82,37 @@ describe("guest workspace", () => {
     ).toBeVisible();
     expect(readGuestSimulation()?.ideas?.days).toEqual(ideas.days);
   }, 15000);
+  it("adds an outside recommendation to a chosen day without navigation or sign-in, and retains it on refresh", async () => {
+    setup();
+    go("Business");
+    start("");
+    go("Attractions & Activities");
+    fireEvent.click(screen.getByText("More places to explore"));
+    await screen.findByLabelText("Find another place");
+    fireEvent.change(screen.getByLabelText("Find another place"), {
+      target: { value: "Oceanário" },
+    });
+    fireEvent.change(screen.getByLabelText("Add to day"), { target: { value: "2" } });
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Add Oceanário de Lisboa to day 2" }),
+    );
+    await screen.findByText(/Oceanário de Lisboa added to day 2/);
+    expect(screen.getByLabelText("Explore a day")).toHaveValue("1");
+    expect(
+      readGuestSimulation()?.ideas?.days[1]?.items.some(
+        (item) => item.location === "Oceanário de Lisboa",
+      ),
+    ).toBe(true);
+    expect(readGuestSimulation()?.budget).toBe(1500);
+    expect(session).not.toHaveBeenCalled();
+    cleanup();
+    setup();
+    expect(
+      readGuestSimulation()?.ideas?.days[1]?.items.some(
+        (item) => item.location === "Oceanário de Lisboa",
+      ),
+    ).toBe(true);
+  }, 30000);
   it("reviews a persona rebuild before replacing manually edited activities", () => {
     setup();
     start("");

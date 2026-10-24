@@ -1,3 +1,5 @@
+import { MorePlaces } from "./MorePlaces";
+import { extraActivity } from "@/lib/extra-places";
 import { personaReferences } from "@/lib/city-guides";
 import { curatedPersonaDay } from "@/lib/persona-stops";
 import { useEffect, useRef, useState } from "react";
@@ -331,6 +333,32 @@ export function TripSuggestions({
               </p>
             )}
           </section>
+          <MorePlaces
+            key={`${trip.id}-draft`}
+            destination={trip.destination}
+            days={days}
+            current={[...activities, ...draft]}
+            disabled={saving || loading}
+            unavailableDays={applied}
+            onAdd={(place, day) => {
+              if (saving || loading || applied.includes(day)) return false;
+              setDraft((current) => [
+                ...current,
+                {
+                  ...extraActivity(place),
+                  id: crypto.randomUUID(),
+                  trip_id: trip.id,
+                  day,
+                  position:
+                    Math.max(
+                      -1,
+                      ...current.filter((item) => item.day === day).map((item) => item.position),
+                    ) + 1,
+                },
+              ]);
+              return true;
+            }}
+          />
           {budgets.map((budget) => {
             const items = draft.filter((item) => item.day === budget.day);
             const saved = applied.includes(budget.day);
