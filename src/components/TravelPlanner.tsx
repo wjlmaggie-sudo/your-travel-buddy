@@ -106,7 +106,6 @@ export function TravelPlanner() {
     setEditing(false);
     setPendingPlan(null);
   }
-  const planned = result?.brief ?? draft;
   return (
     <section
       id="plan-your-trip"
@@ -380,7 +379,7 @@ export function TravelPlanner() {
             <Button onClick={() => setPreferences(false)}>Done</Button>
           </DialogContent>
         </Dialog>
-        {!result && !["planner", "currency", "weather"].includes(section) && (
+        {!result && !["planner", "currency"].includes(section) && (
           <WorkspacePanel
             active
             label={SECTIONS.find((item) => item.id === section)?.label ?? "Travel options"}
@@ -410,14 +409,7 @@ export function TravelPlanner() {
             onEdited={() => setEdited(true)}
           />
         )}
-        <TravelTools
-          key={`${planned.destination}-${planned.start}-${planned.days}`}
-          section={section}
-          currency={planned.currency}
-          destination={planned.destination}
-          start={planned.start}
-          days={Math.min(30, Math.max(1, planned.days))}
-        />
+        <TravelTools section={section} currency={(result?.brief ?? draft).currency} />
       </TravelWorkspace>
     </section>
   );

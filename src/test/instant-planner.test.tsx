@@ -9,7 +9,6 @@ const session = vi.hoisted(() => vi.fn());
 vi.mock("@/integrations/supabase/client", () => ({ supabase: { auth: { getSession: session } } }));
 vi.mock("@/lib/ai.functions", () => ({ generateTripIdeas: paidAI }));
 vi.mock("@tanstack/react-router", () => ({ useNavigate: () => navigate }));
-vi.mock("@/components/TripWeather", () => ({ TripWeather: () => <div>Destination weather</div> }));
 vi.mock("@/components/DayWeather", () => ({ DayWeather: () => <span>Daily weather</span> }));
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TravelPlanner } from "@/components/TravelPlanner";
@@ -103,8 +102,11 @@ describe("guest workspace", () => {
     go("Currency");
     expect(screen.getByRole("region", { name: "Currency converter" })).toBeVisible();
     expect(screen.queryByRole("region", { name: "Connected trip budget" })).not.toBeInTheDocument();
-    go("Weather");
-    expect(screen.getByLabelText("Weather destination")).toHaveValue("Lisbon, Portugal");
+    expect(screen.queryByRole("button", { name: /^Weather$/ })).not.toBeInTheDocument();
+    go("Attractions & Activities");
+    expect(screen.getAllByText("Daily weather").some((item) => !item.closest("[hidden]"))).toBe(
+      true,
+    );
     expect(session).not.toHaveBeenCalled();
   }, 15000);
   it("prompts only at Save and keeps the guest simulation after dismissing", async () => {
