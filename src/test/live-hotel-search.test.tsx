@@ -52,6 +52,8 @@ it("searches only on request, filters allowance and keeps results out of saved q
   expect(mocks.search).not.toHaveBeenCalled();
   fireEvent.click(screen.getByRole("button", { name: "Search real hotels" }));
   expect(await screen.findByText("In budget")).toBeVisible();
+  expect(screen.getByText("Room type & beds:")).toBeVisible();
+  expect(screen.getByText(/Not specified by the provider/)).toBeVisible();
   expect(screen.queryByText("Too expensive")).not.toBeInTheDocument();
   expect(mocks.search).toHaveBeenCalledWith(
     expect.objectContaining({ adults: 2, childrenAges: [], checkout: "2030-06-12" }),

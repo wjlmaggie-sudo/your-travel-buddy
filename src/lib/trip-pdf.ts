@@ -1,3 +1,4 @@
+import { roomRecommendation } from "./room-recommendation";
 import { childCount } from "../../supabase/functions/_shared/travel-persona";
 import { personaSummary } from "./travel-personas";
 import { hotelSearchEndpoint } from "./hotel-search";
@@ -272,6 +273,12 @@ export async function buildTripPdf(
     );
   else content.push(paragraph("No hotel quote selected. Accommodation allocation is an estimate."));
   if (b.days > 1) {
+    const roomAdvice = roomRecommendation(b);
+    content.push(
+      paragraph(
+        `Suggested room setup (not a confirmed offer): ${roomAdvice.title}. ${roomAdvice.detail} Actual room type, beds and capacity must be confirmed with the booking provider.`,
+      ),
+    );
     content.push(
       paragraph(
         `Rooms requested: ${requestedRooms(b)} · hotel allowance is for all rooms and nights.`,

@@ -1,3 +1,4 @@
+import { roomRecommendation } from "@/lib/room-recommendation";
 import { childCount } from "../../supabase/functions/_shared/travel-persona";
 import { useId } from "react";
 import { Building2, Check, Star } from "lucide-react";
@@ -31,6 +32,7 @@ export function HotelRecommendations({
 }) {
   const id = useId();
   brief = { ...brief, hotelRooms: journey.hotelRooms ?? brief.hotelRooms };
+  const roomAdvice = roomRecommendation(brief);
   const rooms = requestedRooms(brief);
   const adults = Math.max(1, brief.travelers - childCount(brief));
   const allowance = connectedBudget(brief, journey).original.allowance;
@@ -75,6 +77,13 @@ export function HotelRecommendations({
           confirm occupancy and child ages with the provider. Changing rooms makes earlier hotel
           quotes out of date.
         </p>
+      </div>
+      <div className="rounded-2xl border bg-card p-4">
+        <p className="text-xs font-medium text-secondary">
+          Suggested room setup · not a confirmed offer
+        </p>
+        <h3 className="mt-1 text-lg font-semibold">{roomAdvice.title}</h3>
+        <p className="mt-2 text-sm text-muted-foreground">{roomAdvice.detail}</p>
       </div>
       <HotelSearchPreview
         key={`${stayScope(brief)}:${allowance}`}

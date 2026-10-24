@@ -1,3 +1,4 @@
+import { HotelRoomFacts } from "./HotelRoomFacts";
 import { LiveHotelSearch } from "./LiveHotelSearch";
 import { childCount, childAgeDescription } from "../../supabase/functions/_shared/travel-persona";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
@@ -351,6 +352,7 @@ function HotelProviderPreview({
                   </p>
                   <h4 className="font-semibold">{offer.name}</h4>
                   <p className="text-xs text-muted-foreground">{offer.address}</p>
+                  <HotelRoomFacts />
                   {offer.stars !== null && (
                     <p className="text-xs">{offer.stars} property stars · provider supplied</p>
                   )}

@@ -1,3 +1,4 @@
+import { HotelRoomFacts } from "./HotelRoomFacts";
 import { useMemo, useState } from "react";
 import { Building2, Search } from "lucide-react";
 import { childCount } from "../../supabase/functions/_shared/travel-persona";
@@ -157,6 +158,7 @@ export function LiveHotelSearch({
                         : "tax inclusion not confirmed"}
                       . Additional local charges may apply.
                     </p>
+                    <HotelRoomFacts />
                     {offer.website && (
                       <a
                         className="inline-block text-sm text-secondary underline"
