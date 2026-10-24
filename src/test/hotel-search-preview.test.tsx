@@ -63,6 +63,7 @@ it("waits for the Hotels section, then uses the complete trip and allowance with
     checkin: "2030-06-10",
     checkout: "2030-06-14",
     travelers: 3,
+    rooms: 2,
     budget: 500,
     currency: "EUR",
   });
@@ -147,4 +148,15 @@ it("does not send age ranges as guessed adult-only provider quotes", async () =>
   );
   expect(screen.getByText(/Child occupancy is not supported/)).toBeVisible();
   expect(api.budgetHotelPreviews).not.toHaveBeenCalled();
+});
+
+it("refreshes automatic hotel searches and external links for requested rooms", async () => {
+  const { rerender } = render(<HotelSearchPreview brief={brief} allowance={500} active />);
+  await screen.findByText("Sandbox Hotel");
+  rerender(<HotelSearchPreview brief={{ ...brief, hotelRooms: 3 }} allowance={500} active />);
+  expect(screen.queryByText("Sandbox Hotel")).not.toBeInTheDocument();
+  await screen.findByText("Sandbox Hotel");
+  expect(api.budgetHotelPreviews).toHaveBeenLastCalledWith(
+    expect.objectContaining({ rooms: 3, travelers: 3, budget: 500 }),
+  );
 });

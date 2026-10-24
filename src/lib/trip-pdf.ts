@@ -9,7 +9,13 @@ import { fetchPlacePhoto } from "./place-photos";
 import { admissionFor, routeLegs } from "./visit-logistics";
 import { budgetAllocation, dailyBudgets, endDate } from "./planning";
 import { connectedBudget, demoFlights, demoHotels } from "./travel-workspace";
-import { bookingSearch, stayCost, type StayBrief, type StayChoice } from "./stay-planning";
+import {
+  bookingSearch,
+  requestedRooms,
+  stayCost,
+  type StayBrief,
+  type StayChoice,
+} from "./stay-planning";
 import { flightSearch, journeyBudget, type Journey } from "./journey-planning";
 
 export type PdfTrip = {
@@ -131,7 +137,8 @@ export async function buildTripPdf(
   trip: PdfTrip,
   progress: (message: string) => void = () => {},
 ): Promise<{ definition: TDocumentDefinitions; missingPhotos: number; missingMaps: number }> {
-  const { brief: b, journey, stay } = trip;
+  const { journey, stay } = trip;
+  const b = { ...trip.brief, hotelRooms: journey?.hotelRooms ?? trip.brief.hotelRooms };
   const money = (n: number) => `${n.toFixed(2)} ${b.currency}`;
   progress("Loading all days and stories…");
   const directory = await loadCityGuide(b.destination).catch(() => null);
@@ -266,13 +273,14 @@ export async function buildTripPdf(
   else content.push(paragraph("No hotel quote selected. Accommodation allocation is an estimate."));
   if (b.days > 1) {
     content.push(
+      paragraph(
+        `Rooms requested: ${requestedRooms(b)} · hotel allowance is for all rooms and nights.`,
+      ),
+    );
+    content.push(
       link(
         "Search hotels for these dates and travelers",
-        bookingSearch(
-          b,
-          stay?.rooms ?? Math.ceil(b.travelers / 2),
-          stay?.evidence === "entered" ? stay.name : undefined,
-        ),
+        bookingSearch(b, requestedRooms(b), stay?.evidence === "entered" ? stay.name : undefined),
       ),
     );
     if (journey && !hotelSearchEndpoint()) {

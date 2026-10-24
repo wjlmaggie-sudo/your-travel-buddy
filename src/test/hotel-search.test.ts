@@ -174,3 +174,26 @@ describe("guest hotel endpoint", () => {
     expect(await response.text()).not.toContain("private-upstream-value");
   });
 });
+it("uses the requested room count and accepts only the complete matching occupancy", () => {
+  const requested = { ...input, rooms: 3 };
+  expect(hotelRateRequest(requested).occupancies).toEqual([
+    { adults: 1, children: [] },
+    { adults: 1, children: [] },
+    { adults: 1, children: [] },
+  ]);
+  expect(hotelSearchInput.safeParse({ ...input, rooms: 4 }).success).toBe(false);
+  expect(hotelSearchInput.safeParse({ ...input, rooms: 0 }).success).toBe(false);
+  expect(normalizeHotelPreview(payload(), requested).offers).toEqual([]);
+  const match = payload();
+  match.data[0]!.roomTypes[0]!.rates = Array.from({ length: 3 }, () => ({
+    adultCount: 1,
+    childCount: 0,
+  }));
+  expect(normalizeHotelPreview(match, requested)).toMatchObject({
+    rooms: 3,
+    offers: [{ amount: 400 }],
+  });
+  expect(hotelRateRequest({ ...input, travelers: 4, rooms: 1 }).occupancies).toEqual([
+    { adults: 4, children: [] },
+  ]);
+});

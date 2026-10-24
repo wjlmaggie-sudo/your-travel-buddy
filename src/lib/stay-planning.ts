@@ -5,6 +5,7 @@ import { endDate, budgetAllocation, dailyBudgets } from "./planning";
 import type { TravelStyle } from "./travel-data";
 import { supabase } from "@/integrations/supabase/client";
 export type StayBrief = PersonaDetails & {
+  hotelRooms?: number | undefined;
   flightBudget?: number | undefined;
   hotelComfort?: "Simple" | "Comfortable" | "Premium" | undefined;
   destination: string;
@@ -26,6 +27,14 @@ export const stayChoiceSchema = z.object({
   scope: z.string().max(600),
 });
 export type StayChoice = z.infer<typeof stayChoiceSchema>;
+/** At least one adult per room; provider availability still determines room capacity. */
+export function requestedRooms(brief: StayBrief) {
+  const adults = Math.max(1, brief.travelers - childCount(brief));
+  const fallback = Math.min(adults, Math.ceil(brief.travelers / 2));
+  return Number.isInteger(brief.hotelRooms) && brief.hotelRooms! > 0
+    ? Math.min(adults, brief.hotelRooms!)
+    : fallback;
+}
 export function stayScope(brief: StayBrief) {
   return JSON.stringify([
     brief.destination.trim().toLowerCase(),
@@ -33,6 +42,9 @@ export function stayScope(brief: StayBrief) {
     brief.days,
     brief.travelers,
     brief.currency,
+    ...(requestedRooms(brief) !== Math.ceil(brief.travelers / 2)
+      ? [{ rooms: requestedRooms(brief) }]
+      : []),
     ...(brief.childrenAgeRanges?.length
       ? [{ ageRanges: brief.childrenAgeRanges }]
       : brief.childrenAges?.length

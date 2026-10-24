@@ -46,6 +46,10 @@ export async function searchHotelPreviews(input: HotelSearchInput, signal: Abort
   const result = hotelSearchResult.safeParse(await response.json());
   if (
     !result.success ||
+    (result.success &&
+      body.rooms !== undefined &&
+      body.rooms !== Math.ceil(body.travelers / 2) &&
+      result.data.rooms !== body.rooms) ||
     result.data.offers.some(
       (offer) => offer.currency !== body.currency || offer.amount > body.budget,
     )

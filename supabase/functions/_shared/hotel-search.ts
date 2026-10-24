@@ -15,8 +15,12 @@ export const hotelSearchInput = z
     checkin: date,
     checkout: date,
     travelers: z.number().int().min(1).max(20),
+    rooms: z.number().int().min(1).max(20).optional(),
     currency: z.string().regex(/^[A-Z]{3}$/),
     budget: z.number().finite().min(0).max(1000000),
+  })
+  .refine((value) => value.rooms === undefined || value.rooms <= value.travelers, {
+    message: "Each room needs at least one adult.",
   })
   .refine(
     (value) => {
@@ -38,18 +42,18 @@ export const hotelPreviewSchema = z.object({
 });
 export const hotelSearchResult = z.object({
   sandbox: z.literal(true),
+  rooms: z.number().int().positive().optional(),
   checkedAt: z.string().datetime(),
   offers: z.array(hotelPreviewSchema).max(3),
 });
 export type HotelSearchResult = z.infer<typeof hotelSearchResult>;
 
 export function hotelRateRequest(input: HotelSearchInput) {
-  let adults = input.travelers;
-  const occupancies = [];
-  while (adults > 0) {
-    occupancies.push({ adults: Math.min(adults, 2), children: [] });
-    adults -= 2;
-  }
+  const rooms = input.rooms ?? Math.ceil(input.travelers / 2);
+  const occupancies = Array.from({ length: rooms }, (_, index) => ({
+    adults: Math.floor(input.travelers / rooms) + (index < input.travelers % rooms ? 1 : 0),
+    children: [],
+  }));
   return {
     cityName: input.city,
     countryCode: input.countryCode,
@@ -114,9 +118,15 @@ export function normalizeHotelPreview(
     if (!info || info.country_code.toUpperCase() !== input.countryCode) return [];
     const amounts = hotel.roomTypes.flatMap((room) => {
       if (
-        room.rates.length !== Math.ceil(input.travelers / 2) ||
+        room.rates.length !== (input.rooms ?? Math.ceil(input.travelers / 2)) ||
         room.rates.reduce((sum, rate) => sum + rate.adultCount, 0) !== input.travelers ||
-        room.rates.some((rate) => rate.childCount !== 0)
+        room.rates.some((rate) => rate.childCount !== 0) ||
+        JSON.stringify(room.rates.map((rate) => rate.adultCount).sort((a, b) => a - b)) !==
+          JSON.stringify(
+            hotelRateRequest(input)
+              .occupancies.map((room) => room.adults)
+              .sort((a, b) => a - b),
+          )
       )
         return [];
       return room.offerRetailRate
@@ -143,6 +153,7 @@ export function normalizeHotelPreview(
   const unique = [...new Map(offers.map((offer) => [offer.id, offer])).values()];
   return {
     sandbox: true,
+    rooms: input.rooms ?? Math.ceil(input.travelers / 2),
     checkedAt: new Date().toISOString(),
     offers: unique.sort((a, b) => a.amount - b.amount).slice(0, 3),
   };

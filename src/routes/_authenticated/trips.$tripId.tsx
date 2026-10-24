@@ -79,6 +79,7 @@ function TripPage() {
   const preferences = useTripPreferences(tripId);
   const journey = useQuery(journeyQuery(tripId));
   const brief = {
+    hotelRooms: journey.data?.hotelRooms,
     destination: trip.destination,
     start: trip.start_date,
     days: tripDays(trip.start_date, trip.end_date),
@@ -257,6 +258,9 @@ function TripPage() {
                     brief={brief}
                     journey={journey.data}
                     stay={stay.data}
+                    onRoomsChange={(hotelRooms) => {
+                      if (journey.data) void updateJourney({ ...journey.data, hotelRooms });
+                    }}
                     onChoose={updateStay}
                   />
                 </fieldset>

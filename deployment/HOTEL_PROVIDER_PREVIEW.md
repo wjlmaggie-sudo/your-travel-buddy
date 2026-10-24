@@ -22,8 +22,9 @@ free planner, guest sessions, saved trips, quotes, budget and PDF exports remain
   Production booking would need accurate nationality before searching/confirming rates.
 - Identical searches share in-flight requests and five-minute, memory-only quote caches;
   location matches cache for 30 minutes. Errors have a one-minute backoff. Reopening the
-  same view reuses results. Refresh is explicit. Rooms hold two adults, with a separate
-  room for an odd traveler. The global 20-request daily quota still applies.
+  same view reuses results. Refresh is explicit. The Hotels section asks for rooms needed; the default is two adults per room.
+  Adults are distributed evenly across the selected rooms (at least one adult per room).
+  The same total hotel allowance covers every room for the full stay. The global 20-request daily quota still applies.
 - The adapter uses the whole-offer `offerRetailRate`, validates occupancy and currency,
   and accepts both documented array totals and the object totals observed in the sandbox.
   Requests require a sandbox credential matching the observed `sand_` UUID format.
@@ -78,3 +79,14 @@ activates live flights nor implements car rental, payment, reservations or live 
 Official contract used for the adapter:
 [Hotel rates API](https://docs.liteapi.travel/reference/post_hotels-rates).
 Provider sandbox verification succeeded. Production integration remains unimplemented.
+
+## Requested rooms — 24 October 2026
+
+Room count is saved in the existing journey settings and guest session. Hotel search,
+cache keys, external Booking.com links, quote scope and PDF use that count. Changing
+rooms invalidates earlier selected quotes without altering the total hotel allowance.
+The sandbox adapter validates the requested per-room adult distribution and returns
+the room count; custom-room responses from an older adapter are rejected. Child
+occupancy is still unsupported by the sandbox; family searches use external providers
+with child counts and entered exact ages when available. No exact ages are inferred
+from planning ranges, and no unsupervised child-only room is suggested.

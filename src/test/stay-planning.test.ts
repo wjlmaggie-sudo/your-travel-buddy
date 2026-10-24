@@ -51,3 +51,7 @@ describe("accommodation comparisons", () => {
     expect(url.searchParams.get("no_rooms")).toBe("2");
   });
 });
+it("invalidates an old quote after requested rooms change and preserves old default scopes", () => {
+  expect(stayScope({ ...brief, hotelRooms: 2 })).toBe(stayScope(brief));
+  expect(stayCost(quote("stay", 400), { ...brief, hotelRooms: 3 })).toBeNull();
+});

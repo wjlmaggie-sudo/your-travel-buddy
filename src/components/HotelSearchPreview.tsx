@@ -14,7 +14,7 @@ import type {
   HotelSearchResult,
 } from "../../supabase/functions/_shared/hotel-search";
 import { endDate } from "@/lib/planning";
-import { bookingSearch, type StayBrief } from "@/lib/stay-planning";
+import { bookingSearch, requestedRooms, type StayBrief } from "@/lib/stay-planning";
 import { dailyMoney } from "./DailyBudget";
 import { Button } from "./ui/button";
 import { Label } from "./ui/label";
@@ -46,6 +46,7 @@ export function HotelSearchPreview({
   const [view, setView] = useState<Preview | null>(null);
   const lastInput = useRef<HotelSearchInput | null>(null);
   const configured = !!hotelSearchEndpoint();
+  const rooms = requestedRooms(brief);
   const hasChildren = childCount(brief) > 0;
   const context = useMemo(
     () => ({
@@ -53,6 +54,7 @@ export function HotelSearchPreview({
       start: brief.start,
       days: brief.days,
       travelers: brief.travelers,
+      rooms,
       childrenAges: brief.childrenAges,
       childrenAgeRanges: brief.childrenAgeRanges,
       currency: brief.currency,
@@ -64,6 +66,7 @@ export function HotelSearchPreview({
       brief.start,
       brief.days,
       brief.travelers,
+      rooms,
       brief.childrenAges,
       brief.childrenAgeRanges,
       brief.currency,
@@ -108,6 +111,7 @@ export function HotelSearchPreview({
           checkin: context.start,
           checkout: endDate(context.start, context.days),
           travelers: context.travelers,
+          rooms: context.rooms,
           currency: context.currency,
           budget: context.allowance,
         };
@@ -141,7 +145,8 @@ export function HotelSearchPreview({
         <h3 className="text-lg font-semibold">A stay for your whole family</h3>
         <p className="mt-2 text-sm">
           Hotel budget: {dailyMoney(allowance, brief.currency)} for {brief.days - 1} nights and{" "}
-          {brief.travelers} travelers, including children aged {childAgeDescription(brief)}.
+          {brief.travelers} travelers in {rooms} {rooms === 1 ? "room" : "rooms"}, including
+          children aged {childAgeDescription(brief)}.
         </p>
         <p className="mt-3 text-sm text-muted-foreground">
           Child occupancy is not supported by the current hotel test API. Your itinerary uses the
@@ -150,7 +155,7 @@ export function HotelSearchPreview({
         </p>
         <a
           className="mt-3 inline-block text-sm text-secondary underline"
-          href={bookingSearch(brief, Math.ceil(brief.travelers / 2))}
+          href={bookingSearch(brief, rooms)}
           target="_blank"
           rel="noreferrer"
         >
@@ -171,8 +176,8 @@ export function HotelSearchPreview({
               : "Provider connection pending · live hotel offers are not available yet."}
           </p>
           <p className="mt-2 text-sm font-medium text-secondary">
-            Up to {dailyMoney(allowance, brief.currency)} total · {brief.days - 1} nights ·{" "}
-            {Math.ceil(brief.travelers / 2)} {brief.travelers > 2 ? "rooms" : "room"}
+            Up to {dailyMoney(allowance, brief.currency)} total · {brief.days - 1} nights · {rooms}{" "}
+            {rooms > 1 ? "rooms" : "room"}
           </p>
           {configured && (
             <p className="mt-2 text-xs text-muted-foreground">
@@ -212,9 +217,9 @@ export function HotelSearchPreview({
             </summary>
             <div className="mt-3 space-y-3 rounded-xl bg-muted/30 p-4">
               <p className="text-xs text-muted-foreground">
-                Country information is matched from your trip destination. Searches use two adults
-                per room, with a separate room for an odd traveler. Results are test quotes and do
-                not change your saved budget or PDF.
+                Country information is matched from your trip destination. Adults are divided evenly
+                across your requested rooms. Results are test quotes and do not change your saved
+                budget or PDF.
               </p>
               {!!current?.locations.length && current.locations.length > 1 && (
                 <div>
@@ -331,7 +336,7 @@ export function HotelSearchPreview({
           className="mt-4 inline-block text-sm text-secondary underline"
           target="_blank"
           rel="noreferrer"
-          href={bookingSearch(brief, Math.ceil(brief.travelers / 2))}
+          href={bookingSearch(brief, rooms)}
         >
           Search hotels on Booking.com ↗
         </a>

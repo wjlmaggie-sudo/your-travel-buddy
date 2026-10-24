@@ -66,7 +66,11 @@ export function InstantPlan({
   const effectiveBrief = {
     ...brief,
     ...(journey
-      ? { flightBudget: flightCost(brief, journey), hotelComfort: journey.hotelComfort }
+      ? {
+          flightBudget: flightCost(brief, journey),
+          hotelComfort: journey.hotelComfort,
+          hotelRooms: journey.hotelRooms,
+        }
       : {}),
   };
   const stayPlan = stayBudget(effectiveBrief, stay);
@@ -257,6 +261,10 @@ export function InstantPlan({
           brief={brief}
           journey={journey}
           stay={stay}
+          onRoomsChange={(hotelRooms) => {
+            setJourney((previous) => ({ ...previous, hotelRooms }));
+            onEdited();
+          }}
           onChoose={(choice) => {
             setStay(choice);
             onEdited();

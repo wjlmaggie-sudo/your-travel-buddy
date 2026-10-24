@@ -159,3 +159,13 @@ it("retains visible fallback diagrams and reports missing street maps", async ()
   expect(JSON.stringify(definition)).toContain("Street map unavailable at export time");
   expect(JSON.stringify(definition)).toContain("Geographic stop overview");
 });
+
+it("exports requested rooms and carries them to the external hotel search", async () => {
+  const { definition } = await buildTripPdf({
+    ...trip,
+    journey: { ...trip.journey!, hotelRooms: 2 },
+  });
+  const text = JSON.stringify(definition);
+  expect(text).toContain("Rooms requested: 2");
+  expect(text).toContain("no_rooms=2");
+});

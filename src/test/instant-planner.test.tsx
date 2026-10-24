@@ -270,3 +270,18 @@ describe("guest workspace", () => {
     expect(session).not.toHaveBeenCalled();
   }, 25000);
 });
+
+it("keeps requested hotel rooms through guest refresh and editing the trip", () => {
+  setup();
+  start("");
+  go("Hotels");
+  fireEvent.change(screen.getByLabelText("Rooms needed"), { target: { value: "2" } });
+  expect(readGuestSimulation()?.journey?.hotelRooms).toBe(2);
+  cleanup();
+  setup();
+  go("Hotels");
+  expect(screen.getByLabelText("Rooms needed")).toHaveValue("2");
+  go("AI Travel Planner");
+  go("Edit trip details");
+  expect(readGuestSimulation()?.journey?.hotelRooms).toBe(2);
+}, 15000);

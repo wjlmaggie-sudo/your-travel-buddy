@@ -1,7 +1,14 @@
 import { childAgeDescription } from "../../supabase/functions/_shared/travel-persona";
 import { z } from "zod";
 import { endDate } from "./planning";
-import { stayBudget, stayCost, type StayBrief, type StayChoice } from "./stay-planning";
+import {
+  requestedRooms,
+  stayScope,
+  stayBudget,
+  stayCost,
+  type StayBrief,
+  type StayChoice,
+} from "./stay-planning";
 
 export const SECTIONS = [
   { id: "planner", label: "AI Travel Planner" },
@@ -30,6 +37,7 @@ export type Estimates = z.infer<typeof estimateSchema>;
 export type WorkspaceJourney = {
   departure: string;
   flightBudget: number;
+  hotelRooms?: number | undefined;
   hotelComfort: "Simple" | "Comfortable" | "Premium";
   flightsRequired?: boolean | undefined;
   selectedFlight?: FlightChoice | undefined;
@@ -67,6 +75,7 @@ export function connectedBudget(
   journey: WorkspaceJourney,
   stay?: StayChoice | null,
 ) {
+  brief = { ...brief, hotelRooms: journey.hotelRooms ?? brief.hotelRooms };
   const plannedFlight = journey.flightsRequired === false ? 0 : journey.flightBudget;
   const original = stayBudget({
     ...brief,
@@ -181,14 +190,8 @@ export function demoHotels(
     unit: "stay",
     amount: cents(allowance * item.factor),
     extras: 0,
-    rooms: Math.ceil(brief.travelers / 2),
+    rooms: requestedRooms({ ...brief, hotelRooms: journey.hotelRooms ?? brief.hotelRooms }),
     evidence: "demo",
-    scope: JSON.stringify([
-      brief.destination.trim().toLowerCase(),
-      brief.start,
-      brief.days,
-      brief.travelers,
-      brief.currency,
-    ]),
+    scope: stayScope({ ...brief, hotelRooms: journey.hotelRooms ?? brief.hotelRooms }),
   }));
 }

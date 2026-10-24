@@ -5,6 +5,7 @@ import { BedDouble, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import {
   bookingSearch,
+  requestedRooms,
   readStayChoice,
   saveStayChoice,
   stayScope,
@@ -44,7 +45,7 @@ export function AccommodationPlanner({
     type: "Hotel" as StayChoice["type"],
     amount: "",
     unit: "stay" as StayChoice["unit"],
-    rooms: Math.ceil(brief.travelers / 2),
+    rooms: requestedRooms(brief),
     extras: "0",
   });
   const [busy, setBusy] = useState(false);
@@ -64,7 +65,7 @@ export function AccommodationPlanner({
         type: "Hotel",
         amount: "",
         unit: "stay",
-        rooms: Math.ceil(brief.travelers / 2),
+        rooms: requestedRooms(brief),
         extras: "0",
       });
   }, [scope]);

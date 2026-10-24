@@ -51,3 +51,23 @@ it("keeps the explicitly labeled comparison available for installations without 
   render(<HotelRecommendations brief={brief} journey={journey} onChoose={vi.fn()} />);
   expect(screen.getAllByRole("button", { name: "Try this demo hotel" })).toHaveLength(3);
 });
+it("offers the requested rooms without changing the whole-stay allowance", () => {
+  endpoint.mockReturnValue("https://test.supabase.co/functions/v1/search-hotels");
+  const change = vi.fn();
+  const family = { ...brief, travelers: 4, childrenAgeRanges: ["4-6" as const] };
+  render(
+    <HotelRecommendations
+      brief={family}
+      journey={{ ...journey, hotelRooms: 1 }}
+      onChoose={vi.fn()}
+      onRoomsChange={change}
+    />,
+  );
+  expect(screen.getByLabelText("Rooms needed")).toHaveValue("1");
+  expect(screen.getAllByRole("option")).toHaveLength(3);
+  fireEvent.change(screen.getByLabelText("Rooms needed"), { target: { value: "2" } });
+  expect(change).toHaveBeenCalledWith(2);
+  expect(
+    screen.getByText(`Provider allowance: ${connectedBudget(family, journey).original.allowance}`),
+  ).toBeVisible();
+});

@@ -1,8 +1,15 @@
 import { childCount } from "../../supabase/functions/_shared/travel-persona";
+import { useId } from "react";
 import { Building2, Check, Star } from "lucide-react";
 import { connectedBudget, demoHotels } from "@/lib/travel-workspace";
 import type { Journey } from "@/lib/journey-planning";
-import { bookingSearch, stayScope, type StayBrief, type StayChoice } from "@/lib/stay-planning";
+import {
+  bookingSearch,
+  requestedRooms,
+  stayScope,
+  type StayBrief,
+  type StayChoice,
+} from "@/lib/stay-planning";
 import { HotelSearchPreview } from "./HotelSearchPreview";
 import { hotelSearchEndpoint } from "@/lib/hotel-search";
 import { dailyMoney } from "./DailyBudget";
@@ -12,6 +19,7 @@ export function HotelRecommendations({
   journey,
   stay,
   onChoose,
+  onRoomsChange,
   active = false,
 }: {
   brief: StayBrief;
@@ -19,7 +27,12 @@ export function HotelRecommendations({
   stay?: StayChoice | null | undefined;
   onChoose: (next: StayChoice | null) => void;
   active?: boolean;
+  onRoomsChange?: (rooms: number) => void;
 }) {
+  const id = useId();
+  brief = { ...brief, hotelRooms: journey.hotelRooms ?? brief.hotelRooms };
+  const rooms = requestedRooms(brief);
+  const adults = Math.max(1, brief.travelers - childCount(brief));
   const allowance = connectedBudget(brief, journey).original.allowance;
   if (brief.days === 1)
     return (
@@ -38,6 +51,29 @@ export function HotelRecommendations({
         <p className="mt-2 text-sm text-muted-foreground">
           {brief.destination} · {brief.days - 1} nights · {brief.travelers} travelers · whole-stay
           totals
+        </p>
+      </div>
+      <div className="rounded-2xl border bg-card p-4">
+        <label htmlFor={`${id}-rooms`} className="text-sm font-medium">
+          Rooms needed
+        </label>
+        <select
+          id={`${id}-rooms`}
+          className="mt-2 block h-10 w-full rounded-md border bg-background px-3 sm:max-w-48"
+          value={rooms}
+          onChange={(event) => onRoomsChange?.(Number(event.target.value))}
+          disabled={!onRoomsChange}
+        >
+          {Array.from({ length: adults }, (_, i) => (
+            <option key={i} value={i + 1}>
+              {i + 1} {i === 0 ? "room" : "rooms"}
+            </option>
+          ))}
+        </select>
+        <p className="mt-2 text-xs text-muted-foreground">
+          The hotel allowance covers all rooms for the entire stay. At least one adult per room;
+          confirm occupancy and child ages with the provider. Changing rooms makes earlier hotel
+          quotes out of date.
         </p>
       </div>
       <HotelSearchPreview

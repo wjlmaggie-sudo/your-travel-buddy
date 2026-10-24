@@ -64,3 +64,17 @@ it("rejects production, over-budget or mismatched-currency previews", async () =
     await expect(searchHotelPreviews(input, signal())).rejects.toThrow(/unsupported preview/);
   }
 });
+it("does not display a custom-room quote from an older backend that ignored room count", async () => {
+  vi.stubEnv("VITE_HOTEL_SEARCH_URL", "https://test.supabase.co/functions/v1/search-hotels");
+  vi.stubGlobal(
+    "fetch",
+    vi
+      .fn()
+      .mockResolvedValue(
+        Response.json({ sandbox: true, checkedAt: "2030-01-01T12:00:00Z", offers: [] }),
+      ),
+  );
+  await expect(searchHotelPreviews({ ...input, rooms: 2 }, signal())).rejects.toThrow(
+    /unsupported preview/,
+  );
+});

@@ -18,6 +18,7 @@ export const journeySchema = z
     selectedFlight: flightChoiceSchema.optional(),
     estimates: estimateSchema.optional(),
     flightBudget: z.number().finite().min(0).max(1000000),
+    hotelRooms: z.number().int().min(1).max(20).optional(),
     hotelComfort: z.enum(["Simple", "Comfortable", "Premium"]),
   })
   .refine((value) => value.flightsRequired === false || value.departure.length > 0, {
@@ -28,7 +29,12 @@ export type Journey = z.infer<typeof journeySchema>;
 export const flightAllowance = (total: number) => Math.round(Math.max(0, total) * 25) / 100;
 export function journeyBudget(brief: StayBrief, journey: Journey, stay?: StayChoice | null) {
   const costs = stayBudget(
-    { ...brief, flightBudget: flightCost(brief, journey), hotelComfort: journey.hotelComfort },
+    {
+      ...brief,
+      flightBudget: flightCost(brief, journey),
+      hotelComfort: journey.hotelComfort,
+      hotelRooms: journey.hotelRooms,
+    },
     stay,
   );
   const planned = connectedBudget(brief, journey, stay);
