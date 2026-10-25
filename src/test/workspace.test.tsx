@@ -4,13 +4,13 @@ import { useState } from "react";
 import { TravelWorkspace, WorkspacePanel } from "@/components/TravelWorkspace";
 import type { TravelSection } from "@/lib/travel-workspace";
 afterEach(cleanup);
-it("preserves each mounted view and its scroll offset while switching", () => {
+it("preserves edits in mounted views while switching document sections", () => {
   function Example() {
     const [section, setSection] = useState<TravelSection>("planner");
     return (
       <TravelWorkspace section={section} onChange={setSection}>
         <WorkspacePanel active={section === "planner"} label="Overview">
-          Plan
+          <input aria-label="Trip notes" defaultValue="Plan" />
         </WorkspacePanel>
         <WorkspacePanel active={section === "flights"} label="Flights view">
           Flight cards
@@ -20,14 +20,14 @@ it("preserves each mounted view and its scroll offset while switching", () => {
   }
   render(<Example />);
   const first = screen.getByRole("region", { name: "Overview" });
-  first.scrollTop = 320;
+  fireEvent.change(screen.getByLabelText("Trip notes"), { target: { value: "My edited plan" } });
   fireEvent.click(screen.getByRole("button", { name: "Flights" }));
   expect(first).toHaveAttribute("hidden");
   const flight = screen.getByRole("region", { name: "Flights view" });
-  flight.scrollTop = 120;
+
   fireEvent.click(screen.getByRole("button", { name: "AI Travel Planner" }));
   expect(screen.getByRole("region", { name: "Overview" })).toBe(first);
-  expect(first.scrollTop).toBe(320);
+  expect(screen.getByLabelText("Trip notes")).toHaveValue("My edited plan");
   fireEvent.click(screen.getByRole("button", { name: "Flights" }));
-  expect(flight.scrollTop).toBe(120);
+  expect(screen.getByRole("region", { name: "Flights view" })).toBe(flight);
 });

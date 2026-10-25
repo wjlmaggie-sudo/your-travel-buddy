@@ -178,7 +178,7 @@ export function MorePlaces({
                     ? `Showing ${Math.min(limit, options.length)} of ${options.length} additional places.`
                     : "No additional matches in the available local directory. Try another search or add your own activity."}
                 </p>
-                <div className="grid max-h-[28rem] gap-3 overflow-y-auto sm:grid-cols-2">
+                <div className="grid gap-3 sm:grid-cols-2">
                   {options.slice(0, limit).map((place) => {
                     const ticket = admissionFor(place.name);
                     return (

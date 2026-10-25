@@ -70,10 +70,7 @@ export function TripWeather({
           </div>
         )}
       </div>
-      <div
-        className="mt-5 h-[320px] overflow-y-auto rounded-xl bg-muted/20 p-4"
-        data-testid="weather-results"
-      >
+      <div className="mt-5 min-h-32 rounded-xl bg-muted/20 p-4" data-testid="weather-results">
         {!requested ? (
           <>
             <p className="mt-2 text-sm text-muted-foreground">

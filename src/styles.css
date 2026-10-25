@@ -114,7 +114,7 @@
   transform: rotate(45deg);
 }
 
-/* Stable feature viewport: panel scroll offsets survive navigation; document height is constant. */
+/* The document owns vertical scrolling; active sections grow to fit their content. */
 html {
   scrollbar-gutter: stable;
 }
@@ -123,17 +123,17 @@ html {
 }
 .travel-workspace {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  height: clamp(520px, calc(100svh - 32px), 820px);
-  overflow: hidden;
+  grid-template-rows: auto auto;
+  align-items: stretch;
   border: 1px solid var(--border);
   border-radius: 1.5rem;
   background: var(--card);
   box-shadow: var(--shadow-card);
 }
 .workspace-navigation {
-  min-height: 0;
+  min-width: 0;
   border-bottom: 1px solid var(--border);
+  border-radius: 1.5rem 1.5rem 0 0;
   background: var(--background);
 }
 .workspace-heading {
@@ -152,12 +152,8 @@ html {
   min-height: 0;
 }
 .workspace-panel {
-  position: absolute;
-  inset: 0;
-  overflow-y: auto;
-  overscroll-behavior-y: contain;
-  overflow-anchor: none;
-  scrollbar-gutter: stable;
+  position: relative;
+  min-width: 0;
   padding: 1.5rem;
   outline-offset: -3px;
 }
@@ -173,11 +169,18 @@ html {
 @media (min-width: 768px) {
   .travel-workspace {
     grid-template-columns: 200px minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr);
+    grid-template-rows: auto;
   }
   .workspace-navigation {
     border-bottom: 0;
     border-right: 1px solid var(--border);
+    border-radius: 1.5rem 0 0 1.5rem;
+  }
+}
+@media (min-width: 768px) and (min-height: 560px) {
+  .workspace-navigation .travel-navigation {
+    position: sticky;
+    top: 1rem;
   }
 }
 @media (max-width: 639px) {
