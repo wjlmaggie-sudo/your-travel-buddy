@@ -50,6 +50,7 @@ it("lets the guest replace a suggested total with their own budget", () => {
   fireEvent.click(
     screen.getByRole("button", { name: /^Continue to (flights|hotels)/, hidden: true }),
   );
+  fireEvent.click(screen.getByRole("button", { name: "AI Travel Planner" }));
   fireEvent.click(screen.getByRole("button", { name: "Edit trip details" }));
   fireEvent.change(screen.getByLabelText("Total group budget (EUR)"), { target: { value: "800" } });
   fireEvent.click(screen.getByRole("button", { name: "Update trip & continue", hidden: true }));
