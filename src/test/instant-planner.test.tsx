@@ -21,6 +21,9 @@ function setup() {
   );
 }
 function start(departure = "Berlin") {
+  fireEvent.change(screen.getByLabelText("Total group budget (EUR)"), {
+    target: { value: "1500" },
+  });
   if (departure)
     fireEvent.change(screen.getByLabelText("Departure city / airport"), {
       target: { value: departure },

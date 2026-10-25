@@ -1,3 +1,4 @@
+import { budgetSuggestionSchema } from "./budget-suggestion";
 import { childCount, childAgeDescription } from "../../supabase/functions/_shared/travel-persona";
 import { z } from "zod";
 import {
@@ -13,6 +14,7 @@ import { stayBudget, type StayBrief, type StayChoice } from "./stay-planning";
 
 export const journeySchema = z
   .object({
+    budgetSuggestion: budgetSuggestionSchema.optional(),
     departure: z.string().trim().max(200),
     flightsRequired: z.boolean().optional(),
     selectedFlight: flightChoiceSchema.optional(),

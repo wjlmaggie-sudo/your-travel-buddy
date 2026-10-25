@@ -1,3 +1,4 @@
+import { SuggestedBudgetNotice } from "./SuggestedBudgetNotice";
 import { useId } from "react";
 import { Wallet } from "lucide-react";
 import { connectedBudget, type Estimates } from "@/lib/travel-workspace";
@@ -73,6 +74,10 @@ export function TripBudgetDashboard({
           <p className="font-display text-3xl font-semibold">{money(brief.budget)}</p>
         </div>
       </div>
+      {journey.budgetSuggestion?.amount === brief.budget &&
+        journey.budgetSuggestion.currency === brief.currency && (
+          <SuggestedBudgetNotice suggestion={journey.budgetSuggestion} />
+        )}
       <dl className="mt-5 grid grid-cols-2 gap-3 xl:grid-cols-5">
         {rows.map((row) => (
           <div key={row.label} className="min-w-0 rounded-xl bg-muted/40 p-3">

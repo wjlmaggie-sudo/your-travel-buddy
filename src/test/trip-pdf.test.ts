@@ -169,3 +169,14 @@ it("exports requested rooms and carries them to the external hotel search", asyn
   expect(text).toContain("Rooms requested: 2");
   expect(text).toContain("no_rooms=2");
 });
+it("exports the suggested budget range and flight allowance as estimates", async () => {
+  const { suggestBudget } = await import("@/lib/budget-suggestion");
+  const suggestion = suggestBudget({ ...trip.brief, departure: "Berlin" });
+  const { definition } = await buildTripPdf({
+    ...trip,
+    brief: { ...trip.brief, budget: suggestion.amount },
+    journey: { ...trip.journey!, flightBudget: suggestion.flights, budgetSuggestion: suggestion },
+  });
+  expect(JSON.stringify(definition)).toContain("Suggested starting budget · planning estimate");
+  expect(JSON.stringify(definition)).toContain("Not live prices or a surveyed average");
+});

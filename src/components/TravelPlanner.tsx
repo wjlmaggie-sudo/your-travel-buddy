@@ -1,3 +1,8 @@
+import {
+  suggestBudget,
+  convertBudgetSuggestion,
+  type BudgetSuggestion,
+} from "@/lib/budget-suggestion";
 import { personaReferences } from "@/lib/city-guides";
 import { curatedPersonaDay } from "@/lib/persona-stops";
 import { childCount } from "../../supabase/functions/_shared/travel-persona";
@@ -33,6 +38,8 @@ import type { TripIdeas } from "../../supabase/functions/_shared/trip-ideas";
 export function TravelPlanner() {
   const preferencesTrigger = useRef<HTMLButtonElement>(null);
   const planningRequest = useRef(0);
+  const [budgetInput, setBudgetInput] = useState("");
+  const [estimatingBudget, setEstimatingBudget] = useState(false);
   const [findingPlaces, setFindingPlaces] = useState(false);
   useEffect(
     () => () => {
@@ -71,6 +78,7 @@ export function TravelPlanner() {
     const saved = readGuestSimulation() ?? readPlannerDraft();
     if (saved) {
       setDraft(saved);
+      setBudgetInput(saved.journey?.budgetSuggestion ? "" : String(saved.budget));
       if (saved.ideas) {
         setResult({ brief: saved, ideas: saved.ideas, revision: 1 });
         setEditing(false);
@@ -81,30 +89,60 @@ export function TravelPlanner() {
     event.preventDefault();
     const includeFlights =
       draft.journey?.flightsRequired !== false && !!draft.journey?.departure.trim();
-    const parsed = plannerDraftSchema.safeParse({
-      ...draft,
-      journey: {
-        ...draft.journey,
-        flightsRequired: includeFlights,
-        flightBudget: includeFlights ? flightAllowance(draft.budget) : 0,
-        departure: draft.journey?.departure ?? "",
-        hotelComfort: draft.journey?.hotelComfort ?? "Comfortable",
-        selectedFlight: undefined,
-      },
-      ideas: undefined,
-      stay: undefined,
-    });
-    if (!parsed.success) {
-      toast.error(
-        "Check the destination, dates, budget and group. Choose the children’s age ranges and include at least one adult.",
-      );
+    function prepare(amount: number, currency: string, suggestion?: BudgetSuggestion) {
+      const parsed = plannerDraftSchema.safeParse({
+        ...draft,
+        budget: amount,
+        currency,
+        journey: {
+          ...draft.journey,
+          flightsRequired: includeFlights,
+          flightBudget: suggestion
+            ? suggestion.flights
+            : includeFlights
+              ? flightAllowance(amount)
+              : 0,
+          budgetSuggestion: suggestion,
+          departure: draft.journey?.departure ?? "",
+          hotelComfort: draft.journey?.hotelComfort ?? "Comfortable",
+          selectedFlight: undefined,
+        },
+        ideas: undefined,
+        stay: undefined,
+      });
+      if (!parsed.success) {
+        toast.error(
+          "Check the destination, dates, budget and group. Choose the children’s age ranges and include at least one adult.",
+        );
+        return;
+      }
+      if (result && edited) {
+        setPendingPlan(parsed.data);
+        return;
+      }
+      applyPlan(parsed.data);
+    }
+    if (budgetInput.trim() !== "") {
+      prepare(Number(budgetInput), draft.currency);
       return;
     }
-    if (result && edited) {
-      setPendingPlan(parsed.data);
-      return;
+    try {
+      const suggestion = suggestBudget({
+        ...draft,
+        departure: includeFlights ? draft.journey?.departure : "",
+      });
+      if (draft.currency === "EUR") prepare(suggestion.amount, "EUR", suggestion);
+      else {
+        setEstimatingBudget(true);
+        void convertBudgetSuggestion(suggestion, draft.currency)
+          .then((converted) => {
+            prepare(converted.amount, converted.currency, converted);
+          })
+          .finally(() => setEstimatingBudget(false));
+      }
+    } catch {
+      toast.error("Check trip days and travelers before suggesting a budget.");
     }
-    applyPlan(parsed.data);
   }
   function applyPlan(next: PlannerDraft) {
     const request = ++planningRequest.current;
@@ -205,152 +243,168 @@ export function TravelPlanner() {
             <p className="mt-3 text-sm text-muted-foreground">
               A few details are all you need. Explore every section without an account.
             </p>
-            <form className="mt-6 space-y-5" onSubmit={generate}>
-              <PersonaPreferences
-                value={draft}
-                travelers={draft.travelers}
-                onChange={(next) =>
-                  setDraft({
-                    ...draft,
-                    ...next,
-                    travelers: Math.max(draft.travelers, childCount(next) + 1),
-                  })
-                }
-              />
-
-              <div>
-                <Label htmlFor="planner-destination">Where would you love to go?</Label>
-                <div className="relative mt-2">
-                  <MapPin className="absolute left-3 top-3.5 h-4 w-4 text-primary" />
-                  <Input
-                    id="planner-destination"
-                    className="h-12 pl-10"
-                    placeholder="City or region, country"
-                    required
-                    maxLength={200}
-                    value={draft.destination}
-                    onChange={(e) => setDraft({ ...draft, destination: e.target.value })}
-                  />
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {["Lisbon, Portugal", "Kyoto, Japan", "Bali, Indonesia"].map((place) => (
-                    <button
-                      key={place}
-                      type="button"
-                      className="rounded-full border px-3 py-1 text-xs hover:bg-muted"
-                      onClick={() => setDraft({ ...draft, destination: place })}
-                    >
-                      {place.split(",")[0]}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="planner-start">When do you leave?</Label>
-                  <Input
-                    id="planner-start"
-                    type="date"
-                    className="mt-2 h-11"
-                    required
-                    value={draft.start}
-                    onChange={(e) => setDraft({ ...draft, start: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="planner-days">How many days?</Label>
-                  <Input
-                    id="planner-days"
-                    type="number"
-                    className="mt-2 h-11"
-                    min={1}
-                    max={30}
-                    required
-                    value={draft.days}
-                    onChange={(e) => setDraft({ ...draft, days: Number(e.target.value) })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="planner-travelers">How many people?</Label>
-                  <Input
-                    id="planner-travelers"
-                    type="number"
-                    className="mt-2 h-11"
-                    min={1}
-                    max={20}
-                    required
-                    value={draft.travelers}
-                    onChange={(e) => setDraft({ ...draft, travelers: Number(e.target.value) })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="planner-budget">Total group budget ({draft.currency})</Label>
-                  <Input
-                    id="planner-budget"
-                    type="number"
-                    className="mt-2 h-11"
-                    min={0}
-                    max={1000000}
-                    step="0.01"
-                    required
-                    value={draft.budget}
-                    onChange={(e) => setDraft({ ...draft, budget: Number(e.target.value) })}
-                  />
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="planner-departure">Departure city / airport</Label>
-                <Input
-                  id="planner-departure"
-                  className="mt-2 h-11"
-                  placeholder="Optional · add it for flight comparisons"
-                  maxLength={200}
-                  value={draft.journey?.departure ?? ""}
-                  onChange={(e) =>
+            <form className="mt-6" onSubmit={generate}>
+              <fieldset disabled={estimatingBudget} className="space-y-5">
+                <PersonaPreferences
+                  value={draft}
+                  travelers={draft.travelers}
+                  onChange={(next) =>
                     setDraft({
                       ...draft,
-                      journey: {
-                        ...draft.journey,
-                        departure: e.target.value,
-                        flightsRequired: !!e.target.value.trim(),
-                        flightBudget: flightAllowance(draft.budget),
-                        hotelComfort: draft.journey?.hotelComfort ?? "Comfortable",
-                      },
+                      ...next,
+                      travelers: Math.max(draft.travelers, childCount(next) + 1),
                     })
                   }
                 />
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Leave blank to plan without flights. You can add flights later.
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-3">
-                <Button disabled={findingPlaces} type="submit" className="h-11">
-                  {findingPlaces
-                    ? "Finding matching places…"
-                    : result
-                      ? "Rebuild my whole trip"
-                      : "Create my travel plan"}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-11"
-                  ref={preferencesTrigger}
-                  onClick={() => setPreferences(true)}
-                >
-                  <SlidersHorizontal className="mr-2 h-4 w-4" />
-                  Preferences
-                </Button>
-                {result && (
-                  <Button type="button" variant="ghost" onClick={() => setEditing(false)}>
-                    Back to overview
+
+                <div>
+                  <Label htmlFor="planner-destination">Where would you love to go?</Label>
+                  <div className="relative mt-2">
+                    <MapPin className="absolute left-3 top-3.5 h-4 w-4 text-primary" />
+                    <Input
+                      id="planner-destination"
+                      className="h-12 pl-10"
+                      placeholder="City or region, country"
+                      required
+                      maxLength={200}
+                      value={draft.destination}
+                      onChange={(e) => setDraft({ ...draft, destination: e.target.value })}
+                    />
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {["Lisbon, Portugal", "Kyoto, Japan", "Bali, Indonesia"].map((place) => (
+                      <button
+                        key={place}
+                        type="button"
+                        className="rounded-full border px-3 py-1 text-xs hover:bg-muted"
+                        onClick={() => setDraft({ ...draft, destination: place })}
+                      >
+                        {place.split(",")[0]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="planner-start">When do you leave?</Label>
+                    <Input
+                      id="planner-start"
+                      type="date"
+                      className="mt-2 h-11"
+                      required
+                      value={draft.start}
+                      onChange={(e) => setDraft({ ...draft, start: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="planner-days">How many days?</Label>
+                    <Input
+                      id="planner-days"
+                      type="number"
+                      className="mt-2 h-11"
+                      min={1}
+                      max={30}
+                      required
+                      value={draft.days}
+                      onChange={(e) => setDraft({ ...draft, days: Number(e.target.value) })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="planner-travelers">How many people?</Label>
+                    <Input
+                      id="planner-travelers"
+                      type="number"
+                      className="mt-2 h-11"
+                      min={1}
+                      max={20}
+                      required
+                      value={draft.travelers}
+                      onChange={(e) => setDraft({ ...draft, travelers: Number(e.target.value) })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="planner-budget">Total group budget ({draft.currency})</Label>
+                    <Input
+                      id="planner-budget"
+                      type="number"
+                      className="mt-2 h-11"
+                      min={0}
+                      max={1000000}
+                      step="0.01"
+                      placeholder="Optional · suggest a budget for me"
+                      aria-describedby="planner-budget-help"
+                      value={budgetInput}
+                      onChange={(e) => {
+                        setBudgetInput(e.target.value);
+                        setDraft({ ...draft, budget: Number(e.target.value) });
+                      }}
+                    />
+                    <p id="planner-budget-help" className="mt-2 text-xs text-muted-foreground">
+                      Optional — leave blank for an editable budget suggestion. Enter a total to use
+                      your own limit.
+                    </p>
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="planner-departure">Departure city / airport</Label>
+                  <Input
+                    id="planner-departure"
+                    className="mt-2 h-11"
+                    placeholder="Optional · add it for flight comparisons"
+                    maxLength={200}
+                    value={draft.journey?.departure ?? ""}
+                    onChange={(e) =>
+                      setDraft({
+                        ...draft,
+                        journey: {
+                          ...draft.journey,
+                          departure: e.target.value,
+                          flightsRequired: !!e.target.value.trim(),
+                          flightBudget: flightAllowance(draft.budget),
+                          hotelComfort: draft.journey?.hotelComfort ?? "Comfortable",
+                        },
+                      })
+                    }
+                  />
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Leave blank to plan without flights. You can add flights later.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  <Button
+                    disabled={findingPlaces || estimatingBudget}
+                    type="submit"
+                    className="h-11"
+                  >
+                    {estimatingBudget
+                      ? "Estimating a starting budget…"
+                      : findingPlaces
+                        ? "Finding matching places…"
+                        : result
+                          ? "Rebuild my whole trip"
+                          : "Create my travel plan"}
                   </Button>
-                )}
-              </div>
-              <p className="text-xs leading-relaxed text-muted-foreground">
-                Free template suggestions · yours to edit. Check Flights and Hotels for provider
-                connection status. Live AI is not connected. Demo prices are clearly labeled.
-              </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-11"
+                    ref={preferencesTrigger}
+                    onClick={() => setPreferences(true)}
+                  >
+                    <SlidersHorizontal className="mr-2 h-4 w-4" />
+                    Preferences
+                  </Button>
+                  {result && (
+                    <Button type="button" variant="ghost" onClick={() => setEditing(false)}>
+                      Back to overview
+                    </Button>
+                  )}
+                </div>
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  Free template suggestions · yours to edit. Check Flights and Hotels for provider
+                  connection status. Live AI is not connected. Demo prices are clearly labeled.
+                </p>
+              </fieldset>
             </form>
           </div>
         </WorkspacePanel>
@@ -381,7 +435,8 @@ export function TravelPlanner() {
                 ))}
               </select>
               <p className="mt-2 text-xs text-muted-foreground">
-                Changing currency does not convert the amount.
+                Entered amounts are not converted. If the budget is blank, we convert the suggestion
+                when a reference rate is available.
               </p>
             </div>
             <div aria-label="Compare budget presets" className="grid grid-cols-3 gap-2">
@@ -389,14 +444,15 @@ export function TravelPlanner() {
                 <Button
                   variant="outline"
                   key={style}
-                  onClick={() =>
+                  onClick={() => {
+                    setBudgetInput(String(estimatedBudget(draft.days, draft.travelers, style)));
                     setDraft({
                       ...draft,
                       style,
                       currency: "EUR",
                       budget: estimatedBudget(draft.days, draft.travelers, style),
-                    })
-                  }
+                    });
+                  }}
                 >
                   {style} · €{estimatedBudget(draft.days, draft.travelers, style)}
                 </Button>

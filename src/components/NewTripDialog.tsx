@@ -1,3 +1,8 @@
+import {
+  suggestBudget,
+  convertBudgetSuggestion,
+  type BudgetSuggestion,
+} from "@/lib/budget-suggestion";
 import { childCount } from "../../supabase/functions/_shared/travel-persona";
 import { personaFields, validParty } from "../../supabase/functions/_shared/travel-persona";
 import { PersonaPreferences } from "./PersonaPreferences";
@@ -57,27 +62,49 @@ export function NewTripDialog({
     childrenAgeRanges: imported?.childrenAgeRanges,
     ...imported,
   }));
+  const [budgetInput, setBudgetInput] = useState(() =>
+    imported ? String(imported.budget) : template ? String(template.price * 2) : "",
+  );
   const [requestAi, setRequestAi] = useState(!template && !imported?.ideas);
   const [busy, setBusy] = useState(false);
   const qc = useQueryClient();
   const navigate = useNavigate();
   async function create(event: React.FormEvent) {
     event.preventDefault();
+    let submission = f;
+    let suggestion: BudgetSuggestion | undefined;
+    if (!budgetInput.trim()) {
+      setBusy(true);
+      try {
+        const initial = suggestBudget({
+          ...f,
+          departure:
+            imported?.journey?.flightsRequired === false ? "" : imported?.journey?.departure,
+        });
+        suggestion = await convertBudgetSuggestion(initial, submission.currency);
+        submission = { ...f, budget: suggestion.amount, currency: suggestion.currency };
+      } catch {
+        setBusy(false);
+        toast.error("Check trip days and travelers before suggesting a budget.");
+        return;
+      }
+    }
     if (
-      !validParty(f) ||
-      !personaFields.childrenAges.safeParse(f.childrenAges).success ||
-      !personaFields.childrenAgeRanges.safeParse(f.childrenAgeRanges).success ||
-      !f.destination.trim() ||
-      !Number.isInteger(f.days) ||
-      f.days < 1 ||
-      f.days > 30 ||
-      !Number.isInteger(f.travelers) ||
-      f.travelers < 1 ||
-      f.travelers > 20 ||
-      !Number.isFinite(f.budget) ||
-      f.budget < 0
+      !validParty(submission) ||
+      !personaFields.childrenAges.safeParse(submission.childrenAges).success ||
+      !personaFields.childrenAgeRanges.safeParse(submission.childrenAgeRanges).success ||
+      !submission.destination.trim() ||
+      !Number.isInteger(submission.days) ||
+      submission.days < 1 ||
+      submission.days > 30 ||
+      !Number.isInteger(submission.travelers) ||
+      submission.travelers < 1 ||
+      submission.travelers > 20 ||
+      !Number.isFinite(submission.budget) ||
+      submission.budget < 0
     ) {
       toast.error("Check trip details and child ages (0–17); include at least one adult.");
+      setBusy(false);
       return;
     }
     setBusy(true);
@@ -87,11 +114,11 @@ export function NewTripDialog({
         : await supabase
             .from("trips")
             .insert({
-              destination: f.destination.trim(),
-              start_date: f.start,
-              end_date: endDate(f.start, f.days),
-              budget: f.budget,
-              currency: f.currency,
+              destination: submission.destination.trim(),
+              start_date: submission.start,
+              end_date: endDate(submission.start, submission.days),
+              budget: submission.budget,
+              currency: submission.currency,
             })
             .select()
             .single();
@@ -102,28 +129,48 @@ export function NewTripDialog({
       try {
         await saveTripPreferences(data.id, {
           ...DEFAULT_PREFERENCES,
-          travelers: f.travelers,
-          style: f.style,
-          interest: f.interest,
-          persona: f.persona,
-          childrenAges: f.childrenAges,
-          childrenAgeRanges: f.childrenAgeRanges,
+          travelers: submission.travelers,
+          style: submission.style,
+          interest: submission.interest,
+          persona: submission.persona,
+          childrenAges: submission.childrenAges,
+          childrenAgeRanges: submission.childrenAgeRanges,
         });
       } catch {
         toast.error(
           "Trip created, but travel settings could not save. Update them on the trip page.",
         );
       }
-      if (template && f.destination.trim() === template.destination && !requestAi) {
-        const { error: activityError } = await supabase
-          .from("activities")
-          .insert(templateActivities(template.id, f.days).map((a) => ({ ...a, trip_id: data.id })));
+      if (template && submission.destination.trim() === template.destination && !requestAi) {
+        const { error: activityError } = await supabase.from("activities").insert(
+          templateActivities(template.id, submission.days).map((a) => ({
+            ...a,
+            trip_id: data.id,
+          })),
+        );
         if (activityError)
           toast.error(
             "Trip created, but template activities could not save. Add activities on your trip page.",
           );
       }
-      if (imported?.journey) await saveJourney(data.id, imported.journey);
+      if (suggestion)
+        await saveJourney(data.id, {
+          ...(imported?.journey ?? {
+            departure: "",
+            flightsRequired: false,
+            hotelComfort: "Comfortable" as const,
+          }),
+          flightBudget: suggestion.flights,
+          budgetSuggestion: suggestion,
+        });
+      else if (imported?.journey)
+        await saveJourney(data.id, {
+          ...imported.journey,
+          budgetSuggestion:
+            imported.budget === submission.budget && imported.currency === submission.currency
+              ? imported.journey.budgetSuggestion
+              : undefined,
+        });
       if (imported?.stay) await saveStayChoice(data.id, imported.stay);
       if (imported?.ideas) {
         const items = plannedActivities ?? prepareSuggestedPlan(data.id, imported.ideas, []);
@@ -277,14 +324,15 @@ export function NewTripDialog({
                       key={style}
                       variant={f.style === style ? "secondary" : "outline"}
                       aria-pressed={f.style === style}
-                      onClick={() =>
+                      onClick={() => {
+                        setBudgetInput(String(estimatedBudget(f.days, f.travelers, style)));
                         setF({
                           ...f,
                           style,
                           budget: estimatedBudget(f.days, f.travelers, style),
                           currency: "EUR",
-                        })
-                      }
+                        });
+                      }}
                     >
                       {style}
                     </Button>
@@ -297,12 +345,15 @@ export function NewTripDialog({
                   id="new-budget"
                   className="mt-2"
                   type="number"
-                  required
                   min={0}
                   max={1000000}
                   step="0.01"
-                  value={f.budget}
-                  onChange={(e) => setF({ ...f, budget: Number(e.target.value) })}
+                  placeholder="Optional · suggest a budget for me"
+                  value={budgetInput}
+                  onChange={(e) => {
+                    setBudgetInput(e.target.value);
+                    setF({ ...f, budget: Number(e.target.value) });
+                  }}
                 />
               </div>
               <div>
@@ -318,6 +369,10 @@ export function NewTripDialog({
                   ))}
                 </select>
               </div>
+              <p className="text-xs text-muted-foreground">
+                Budget is optional. Leave it blank for an editable reference estimate; a suggested
+                total is needed to calculate your saved plan.
+              </p>
               <p className="text-xs text-muted-foreground">
                 Budget style presets use estimated EUR costs. Edit your total and currency as
                 needed.{" "}

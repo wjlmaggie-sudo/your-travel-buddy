@@ -5,6 +5,7 @@ const api = vi.hoisted(() => ({
   navigate: vi.fn(),
   invalidate: vi.fn(),
   savePreferences: vi.fn(),
+  saveJourney: vi.fn(),
   insertTrip: vi.fn(),
   insertActivities: vi.fn(),
   upsertActivities: vi.fn(),
@@ -31,6 +32,10 @@ vi.mock("@/integrations/supabase/client", () => ({
           }
         : { insert: api.insertActivities, upsert: api.upsertActivities },
   },
+}));
+vi.mock("@/lib/journey-planning", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/journey-planning")>()),
+  saveJourney: api.saveJourney,
 }));
 import { NewTripDialog } from "@/components/NewTripDialog";
 import { savePlannerDraft, readPlannerDraft } from "@/lib/planner-draft";
@@ -153,4 +158,22 @@ describe("creating an account trip from a template", () => {
     await waitFor(() => expect(api.navigate).toHaveBeenCalled());
     expect(api.insertActivities).not.toHaveBeenCalled();
   });
+});
+
+it("creates an account trip from an empty budget using the same saved reference estimate", async () => {
+  render(<NewTripDialog open onOpenChange={vi.fn()} />);
+  expect(screen.getByLabelText("Total group budget")).not.toBeRequired();
+  fireEvent.change(screen.getByLabelText("Destination"), { target: { value: "Lisbon, Portugal" } });
+  fireEvent.submit(screen.getByLabelText("Destination").closest("form")!);
+  await waitFor(() => expect(api.navigate).toHaveBeenCalled());
+  expect(api.insertTrip).toHaveBeenCalledWith(
+    expect.objectContaining({ budget: 1300, currency: "EUR" }),
+  );
+  expect(api.saveJourney).toHaveBeenCalledWith(
+    "new-trip",
+    expect.objectContaining({
+      flightBudget: 0,
+      budgetSuggestion: expect.objectContaining({ amount: 1300, profile: "Lisbon reference" }),
+    }),
+  );
 });

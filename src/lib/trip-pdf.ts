@@ -272,6 +272,19 @@ export async function buildTripPdf(
       ),
     );
   else content.push(paragraph("No hotel quote selected. Accommodation allocation is an estimate."));
+  if (
+    journey?.budgetSuggestion &&
+    journey.budgetSuggestion.amount === b.budget &&
+    journey.budgetSuggestion.currency === b.currency
+  ) {
+    const suggested = journey.budgetSuggestion;
+    content.push(
+      heading("Suggested starting budget · planning estimate"),
+      paragraph(
+        `${money(suggested.amount)} for the group; planning range ${money(suggested.low)}–${money(suggested.high)}. ${money(suggested.perPersonDay)} per person/day excluding flights; group flight reserve ${money(suggested.flights)}. ${suggested.profile}. Not live prices or a surveyed average. ${suggested.note} ${suggested.fxDate ? `ECB conversion date: ${suggested.fxDate}.` : ""}`,
+      ),
+    );
+  }
   if (b.days > 1) {
     const roomAdvice = roomRecommendation(b);
     content.push(
