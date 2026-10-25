@@ -200,25 +200,27 @@ export function LiveHotelSearch({
                         {dailyMoney(offer.amount - allowance, brief.currency)} above hotel allowance
                       </p>
                     )}
-                    <Button
-                      className="mt-5"
-                      variant={selected ? "secondary" : "outline"}
-                      onClick={() =>
-                        onChoose?.({
-                          name: offer.name,
-                          type: "Hotel",
-                          amount: offer.amount,
-                          unit: "stay",
-                          rooms: 1,
-                          extras: 0,
-                          scope: stayScope(brief),
-                          evidence: "live-search",
-                          checkedAt: current.result!.checkedAt,
-                        })
-                      }
-                    >
-                      {selected ? "Selected hotel" : "Choose this hotel"}
-                    </Button>
+                    <div className="mt-auto pt-5">
+                      <Button
+                        className="w-full shrink-0 whitespace-nowrap px-3"
+                        variant={selected ? "secondary" : "outline"}
+                        onClick={() =>
+                          onChoose?.({
+                            name: offer.name,
+                            type: "Hotel",
+                            amount: offer.amount,
+                            unit: "stay",
+                            rooms: 1,
+                            extras: 0,
+                            scope: stayScope(brief),
+                            evidence: "live-search",
+                            checkedAt: current.result!.checkedAt,
+                          })
+                        }
+                      >
+                        {selected ? "Selected hotel" : "Choose this hotel"}
+                      </Button>
+                    </div>
                   </div>
                 </article>
               );

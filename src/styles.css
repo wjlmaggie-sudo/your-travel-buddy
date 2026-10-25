@@ -229,11 +229,11 @@ html {
 /* Flight tickets keep the route readable and the price anchored across sizes. */
 .flight-ticket-list {
   display: grid;
-  gap: 1rem;
+  gap: 0.65rem;
 }
 .flight-ticket {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 175px;
+  grid-template-columns: minmax(0, 1fr) 160px;
   border: 1px solid var(--border);
   border-radius: 1.25rem;
   background: var(--card);
@@ -253,7 +253,7 @@ html {
 }
 .flight-ticket-main {
   min-width: 0;
-  padding: 1.25rem 1.5rem 1rem;
+  padding: 0.8rem 1rem 0.65rem;
 }
 .flight-ticket-topline {
   display: flex;
@@ -286,7 +286,7 @@ html {
   font-weight: 600;
 }
 .flight-airline {
-  margin-top: 0.8rem;
+  margin: 0;
   font-family: var(--font-sans);
   font-size: 0.9rem;
   font-weight: 600;
@@ -295,8 +295,8 @@ html {
   display: grid;
   grid-template-columns: auto minmax(70px, 1fr) auto;
   align-items: center;
-  gap: 1.25rem;
-  margin-top: 1rem;
+  gap: 1rem;
+  margin-top: 0.65rem;
 }
 .flight-endpoint {
   display: flex;
@@ -304,7 +304,7 @@ html {
   gap: 0.15rem;
 }
 .flight-endpoint strong {
-  font-size: 1.8rem;
+  font-size: 1.5rem;
   line-height: 1.15;
   font-weight: 600;
   letter-spacing: -0.06em;
@@ -386,8 +386,8 @@ html {
 .flight-connections {
   display: grid;
   gap: 0.45rem;
-  margin-top: 1rem;
-  padding: 0.65rem 0.8rem;
+  margin-top: 0.6rem;
+  padding: 0.35rem 0.65rem;
   border-radius: 0.65rem;
   background: #b9842810;
   color: #77532e;
@@ -408,7 +408,7 @@ html {
   font-weight: 600;
 }
 .flight-leg-details {
-  margin-top: 0.8rem;
+  margin-top: 0.35rem;
   font-size: 0.72rem;
 }
 .flight-leg-details summary {
@@ -466,7 +466,7 @@ html {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 1.4rem 1.1rem;
+  padding: 0.8rem 0.9rem;
   border-left: 1px dashed color-mix(in srgb, var(--secondary) 25%, var(--border));
   background: color-mix(in srgb, var(--secondary) 3%, var(--card));
 }
@@ -479,7 +479,7 @@ html {
 }
 .flight-price {
   margin-top: 0.5rem;
-  font-size: 2rem;
+  font-size: 1.75rem;
   font-weight: 600;
   letter-spacing: -0.06em;
   font-variant-numeric: tabular-nums;
@@ -491,7 +491,7 @@ html {
 }
 .flight-choose {
   width: 100%;
-  margin-top: 1.2rem;
+  margin-top: 0.65rem;
   gap: 0.4rem;
   font-size: 0.72rem;
   border-radius: 2rem;
@@ -501,13 +501,13 @@ html {
     grid-template-columns: minmax(0, 1fr);
   }
   .flight-ticket-main {
-    padding: 1rem;
+    padding: 0.8rem;
   }
   .flight-route {
     gap: 0.75rem;
   }
   .flight-endpoint strong {
-    font-size: 1.6rem;
+    font-size: 1.4rem;
   }
   .flight-ticket-fare {
     border-left: 0;
@@ -525,7 +525,7 @@ html {
   .flight-price {
     grid-column: 1;
     margin: 0;
-    font-size: 1.6rem;
+    font-size: 1.4rem;
   }
   .flight-price-note {
     grid-column: 1;
@@ -541,14 +541,4 @@ html {
   .flight-ticket {
     transition: none;
   }
-}
-
-.flight-direction-label {
-  margin-top: 0.75rem;
-  color: var(--muted-foreground);
-  font-size: 0.62rem;
-  letter-spacing: 0.03em;
-}
-.flight-direction-label + .flight-route {
-  margin-top: 0.4rem;
 }

@@ -255,12 +255,13 @@ export function LiveFlightSearch({
                           <Check size={13} aria-hidden /> Selected
                         </span>
                       )}
-                      <span className="flight-ticket-reason">{detail}</span>
+                      <h3 className="flight-airline">
+                        {[...new Set(offer.flights.map((f) => f.airline))].join(" + ")}
+                      </h3>
+                      <span className="flight-ticket-reason" title={detail}>
+                        Outbound · local times
+                      </span>
                     </div>
-                    <h3 className="flight-airline">
-                      {[...new Set(offer.flights.map((f) => f.airline))].join(" + ")}
-                    </h3>
-                    <p className="flight-direction-label">Outbound · airport-local times</p>
                     <div className="flight-route">
                       <div className="flight-endpoint">
                         <strong>{first.departure_airport.time.slice(11)}</strong>
