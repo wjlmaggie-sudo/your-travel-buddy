@@ -32,7 +32,11 @@ export async function searchCars(input: CarSearchInput, signal: AbortSignal) {
         ? "The free car rental search allowance has been reached. Try again next month."
         : response.status === 503 || response.status === 404
           ? "Car rental search is awaiting activation. No live offers are available yet."
-          : "Car rental search is unavailable. Please try again later.",
+          : response.status === 504
+            ? "The rental provider took too long to respond. Please try again later."
+            : response.status === 400
+              ? "Check your pickup airport, dates and driver details."
+              : "Car rental search is unavailable. Please try again later.",
     );
   const result = carSearchResult.parse(await response.json());
   if (JSON.stringify(result.query) !== JSON.stringify(query))

@@ -177,10 +177,10 @@ export function createCarHandler(options: {
           }).toString();
           const response = await (options.fetcher ?? fetch)(url, {
             headers: { "X-API-KEY": options.apiKey!, Accept: "application/json" },
-            signal: AbortSignal.timeout(45000),
+            signal: AbortSignal.timeout(90000),
           });
           // Never follow payment challenges, buy credits or retry automatically.
-          if (!response.ok) throw new Error("Provider unavailable");
+          if (!response.ok) throw new Error(`provider-http-${response.status}`);
           const result = normalizeCars(await response.json(), query);
           for (const [id, entry] of cache) if (entry.until <= Date.now()) cache.delete(id);
           if (cache.size >= 100) cache.delete(cache.keys().next().value!);
@@ -194,8 +194,22 @@ export function createCarHandler(options: {
       return result
         ? reply(result)
         : reply({ error: "The free car search allowance has been reached." }, 429);
-    } catch {
-      return reply({ error: "Car rental search unavailable. No offers have been added." }, 502);
+    } catch (cause) {
+      const code =
+        cause instanceof z.ZodError
+          ? "provider-schema"
+          : cause instanceof Error &&
+              (cause.message === "Car search mismatch" ||
+                /^provider-http-\d{3}$/.test(cause.message))
+            ? cause.message
+            : cause instanceof Error && cause.name === "TimeoutError"
+              ? "provider-timeout"
+              : "provider-unavailable";
+      console.error("Car rental provider failure", code);
+      return reply(
+        { error: "Car rental search unavailable. No offers have been added.", code },
+        code === "provider-timeout" ? 504 : 502,
+      );
     }
   };
 }
