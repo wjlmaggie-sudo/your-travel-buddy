@@ -95,7 +95,7 @@ export function CurrencyConverter({
         </div>
         <div
           aria-live="polite"
-          className="flex min-h-[110px] flex-col justify-center rounded-xl bg-secondary/10 p-4"
+          className="flex min-h-[110px] flex-col justify-center rounded-2xl bg-gradient-to-br from-secondary/15 to-secondary/5 p-5"
         >
           {!valid ? (
             <p className="text-sm">Enter a valid, non-negative amount.</p>

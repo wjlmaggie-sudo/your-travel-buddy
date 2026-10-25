@@ -247,8 +247,10 @@ export async function buildTripPdf(
     );
   if (connected?.carChoice) {
     const car = connected.carChoice;
+    const carImage = car.photo ? await pdfImage(car.photo) : null;
     content.push(
       heading("Car rental"),
+      ...(carImage ? [{ image: carImage, fit: [250, 150], margin: [0, 0, 0, 8] } as Content] : []),
       paragraph(
         `${car.name} or similar · ${car.supplier} · ${money(car.amount)} whole rental. ${car.pickup} · ${car.pickupDate} ${car.pickupTime} to ${car.dropoffDate} ${car.dropoffTime}. Advertised price checked ${car.checkedAt}; not booked. Fuel, parking and extras separate. Reconfirm rental conditions with provider.`,
       ),

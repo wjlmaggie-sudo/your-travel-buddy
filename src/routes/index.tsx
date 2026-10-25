@@ -39,36 +39,47 @@ function Index() {
       <main className="mx-auto max-w-7xl px-4 sm:px-6">
         <section
           aria-label="Travel inspiration"
-          className="flex items-center justify-between gap-5 rounded-2xl border bg-card px-5 py-4 sm:px-6"
+          className="travel-hero relative isolate overflow-hidden rounded-3xl bg-secondary text-white"
         >
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[.2em] text-secondary">
-              Your next adventure, made simple
+          <img
+            src={travelLake}
+            alt="An alpine lake and mountains at Lago di Braies, Italy"
+            width={1600}
+            height={900}
+            fetchPriority="high"
+            className="absolute inset-0 -z-20 h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 -z-10 bg-gradient-to-r from-black/75 via-black/40 to-black/10" />
+          <div className="max-w-2xl px-6 py-10 sm:px-10 sm:py-14">
+            <p className="text-[10px] font-semibold uppercase tracking-[.24em] text-white/80">
+              Less searching. More exploring.
             </p>
-            <h1 className="mt-1 text-2xl font-semibold sm:text-3xl">
-              One trip. Every choice connected.
+            <h1 className="mt-3 text-4xl font-semibold leading-tight sm:text-5xl">
+              Your next adventure
+              <br />
+              starts here.
             </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Start with the basics. Choose your flights, stay and favorite places.
+            <p className="mt-4 max-w-md text-sm leading-relaxed text-white/90">
+              Flights, beautiful stays and days worth remembering. Bring every choice into one
+              simple plan.
             </p>
+            <div className="mt-5 flex flex-wrap gap-2 text-[11px]">
+              <span className="rounded-full border border-white/25 bg-white/10 px-3 py-1.5">
+                Plan as a guest
+              </span>
+              <span className="rounded-full border border-white/25 bg-white/10 px-3 py-1.5">
+                Keep your budget in view
+              </span>
+            </div>
           </div>
-          <div className="relative hidden shrink-0 sm:block">
-            <img
-              src={travelLake}
-              alt="An alpine lake and mountains at Lago di Braies, Italy"
-              width={160}
-              height={88}
-              className="h-20 w-36 rounded-xl object-cover"
-            />
-            <a
-              href="https://commons.wikimedia.org/wiki/File:Lago_di_Braies_(Unsplash_VowIFDxogG4).jpg"
-              target="_blank"
-              rel="noreferrer"
-              className="absolute bottom-1 right-2 text-[8px] text-white underline"
-            >
-              Luca Bravo · CC0
-            </a>
-          </div>
+          <a
+            href="https://commons.wikimedia.org/wiki/File:Lago_di_Braies_(Unsplash_VowIFDxogG4).jpg"
+            target="_blank"
+            rel="noreferrer"
+            className="absolute bottom-3 right-4 text-[9px] text-white/80 underline"
+          >
+            Luca Bravo · CC0
+          </a>
         </section>
       </main>
       <TravelPlanner />

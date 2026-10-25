@@ -152,3 +152,29 @@ it("adds rental costs exactly once, preserves local transport, restores selectio
   expect(connectedBudget({ ...brief, currency: "USD" }, restored).car).toBe(0);
   expect(connectedBudget({ ...brief, days: 5 }, restored).car).toBe(0);
 });
+it("keeps provider vehicle photos and reads the security hold separately from rental payment", () => {
+  const source = raw();
+  Object.assign(source.offers[0]!, {
+    car: {
+      ...source.offers[0]!.car,
+      image_url: "https://cdn2.rcstatic.com/images/car_images/web/opel/insignia_lrg.jpg",
+      suitcase_count: 3,
+    },
+    price: { total: 120, currency: "EUR", deposit: 120 },
+    deposit: { amount: 750, currency: "EUR" },
+  });
+  const offer = normalizeCars(source, query).offers[0]!;
+  expect(offer.photo).toBe("https://cdn2.rcstatic.com/images/car_images/web/opel/insignia_lrg.jpg");
+  expect(offer.bags).toBe(3);
+  expect(offer.deposit).toBe(750);
+});
+it("never treats an upfront payment as the security deposit and rejects unsafe image URLs", () => {
+  const source = raw();
+  Object.assign(source.offers[0]!, {
+    car: { ...source.offers[0]!.car, image_url: "https://cdn2.rcstatic.com.evil.test/car.jpg" },
+    price: { total: 120, currency: "EUR", deposit: 120 },
+  });
+  const offer = normalizeCars(source, query).offers[0]!;
+  expect(offer.photo).toBeNull();
+  expect(offer.deposit).toBeNull();
+});

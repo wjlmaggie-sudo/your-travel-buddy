@@ -27,10 +27,26 @@ export const carSearchInput = z
     return days > 0 && days <= 30;
   });
 export type CarSearchInput = z.infer<typeof carSearchInput>;
+// Rentalcars supplies representative vehicle photos, never guaranteed exact cars.
+const carPhotoUrl = z
+  .string()
+  .url()
+  .refine((value) => {
+    const url = new URL(value);
+    return (
+      url.protocol === "https:" &&
+      /(^|\.)rcstatic\.com$/.test(url.hostname) &&
+      !url.username &&
+      !url.password &&
+      !url.search
+    );
+  });
 export const carOfferSchema = z.object({
   id: z.string().min(1).max(200),
   name: z.string().min(1).max(200),
   supplier: z.string().min(1).max(200),
+  photo: carPhotoUrl.nullable().optional(),
+  bags: z.number().int().min(0).max(30).nullable().optional(),
   amount: z.number().finite().positive().max(1000000),
   currency: z.string().regex(/^[A-Z]{3}$/),
   seats: z.number().int().min(1).max(20),
@@ -78,7 +94,13 @@ export function normalizeCars(raw: unknown, query: CarSearchInput): CarSearchRes
       make_and_model: z.string(),
       seats: z.number(),
       transmission: z.string().optional(),
+      image_url: z.unknown().optional(),
+      suitcase_count: z.number().int().min(0).max(30).nullable().optional(),
     }),
+    deposit: z
+      .object({ amount: z.number().finite().nonnegative(), currency: z.string() })
+      .nullable()
+      .optional(),
     price: z.object({
       total: z.number(),
       currency: z.string(),
@@ -96,6 +118,8 @@ export function normalizeCars(raw: unknown, query: CarSearchInput): CarSearchRes
       id: v.vehicle_id,
       name: v.car.make_and_model,
       supplier: v.supplier.name,
+      photo: carPhotoUrl.safeParse(v.car.image_url).success ? String(v.car.image_url) : null,
+      bags: v.car.suitcase_count ?? null,
       amount: v.price.total,
       currency: v.price.currency,
       seats: v.car.seats,
@@ -103,7 +127,8 @@ export function normalizeCars(raw: unknown, query: CarSearchInput): CarSearchRes
       mileage: v.mileage?.type ?? "Not supplied",
       fuelPolicy: v.fuel_policy?.type ?? "Not supplied",
       cancellation: v.free_cancellation ?? null,
-      deposit: v.price.deposit ?? null,
+      // price.deposit is the upfront rental payment, not the security hold.
+      deposit: v.deposit?.currency === query.currency ? v.deposit.amount : null,
     });
     return normalized.success &&
       normalized.data.currency === query.currency &&

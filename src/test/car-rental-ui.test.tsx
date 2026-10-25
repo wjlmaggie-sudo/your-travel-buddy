@@ -24,7 +24,7 @@ it("clearly shows pending activation and prevents searches without a key", async
   vi.mocked(carSearchAvailable).mockResolvedValue(false);
   render(<CarRental active brief={brief} allowance={100} onChoose={vi.fn()} />);
   expect(await screen.findByText(/Live car rental searches are awaiting activation/)).toBeVisible();
-  expect(screen.getByRole("button", { name: "Find rental cars" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Find cars" })).toBeDisabled();
   expect(searchCars).not.toHaveBeenCalled();
 });
 it("uses trip dates and actual driver details, then selects a real response for the budget", async () => {
@@ -37,6 +37,7 @@ it("uses trip dates and actual driver details, then selects a real response for 
       {
         id: "test-offer",
         name: "Test vehicle",
+        photo: "https://cdn2.rcstatic.com/images/car_images/web/opel/insignia_lrg.jpg",
         supplier: "Test supplier",
         amount: 120,
         currency: "EUR",
@@ -51,17 +52,16 @@ it("uses trip dates and actual driver details, then selects a real response for 
   }));
   const onChoose = vi.fn();
   render(<CarRental active brief={brief} allowance={100} onChoose={onChoose} />);
-  await vi.waitFor(() =>
-    expect(screen.getByRole("button", { name: "Find rental cars" })).toBeEnabled(),
-  );
+  await vi.waitFor(() => expect(screen.getByRole("button", { name: "Find cars" })).toBeEnabled());
   expect(screen.getByLabelText("Car pickup date")).toHaveValue("2026-12-01");
   expect(screen.getByLabelText("Car return date")).toHaveValue("2026-12-04");
   fireEvent.change(screen.getByLabelText("Driver age"), { target: { value: "35" } });
   fireEvent.change(screen.getByLabelText("Driver country of residence"), {
     target: { value: "DE" },
   });
-  fireEvent.click(screen.getByRole("button", { name: "Find rental cars" }));
+  fireEvent.click(screen.getByRole("button", { name: "Find cars" }));
   expect(await screen.findByText("Test vehicle or similar")).toBeVisible();
+  expect(screen.getByRole("img", { name: "Test vehicle rental model" })).toBeVisible();
   expect(searchCars).toHaveBeenCalledWith(
     expect.objectContaining({
       pickup: "LIS",
@@ -72,7 +72,7 @@ it("uses trip dates and actual driver details, then selects a real response for 
     }),
     expect.any(AbortSignal),
   );
-  fireEvent.click(screen.getByRole("button", { name: "Use this rental in budget" }));
+  fireEvent.click(screen.getByRole("button", { name: "Select car" }));
   expect(onChoose).toHaveBeenCalledWith(
     expect.objectContaining({
       amount: 120,
@@ -97,8 +97,6 @@ it("allows standalone car searches without a travel plan or account", async () =
   expect(screen.getByLabelText("Car travelers")).toHaveValue(2);
   expect(screen.getByLabelText("Car currency")).toHaveValue("EUR");
   expect(screen.queryByText(/Local transport allowance:/)).toBeNull();
-  expect(screen.getByText(/without creating a trip or signing in/)).toBeVisible();
-  await vi.waitFor(() =>
-    expect(screen.getByRole("button", { name: "Find rental cars" })).toBeEnabled(),
-  );
+  expect(screen.getByText(/no account needed/)).toBeVisible();
+  await vi.waitFor(() => expect(screen.getByRole("button", { name: "Find cars" })).toBeEnabled());
 });

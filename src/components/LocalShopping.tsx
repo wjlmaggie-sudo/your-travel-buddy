@@ -17,18 +17,18 @@ export function LocalShopping({ destination }: { destination: string }) {
     [error, setError] = useState(""),
     [searched, setSearched] = useState(false),
     [submitted, setSubmitted] = useState("");
-  async function choose(place: Destination) {
+  async function choose(place: Destination, term = submitted) {
     setBusy(true);
     setLocation(place);
     setError("");
     setStores([]);
     try {
       const all = (await nearbyPlaces(place)).filter((item) => item.category === "Shops");
-      const words = submitted
+      const words = term
         .toLowerCase()
         .split(/\s+/)
         .filter((word) => word.length > 2);
-      const beauty = /skin|beauty|cosmetic|cream|sunscreen|serum/i.test(submitted);
+      const beauty = /skin|beauty|cosmetic|cream|sunscreen|serum/i.test(term);
       setStores(
         all
           .sort((a, b) => {
@@ -56,9 +56,20 @@ export function LocalShopping({ destination }: { destination: string }) {
           Find something worth bringing home.
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          Search for a product, brand or store type. Start with “skincare”, “coffee beans” or a
-          specific product name.
+          Find a product, a local specialty or a favorite brand.
         </p>
+      </div>
+      <div className="flex flex-wrap gap-2" aria-label="Shopping ideas">
+        {["Skincare", "Coffee beans", "Souvenirs"].map((idea) => (
+          <Button
+            key={idea}
+            variant={product === idea ? "secondary" : "outline"}
+            size="sm"
+            onClick={() => setProduct(idea)}
+          >
+            {idea}
+          </Button>
+        ))}
       </div>
       <form
         className="grid gap-3 rounded-2xl border bg-card p-5 sm:grid-cols-[1fr_1fr_auto]"
@@ -74,6 +85,7 @@ export function LocalShopping({ destination }: { destination: string }) {
             const found = await searchDestinations(area);
             setLocations(found);
             if (!found.length) setError("No destination found. Try a city and country.");
+            else if (found.length === 1) await choose(found[0]!, product);
           } catch {
             setError(
               "Could not search the place directory. Use the external map search or try again.",
@@ -119,11 +131,15 @@ export function LocalShopping({ destination }: { destination: string }) {
           Find local shops
         </Button>
       </form>
-      <div className="rounded-xl bg-secondary/10 p-4 text-sm">
-        <strong>Store directory, not inventory.</strong> Mapped stores may be relevant, but product
-        stock and prices have not been verified. Confirm the exact product, size, price and opening
-        hours with the shop.
-      </div>
+      <details className="rounded-xl bg-secondary/10 p-4 text-xs">
+        <summary className="cursor-pointer font-medium">
+          Shop locations · stock & prices unverified
+        </summary>
+        <p className="mt-2 leading-relaxed">
+          Mapped stores may be relevant, but product stock and prices have not been verified.
+          Confirm the exact product, size, price and opening hours with the shop.
+        </p>
+      </details>
       {busy && (
         <p role="status" className="text-sm">
           Looking up local places…

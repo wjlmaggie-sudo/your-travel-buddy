@@ -1,3 +1,4 @@
+import { PlacePhoto } from "./PlacePhoto";
 import { useQuery } from "@tanstack/react-query";
 import { loadCityGuide, curatedDay, type VisualPlace } from "@/lib/city-guides";
 import { PERSONA_LISBON_PLACES } from "@/lib/persona-stops";
@@ -55,47 +56,55 @@ export function AttractionRecommendations({
           const included = place && current.some((i) => i.day === day && i.location === place.name),
             ticket = place ? admissionFor(place.name) : undefined;
           return (
-            <article key={label} className="flex flex-col rounded-2xl border bg-card p-5">
-              <p className="text-xs font-semibold uppercase tracking-widest text-secondary">
-                {label}
-              </p>
-              <h4 className="mt-3 text-lg font-semibold">
-                {place?.name ?? `Explore ${label.toLowerCase()} nearby`}
-              </h4>
-              <p className="mt-2 text-sm text-muted-foreground">{detail}</p>
-              {place && (
-                <p className="mt-3 line-clamp-3 text-xs text-muted-foreground">
-                  {place.description}
+            <article
+              key={label}
+              className="visual-offer flex flex-col overflow-hidden rounded-2xl border bg-card"
+            >
+              {place && <PlacePhoto place={place} active={active} />}
+              <div className="flex flex-1 flex-col p-5">
+                <p className="text-xs font-semibold uppercase tracking-widest text-secondary">
+                  {label}
                 </p>
-              )}
-              <p className="mt-3 text-xs">
-                {ticket?.price === 0
-                  ? "Public-space visit · paid extras separate"
-                  : ticket?.price !== undefined
-                    ? `Reference adult admission €${ticket.price} · confirm family prices`
-                    : "Check current admission, opening hours and age suitability."}
-              </p>
-              <a
-                className="my-4 text-xs text-secondary underline"
-                href={
-                  place?.source ??
-                  `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${search} ${brief.destination}`)}`
-                }
-                target="_blank"
-                rel="noreferrer"
-              >
-                {place ? "Place details & visiting information ↗" : "Find matching places nearby ↗"}
-              </a>
-              {place && (
-                <Button
-                  className="mt-auto h-auto whitespace-normal"
-                  variant="outline"
-                  disabled={!!included || current.filter((i) => i.day === day).length >= 8}
-                  onClick={() => onAdd(place)}
+                <h4 className="mt-3 text-lg font-semibold">
+                  {place?.name ?? `Explore ${label.toLowerCase()} nearby`}
+                </h4>
+                <details className="mt-2 text-xs text-muted-foreground">
+                  <summary className="cursor-pointer font-medium">Why visit?</summary>
+                  <p className="mt-2 leading-relaxed">
+                    {detail} {place?.description}
+                  </p>
+                </details>
+                <p className="mt-3 text-xs">
+                  {ticket?.price === 0
+                    ? "Public-space visit · paid extras separate"
+                    : ticket?.price !== undefined
+                      ? `Reference adult admission €${ticket.price} · confirm family prices`
+                      : "Check current admission, opening hours and age suitability."}
+                </p>
+                <a
+                  className="my-4 text-xs text-secondary underline"
+                  href={
+                    place?.source ??
+                    `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${search} ${brief.destination}`)}`
+                  }
+                  target="_blank"
+                  rel="noreferrer"
                 >
-                  {included ? "Already in this day" : `Add to day ${day}`}
-                </Button>
-              )}
+                  {place
+                    ? "Place details & visiting information ↗"
+                    : "Find matching places nearby ↗"}
+                </a>
+                {place && (
+                  <Button
+                    className="mt-auto h-auto whitespace-normal"
+                    variant="outline"
+                    disabled={!!included || current.filter((i) => i.day === day).length >= 8}
+                    onClick={() => onAdd(place)}
+                  >
+                    {included ? "Already in this day" : `Add to day ${day}`}
+                  </Button>
+                )}
+              </div>
             </article>
           );
         })}

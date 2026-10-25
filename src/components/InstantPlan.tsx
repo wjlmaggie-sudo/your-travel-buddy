@@ -1,3 +1,4 @@
+import { TripCover } from "./TripCover";
 import { CarRental } from "./CarRental";
 import { AttractionRecommendations } from "./AttractionRecommendations";
 import { MorePlaces } from "./MorePlaces";
@@ -145,78 +146,84 @@ export function InstantPlan({
             </Button>
           </div>
         )}
-        <div className="rounded-2xl border bg-card p-5">
-          <span className="inline-flex items-center gap-2 rounded-full bg-secondary/10 px-3 py-1 text-xs font-medium text-secondary">
-            <Check className="h-3 w-3" /> Your whole trip is ready · free template plan
-          </span>
-          <h2 id="whole-plan-heading" tabIndex={-1} className="mt-4 text-3xl font-semibold">
-            {brief.days} days in {brief.destination}
-          </h2>
-          <p className="mt-3 text-sm text-muted-foreground">
-            {brief.start} · {brief.travelers} travelers · an editable template plan
-          </p>
-          {personaSummary(brief) && (
-            <p className="mt-3 text-sm font-medium text-secondary">{personaSummary(brief)}</p>
-          )}
-          <details className="mt-3">
-            <summary className="cursor-pointer text-xs text-muted-foreground">
-              About these suggestions
-            </summary>
-            <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{ideas.summary}</p>
-          </details>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Choose a section to explore. Your selections and edits stay with this simulation.
-          </p>
-          <div className="mt-5 flex flex-wrap gap-3">
-            <Button type="button" variant="outline" onClick={onEditBrief}>
-              Edit trip details
-            </Button>
+        <div className="grid gap-6 rounded-2xl border bg-card p-5 lg:grid-cols-[1fr_240px]">
+          <div className="min-w-0">
+            <span className="inline-flex items-center gap-2 rounded-full bg-secondary/10 px-3 py-1 text-xs font-medium text-secondary">
+              <Check className="h-3 w-3" /> Your whole trip is ready · free template plan
+            </span>
+            <h2 id="whole-plan-heading" tabIndex={-1} className="mt-4 text-3xl font-semibold">
+              {brief.days} days in {brief.destination}
+            </h2>
+            <p className="mt-3 text-sm text-muted-foreground">
+              {brief.start} · {brief.travelers} travelers · an editable template plan
+            </p>
+            {personaSummary(brief) && (
+              <p className="mt-3 text-sm font-medium text-secondary">{personaSummary(brief)}</p>
+            )}
+            <details className="mt-3">
+              <summary className="cursor-pointer text-xs text-muted-foreground">
+                About these suggestions
+              </summary>
+              <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{ideas.summary}</p>
+            </details>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Choose your favorites. Make the plan yours.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Button type="button" variant="outline" onClick={onEditBrief}>
+                Edit trip details
+              </Button>
 
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setPlacesRequest((request) => request + 1);
-                onSectionChange?.("attractions");
-              }}
-            >
-              Browse more places
-            </Button>
-            <SavePlanButton
-              prepare={() => {
-                if (ideas.days.some((day) => day.items.some((item) => !item.title.trim()))) {
-                  toast.error("Give each activity a title before saving.");
-                  return false;
-                }
-                if (
-                  !savePlannerDraft({
-                    ...brief,
-                    ...(journey ? { journey } : {}),
-                    ideas,
-                    ...(stay ? { stay } : { stay: undefined }),
-                  })
-                ) {
-                  toast.error("Your browser could not keep this plan. Download a copy instead.");
-                  return false;
-                }
-                return true;
-              }}
-            />
-            <DownloadTripPdf
-              trip={{
-                brief,
-                summary: ideas.summary,
-                interest: brief.interest,
-                journey,
-                stay,
-                days: ideas.days,
-              }}
-            />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setPlacesRequest((request) => request + 1);
+                  onSectionChange?.("attractions");
+                }}
+              >
+                Browse more places
+              </Button>
+              <SavePlanButton
+                prepare={() => {
+                  if (ideas.days.some((day) => day.items.some((item) => !item.title.trim()))) {
+                    toast.error("Give each activity a title before saving.");
+                    return false;
+                  }
+                  if (
+                    !savePlannerDraft({
+                      ...brief,
+                      ...(journey ? { journey } : {}),
+                      ideas,
+                      ...(stay ? { stay } : { stay: undefined }),
+                    })
+                  ) {
+                    toast.error("Your browser could not keep this plan. Download a copy instead.");
+                    return false;
+                  }
+                  return true;
+                }}
+              />
+              <DownloadTripPdf
+                trip={{
+                  brief,
+                  summary: ideas.summary,
+                  interest: brief.interest,
+                  journey,
+                  stay,
+                  days: ideas.days,
+                }}
+              />
+            </div>
+            <p className="mt-3 text-xs text-muted-foreground">
+              Explore freely. Sign in only to save your plan.
+            </p>
           </div>
-          <p className="mt-3 text-xs text-muted-foreground">
-            Free template planner · no AI API key or AI charges. Only saving to your account needs
-            sign-in.
-          </p>
+          <TripCover
+            active={section === "planner" && overviewActive}
+            destination={brief.destination}
+            locations={ideas.days.flatMap((day) => day.items.map((item) => item.location ?? ""))}
+          />
         </div>
         <TripBudgetDashboard
           brief={brief}
@@ -301,8 +308,7 @@ export function InstantPlan({
           </p>
           <h2 className="mt-2 text-3xl font-semibold">Your days, thoughtfully connected.</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            A suggested outline with maps, restaurant alternatives and sourced stories. Check
-            opening hours and actual flight times before confirming the order.
+            Places, stories and local flavors, one day at a time. Check opening hours before you go.
           </p>
         </div>
         <div className="rounded-xl border bg-card p-3">

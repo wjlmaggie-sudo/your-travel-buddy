@@ -255,13 +255,13 @@ export function TravelPlanner() {
               A whole trip, with less effort
             </p>
             <h2 id="planner-heading" className="mt-2 text-3xl font-semibold">
-              Your next adventure starts here.
+              Where are we going?
             </h2>
             <p className="mt-3 text-sm text-muted-foreground">
-              A few details are all you need. Explore every section without an account.
+              A few details. A whole trip to explore.
             </p>
             <form ref={formRef} className="mt-6" onSubmit={generate}>
-              <fieldset disabled={estimatingBudget} className="space-y-5">
+              <fieldset disabled={estimatingBudget} className="space-y-4">
                 <PersonaPreferences
                   value={draft}
                   travelers={draft.travelers}
@@ -357,8 +357,7 @@ export function TravelPlanner() {
                       }}
                     />
                     <p id="planner-budget-help" className="mt-2 text-xs text-muted-foreground">
-                      Optional — leave blank for an editable budget suggestion. Enter a total to use
-                      your own limit.
+                      Optional · leave blank for a suggested budget.
                     </p>
                   </div>
                 </div>
@@ -384,7 +383,7 @@ export function TravelPlanner() {
                     }
                   />
                   <p className="mt-2 text-xs text-muted-foreground">
-                    Leave blank to plan without flights. You can add flights later.
+                    Optional · add a departure city for flights.
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-3">
@@ -423,8 +422,7 @@ export function TravelPlanner() {
                   )}
                 </div>
                 <p className="text-xs leading-relaxed text-muted-foreground">
-                  Your trip details carry into each step. Flight and hotel searches use real
-                  advertised prices; attractions are editable suggestions.
+                  Real flight and hotel searches. Editable daily suggestions.
                 </p>
               </fieldset>
             </form>

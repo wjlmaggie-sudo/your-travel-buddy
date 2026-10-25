@@ -1,3 +1,4 @@
+import { PlacePhoto } from "./PlacePhoto";
 import { useEffect, useId, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { loadCityGuide, type VisualPlace } from "@/lib/city-guides";
@@ -184,54 +185,57 @@ export function MorePlaces({
                     return (
                       <article
                         key={place.name}
-                        className="flex min-w-0 flex-col rounded-xl border bg-background p-4"
+                        className="visual-offer flex min-w-0 flex-col overflow-hidden rounded-xl border bg-background"
                       >
-                        <h4 className="font-semibold">{place.name}</h4>
-                        <p className="mt-2 line-clamp-3 text-xs text-muted-foreground">
-                          {place.description}
-                        </p>
-                        <p className="mt-2 text-xs">
-                          {ticket?.price === 0
-                            ? "Public-space visit · food, transport and paid extras separate"
-                            : ticket?.price !== undefined
-                              ? `Reference admission: €${ticket.price.toFixed(2)} per adult · confirm your group total`
-                              : "Ticket price unverified · check with the venue"}
-                        </p>
-                        <div className="my-3 flex flex-wrap gap-3 text-xs">
-                          <a
-                            className="text-secondary underline"
-                            href={place.source}
-                            target="_blank"
-                            rel="noreferrer"
+                        <PlacePhoto place={place} active={active && open} />
+                        <div className="flex flex-1 flex-col p-4">
+                          <h4 className="font-semibold">{place.name}</h4>
+                          <p className="mt-2 line-clamp-3 text-xs text-muted-foreground">
+                            {place.description}
+                          </p>
+                          <p className="mt-2 text-xs">
+                            {ticket?.price === 0
+                              ? "Public-space visit · food, transport and paid extras separate"
+                              : ticket?.price !== undefined
+                                ? `Reference admission: €${ticket.price.toFixed(2)} per adult · confirm your group total`
+                                : "Ticket price unverified · check with the venue"}
+                          </p>
+                          <div className="my-3 flex flex-wrap gap-3 text-xs">
+                            <a
+                              className="text-secondary underline"
+                              href={place.source}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              Place details
+                            </a>
+                            <a
+                              className="text-secondary underline"
+                              href={ticket?.url ?? place.source}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              Tickets & access
+                            </a>
+                            <a
+                              className="text-secondary underline"
+                              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${place.name}, ${destination}`)}`}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              Map
+                            </a>
+                          </div>
+                          <Button
+                            type="button"
+                            className="mt-auto h-auto whitespace-normal py-2"
+                            variant="outline"
+                            disabled={busy || disabled || full || unavailable}
+                            onClick={() => void add(place)}
                           >
-                            Place details
-                          </a>
-                          <a
-                            className="text-secondary underline"
-                            href={ticket?.url ?? place.source}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            Tickets & access
-                          </a>
-                          <a
-                            className="text-secondary underline"
-                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${place.name}, ${destination}`)}`}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            Map
-                          </a>
+                            Add {place.name} to day {targetDay}
+                          </Button>
                         </div>
-                        <Button
-                          type="button"
-                          className="mt-auto h-auto whitespace-normal py-2"
-                          variant="outline"
-                          disabled={busy || disabled || full || unavailable}
-                          onClick={() => void add(place)}
-                        >
-                          Add {place.name} to day {targetDay}
-                        </Button>
                       </article>
                     );
                   })}

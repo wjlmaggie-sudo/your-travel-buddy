@@ -13,6 +13,12 @@ const garden: VisualPlace = {
   description:
     "A garden with playgrounds and ponds, listed by Lisbon tourism. A play-and-nature choice for younger children; supervise around water and check current access.",
   source: "https://www.visitlisboa.com/en/places/jardim-da-estrela",
+  image: {
+    url: "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/63/Jardim_da_Estrela_01.jpg/960px-Jardim_da_Estrela_01.jpg",
+    credit: "GualdimG",
+    license: "CC BY-SA 4.0",
+    source: "https://commons.wikimedia.org/wiki/File:Jardim_da_Estrela_01.jpg",
+  },
 };
 const aquarium: VisualPlace = {
   name: "Oceanário de Lisboa",

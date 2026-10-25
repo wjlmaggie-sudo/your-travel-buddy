@@ -9,47 +9,9 @@ import type { TravelStyle } from "@/lib/travel-data";
 import { AdmissionDetails, RouteLogistics } from "./VisitLogistics";
 import { PlaceStory } from "./PlaceStory";
 import { DayRouteMap } from "./DayRouteMap";
-import { fetchPlacePhoto } from "@/lib/place-photos";
+import { PlacePhoto } from "./PlacePhoto";
 import { TransportComparison } from "./TransportComparison";
 
-function Photo({ place }: { place: VisualPlace }) {
-  const [failed, setFailed] = useState(false);
-  const query = useQuery({
-    queryKey: ["place-photo", place.name, place.lat, place.lon],
-    queryFn: ({ signal }) => fetchPlacePhoto(place, signal),
-    enabled: !place.image,
-    staleTime: 86400000,
-    retry: false,
-  });
-  const photo = place.image ?? query.data;
-  if (!photo || failed)
-    return (
-      <figure aria-label={`Photo unavailable for ${place.name}`}>
-        <div className="flex aspect-[16/10] items-center justify-center rounded-t-xl bg-muted text-xs text-muted-foreground">
-          {failed ? "Photo unavailable" : "Place photo"}
-        </div>
-        <figcaption className="h-8 px-3 pt-2 text-[10px] text-muted-foreground">
-          {place.name}
-        </figcaption>
-      </figure>
-    );
-  return (
-    <figure>
-      <img
-        src={photo.url}
-        alt={place.name}
-        loading="lazy"
-        className="aspect-[16/10] w-full rounded-t-xl object-cover"
-        onError={() => setFailed(true)}
-      />
-      <figcaption className="h-8 overflow-hidden px-3 pt-2 text-[10px] text-muted-foreground">
-        <a href={photo.source} target="_blank" rel="noreferrer" className="underline">
-          Photo: {photo.credit} · {photo.license}
-        </a>
-      </figcaption>
-    </figure>
-  );
-}
 export function DayVisuals({
   destination,
   day,
@@ -183,7 +145,7 @@ export function DayVisuals({
                 key={place.name}
                 className="min-w-0 overflow-hidden rounded-xl border bg-background/40"
               >
-                <Photo place={place} />
+                <PlacePhoto place={place} />
                 <div className="p-3">
                   <h5 className="text-sm font-semibold">
                     <span className="mr-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">

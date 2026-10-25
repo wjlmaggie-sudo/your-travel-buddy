@@ -1,3 +1,4 @@
+import { OfferImage } from "./OfferImage";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { childCount } from "../../supabase/functions/_shared/travel-persona";
 import {
@@ -165,22 +166,14 @@ export function LiveHotelSearch({
               return (
                 <article
                   key={offer.id}
-                  className={`flex flex-col overflow-hidden rounded-2xl border bg-card shadow-card ${selected ? "ring-2 ring-secondary" : ""}`}
+                  className={`visual-offer flex flex-col overflow-hidden rounded-2xl border bg-card shadow-card ${selected ? "ring-2 ring-secondary" : ""}`}
                 >
-                  {offer.photo && (
-                    <img
-                      src={offer.photo}
-                      alt={offer.name}
-                      className="h-28 w-full object-cover"
-                      loading="lazy"
-                      referrerPolicy="no-referrer"
-                    />
-                  )}
+                  <OfferImage src={offer.photo} alt={offer.name} />
                   <div className="flex flex-1 flex-col p-5">
                     <p className="text-xs font-semibold uppercase tracking-widest text-secondary">
                       {label}
                     </p>
-                    <p className="mt-1 text-xs text-muted-foreground">{detail}</p>
+                    <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{detail}</p>
                     <h3 className="mt-3 text-xl font-semibold">{offer.name}</h3>
                     <p className="mt-2 text-sm">
                       {offer.rating !== null

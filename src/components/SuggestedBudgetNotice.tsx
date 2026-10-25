@@ -38,16 +38,19 @@ export function SuggestedBudgetNotice({
           ? `${money(suggestion.flights)} extra is reserved for group return flights.`
           : "Flights are excluded."}
       </p>
-      <p className="mt-2 text-xs text-muted-foreground">
-        {suggestion.profile} · planning estimate, not live prices or a surveyed average.{" "}
-        {suggestion.note}{" "}
-        {suggestion.fxDate
-          ? `Converted using the ECB reference rate dated ${suggestion.fxDate}.`
-          : ""}
-      </p>
-      <p className="mt-2 text-xs text-muted-foreground">
-        You can set your own total in Edit trip details. Nothing has been booked.
-      </p>
+      <details className="mt-3 text-xs text-muted-foreground">
+        <summary className="cursor-pointer font-medium">How this budget is estimated</summary>
+        <p className="mt-2">
+          {suggestion.profile} · planning estimate, not live prices or a surveyed average.{" "}
+          {suggestion.note}{" "}
+          {suggestion.fxDate
+            ? `Converted using the ECB reference rate dated ${suggestion.fxDate}.`
+            : ""}
+        </p>
+        <p className="mt-2 text-xs text-muted-foreground">
+          You can set your own total in Edit trip details. Nothing has been booked.
+        </p>
+      </details>
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { BriefcaseBusiness, Users, Wallet } from "lucide-react";
 import {
   activityAgeBands,
   CHILD_AGE_RANGES,
@@ -22,7 +23,7 @@ export function PersonaPreferences({
     <fieldset className="space-y-3 rounded-xl border bg-card p-4">
       <legend className="px-2 text-sm font-semibold">How do you like to travel?</legend>
       <p className="text-xs text-muted-foreground">
-        Optional · shapes your activities and pace, while keeping your budget.
+        Choose a style · we’ll tailor your activities and pace.
       </p>
       <div className="grid gap-2 sm:grid-cols-3">
         {PERSONAS.map((p) => (
@@ -37,8 +38,17 @@ export function PersonaPreferences({
               onChange({ ...value, persona: value.persona === p.id ? undefined : p.id })
             }
           >
-            <span>{p.label}</span>
-            <span className="mt-1 text-xs font-normal">{p.description}</span>
+            <span className="flex items-center gap-2">
+              {p.id === "business" ? (
+                <BriefcaseBusiness className="h-4 w-4" />
+              ) : p.id === "family" ? (
+                <Users className="h-4 w-4" />
+              ) : (
+                <Wallet className="h-4 w-4" />
+              )}
+              {p.label}
+            </span>
+            <span className="mt-1 text-[11px] font-normal leading-relaxed">{p.description}</span>
           </Button>
         ))}
       </div>
