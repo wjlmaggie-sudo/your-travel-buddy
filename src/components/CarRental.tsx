@@ -342,7 +342,7 @@ export function CarRental({
                     {offer.bags != null && (
                       <span className="inline-flex items-center gap-1">
                         <BriefcaseBusiness className="h-3.5 w-3.5" />
-                        {offer.bags} bags
+                        {offer.bags} {offer.bags === 1 ? "bag" : "bags"}
                       </span>
                     )}
                   </div>

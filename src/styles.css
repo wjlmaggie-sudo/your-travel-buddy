@@ -177,7 +177,7 @@ html {
     border-radius: 1.5rem 0 0 1.5rem;
   }
 }
-@media (min-width: 768px) and (min-height: 560px) {
+@media (min-width: 768px) and (min-height: 480px) {
   .workspace-navigation .travel-navigation {
     position: sticky;
     top: 1rem;
