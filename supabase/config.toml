@@ -15,3 +15,6 @@ verify_jwt = true
 
 [functions.search-hotels-live]
 verify_jwt = true
+
+[functions.search-cars]
+verify_jwt = true

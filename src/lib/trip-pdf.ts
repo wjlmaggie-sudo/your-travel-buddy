@@ -245,6 +245,15 @@ export async function buildTripPdf(
         `Planned total: ${money(connected.planned)} · Remaining: ${money(connected.remaining)}${connected.remaining < 0 ? " · OVER BUDGET" : ""}`,
       ),
     );
+  if (connected?.carChoice) {
+    const car = connected.carChoice;
+    content.push(
+      heading("Car rental"),
+      paragraph(
+        `${car.name} or similar · ${car.supplier} · ${money(car.amount)} whole rental. ${car.pickup} · ${car.pickupDate} ${car.pickupTime} to ${car.dropoffDate} ${car.dropoffTime}. Advertised price checked ${car.checkedAt}; not booked. Fuel, parking and extras separate. Reconfirm rental conditions with provider.`,
+      ),
+    );
+  }
   content.push(heading("Flights & accommodation"));
   if (journey && journey.flightsRequired !== false) {
     content.push(

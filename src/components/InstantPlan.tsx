@@ -1,3 +1,4 @@
+import { CarRental } from "./CarRental";
 import { AttractionRecommendations } from "./AttractionRecommendations";
 import { MorePlaces } from "./MorePlaces";
 import { extraActivity } from "@/lib/extra-places";
@@ -280,6 +281,18 @@ export function InstantPlan({
             the updated sightseeing allowance.
           </p>
         )}
+      </WorkspacePanel>
+      <WorkspacePanel active={section === "cars"} label="Car Rental">
+        <CarRental
+          active={section === "cars"}
+          brief={brief}
+          allowance={connected.estimates.transport}
+          chosen={journey.selectedCar}
+          onChoose={(choice) => {
+            setJourney({ ...journey, selectedCar: choice });
+            onEdited();
+          }}
+        />
       </WorkspacePanel>
       <WorkspacePanel active={section === "attractions"} label="Attractions & Activities">
         <div>

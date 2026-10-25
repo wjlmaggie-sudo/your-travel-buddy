@@ -3,6 +3,7 @@ import { childCount, childAgeDescription } from "../../supabase/functions/_share
 import { z } from "zod";
 import {
   flightChoiceSchema,
+  carChoiceSchema,
   estimateSchema,
   flightCost,
   connectedBudget,
@@ -18,6 +19,7 @@ export const journeySchema = z
     departure: z.string().trim().max(200),
     flightsRequired: z.boolean().optional(),
     selectedFlight: flightChoiceSchema.optional(),
+    selectedCar: carChoiceSchema.optional(),
     estimates: estimateSchema.optional(),
     flightBudget: z.number().finite().min(0).max(1000000),
     hotelRooms: z.number().int().min(1).max(20).optional(),
@@ -48,6 +50,9 @@ export function journeyBudget(brief: StayBrief, journey: Journey, stay?: StayCho
       { label: "Food", amount: planned.estimates.food },
       { label: "Tourist spots & tickets", amount: planned.estimates.activities },
       { label: "Local transport", amount: planned.estimates.transport },
+      ...(planned.carChoice
+        ? [{ label: "Car rental · selected advertised price", amount: planned.car }]
+        : []),
       { label: "Shopping & buffer", amount: planned.estimates.shopping },
     ],
   };

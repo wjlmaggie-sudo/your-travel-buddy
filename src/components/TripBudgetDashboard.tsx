@@ -37,6 +37,15 @@ export function TripBudgetDashboard({
         ? `${stay?.evidence === "demo" ? "Selected demo" : stay?.evidence === "live-search" ? "Live search estimate" : "Entered quote"} · whole stay`
         : "Allowance · no hotel selected",
     },
+    ...(costs.carChoice
+      ? [
+          {
+            label: "Car rental",
+            value: costs.car,
+            note: "Selected advertised price · not booked; fuel & parking separate",
+          },
+        ]
+      : []),
     {
       label: "Activity costs",
       value: costs.estimates.activities,

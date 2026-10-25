@@ -1,3 +1,4 @@
+import { CarRental } from "@/components/CarRental";
 import { MorePlaces } from "@/components/MorePlaces";
 import { extraActivity } from "@/lib/extra-places";
 import { DownloadTripPdf } from "@/components/DownloadTripPdf";
@@ -117,6 +118,7 @@ function TripPage() {
     ideas: "planner",
     flights: "flights",
     hotels: "hotels",
+    cars: "cars",
     itinerary: "attractions",
     shop: "shopping",
     budget: "planner",
@@ -127,6 +129,7 @@ function TripPage() {
     planner: "ideas",
     flights: "flights",
     hotels: "hotels",
+    cars: "cars",
     attractions: "itinerary",
     shopping: "shop",
     currency: "currency",
@@ -279,6 +282,25 @@ function TripPage() {
                   }}
                 />
               </details>
+            </WorkspacePanel>
+            <WorkspacePanel active={tab === "cars"} label="Car Rental">
+              {journey.data ? (
+                <fieldset disabled={selectionBusy} className="min-w-0">
+                  <CarRental
+                    active={tab === "cars"}
+                    brief={brief}
+                    allowance={connectedBudget(brief, journey.data, stay.data).estimates.transport}
+                    chosen={journey.data.selectedCar}
+                    onChoose={(choice) => {
+                      void updateJourney({ ...journey.data!, selectedCar: choice });
+                    }}
+                  />
+                </fieldset>
+              ) : (
+                <p>
+                  Open AI Travel Planner and enable connected planning to add a rental to this trip.
+                </p>
+              )}
             </WorkspacePanel>
             <WorkspacePanel active={tab === "itinerary"} label="Attractions & Activities">
               <Itinerary

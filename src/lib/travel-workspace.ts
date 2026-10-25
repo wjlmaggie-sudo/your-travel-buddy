@@ -1,5 +1,6 @@
 import { childAgeDescription } from "../../supabase/functions/_shared/travel-persona";
 import { z } from "zod";
+import { carOfferSchema } from "../../supabase/functions/_shared/car-search";
 import { endDate } from "./planning";
 import {
   requestedRooms,
@@ -14,6 +15,7 @@ export const SECTIONS = [
   { id: "planner", label: "AI Travel Planner" },
   { id: "flights", label: "Flights" },
   { id: "hotels", label: "Hotels" },
+  { id: "cars", label: "Car Rental" },
   { id: "attractions", label: "Attractions & Activities" },
   { id: "shopping", label: "Local Shopping" },
   { id: "currency", label: "Currency" },
@@ -27,6 +29,25 @@ export const flightChoiceSchema = z.object({
   evidence: z.enum(["demo", "entered", "live-search"]),
   checkedAt: z.string().datetime().optional(),
 });
+export const carChoiceSchema = carOfferSchema.extend({
+  scope: z.string().max(1200),
+  checkedAt: z.string().datetime(),
+  pickup: z.string().max(200),
+  pickupDate: z.string().max(10),
+  dropoffDate: z.string().max(10),
+  pickupTime: z.string().max(5),
+  dropoffTime: z.string().max(5),
+});
+export type CarChoice = z.infer<typeof carChoiceSchema>;
+export function carScope(brief: StayBrief) {
+  return JSON.stringify([
+    brief.destination,
+    brief.start,
+    brief.days,
+    brief.travelers,
+    brief.currency,
+  ]);
+}
 export const estimateSchema = z.object({
   activities: z.number().finite().min(0).max(1000000),
   food: z.number().finite().min(0).max(1000000),
@@ -42,6 +63,7 @@ export type WorkspaceJourney = {
   hotelComfort: "Simple" | "Comfortable" | "Premium";
   flightsRequired?: boolean | undefined;
   selectedFlight?: FlightChoice | undefined;
+  selectedCar?: CarChoice | undefined;
   estimates?: Estimates | undefined;
 };
 export const cents = (amount: number) => Math.round(amount * 100) / 100;
@@ -98,11 +120,19 @@ export function connectedBudget(
   const estimated = cents(
     estimates.food + estimates.activities + estimates.transport + estimates.shopping,
   );
-  const planned = cents(flight + hotel + estimated);
+  const carChoice =
+    journey.selectedCar?.scope === carScope(brief) &&
+    journey.selectedCar.currency === brief.currency
+      ? journey.selectedCar
+      : null;
+  const car = carChoice?.amount ?? 0;
+  const planned = cents(flight + hotel + estimated + car);
   const remaining = cents(brief.budget - planned);
   return {
     flight,
     hotel,
+    car,
+    carChoice,
     estimates,
     estimated,
     planned,
