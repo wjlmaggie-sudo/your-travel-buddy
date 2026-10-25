@@ -249,7 +249,7 @@ export async function buildTripPdf(
   if (journey && journey.flightsRequired !== false) {
     content.push(
       paragraph(
-        `Departure: ${journey.departure} · Flight cost / allowance: ${money(connected!.flight)} · ${connected!.flightChoice ? `${connected!.flightChoice.label} (${connected!.flightChoice.evidence === "demo" ? "DEMONSTRATION" : "entered quote"})` : "Unselected group return-flight allowance"}`,
+        `Departure: ${journey.departure} · Flight cost / allowance: ${money(connected!.flight)} · ${connected!.flightChoice ? `${connected!.flightChoice.label} (${connected!.flightChoice.evidence === "demo" ? "DEMONSTRATION" : connected!.flightChoice.evidence === "live-search" ? "live search estimate, not booked" : "entered quote"})` : "Unselected group return-flight allowance"}`,
       ),
       link(
         "Search current return flights (external search, not a quote)",
@@ -268,7 +268,7 @@ export async function buildTripPdf(
   if (stay)
     content.push(
       paragraph(
-        `Selected stay: ${stay.name} (${stay.evidence === "demo" ? "DEMONSTRATION ONLY" : "entered quote, unverified"}) · ${stay.type} · ${stay.rooms} rooms · ${money(stay.amount)} / ${stay.unit} + ${money(stay.extras)} extras · ${stayCost(stay, b) === null ? "Quote does not match this trip; allowance used instead" : `${money(stayCost(stay, b)!)} whole group / stay`}`,
+        `Selected stay: ${stay.name} (${stay.evidence === "demo" ? "DEMONSTRATION ONLY" : stay.evidence === "live-search" ? "live search estimate, not booked" : "entered quote, unverified"}) · ${stay.type} · ${stay.rooms} rooms · ${money(stay.amount)} / ${stay.unit} + ${money(stay.extras)} extras · ${stayCost(stay, b) === null ? "Quote does not match this trip; allowance used instead" : `${money(stayCost(stay, b)!)} whole group / stay`}`,
       ),
     );
   else content.push(paragraph("No hotel quote selected. Accommodation allocation is an estimate."));

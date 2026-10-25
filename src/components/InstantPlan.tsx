@@ -1,3 +1,4 @@
+import { AttractionRecommendations } from "./AttractionRecommendations";
 import { MorePlaces } from "./MorePlaces";
 import { extraActivity } from "@/lib/extra-places";
 import { personaSummary } from "@/lib/travel-personas";
@@ -8,11 +9,16 @@ import { TripBudgetDashboard } from "./TripBudgetDashboard";
 import { FlightRecommendations } from "./FlightRecommendations";
 import { HotelRecommendations } from "./HotelRecommendations";
 import { LocalShopping } from "./LocalShopping";
-import { flightCost, connectedBudget, type TravelSection } from "@/lib/travel-workspace";
-import { JourneyPlanner } from "./JourneyPlanner";
+import {
+  flightCost,
+  flightScope,
+  connectedBudget,
+  type TravelSection,
+} from "@/lib/travel-workspace";
+
 import { createJourneyIdeas } from "@/lib/journey-plan";
 import type { Journey } from "@/lib/journey-planning";
-import { AccommodationPlanner } from "./AccommodationPlanner";
+
 import { stayCost, stayBudget, type StayChoice } from "@/lib/stay-planning";
 import { useEffect, useState } from "react";
 import { Plus, Trash2, Check } from "lucide-react";
@@ -37,8 +43,10 @@ export function InstantPlan({
   overviewActive = true,
   onEditBrief,
   onBudgetChange,
+  onRouteUpdate,
 }: {
   onBudgetChange?: (budget: BudgetSnapshot) => void;
+  onRouteUpdate?: (destination: string, departure: string) => void;
   overviewActive?: boolean;
   onEditBrief?: () => void;
   section?: TravelSection;
@@ -48,17 +56,27 @@ export function InstantPlan({
   onEdited: () => void;
 }) {
   const [journey, setJourney] = useState<Journey>(
-    brief.journey ?? {
-      departure: "",
-      flightBudget: 0,
-      hotelComfort: "Comfortable",
-      flightsRequired: false,
-    },
+    brief.journey
+      ? {
+          ...brief.journey,
+          selectedFlight:
+            brief.journey.selectedFlight?.evidence === "demo"
+              ? undefined
+              : brief.journey.selectedFlight,
+        }
+      : {
+          departure: "",
+          flightBudget: 0,
+          hotelComfort: "Comfortable",
+          flightsRequired: false,
+        },
   );
   const [placesRequest, setPlacesRequest] = useState(0);
   const [activeDay, setActiveDay] = useState(1);
   const [activityEdited, setActivityEdited] = useState(false);
-  const [stay, setStay] = useState<StayChoice | null>(brief.stay ?? null);
+  const [stay, setStay] = useState<StayChoice | null>(
+    brief.stay?.evidence === "demo" ? null : (brief.stay ?? null),
+  );
   const [ideas, setIdeas] = useState(initialIdeas);
   useEffect(() => {
     saveGuestSimulation({ ...brief, ideas, journey, stay: stay ?? undefined });
@@ -208,66 +226,44 @@ export function InstantPlan({
             onEdited();
           }}
         />
-        <div className="rounded-2xl border bg-card p-5">
-          <h3 className="text-2xl font-semibold">Your journey at a glance</h3>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {ideas.days.map((day) => (
-              <button
-                type="button"
-                key={day.day}
-                className="rounded-xl border p-4 text-left transition hover:bg-secondary/5"
-                onClick={() => {
-                  setActiveDay(day.day);
-                  onSectionChange?.("attractions");
-                }}
-              >
-                <span className="text-xs font-semibold uppercase tracking-widest text-secondary">
-                  Day {day.day}
-                </span>
-                <p className="mt-2 text-sm font-medium">
-                  {(brief.persona
-                    ? day.items.find((item) => item.location !== brief.destination && item.location)
-                        ?.title
-                    : undefined) ??
-                    day.items[1]?.title ??
-                    day.items[0]?.title}
-                </p>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  {day.items.length} editable activities · see the map & stories ↗
-                </p>
-              </button>
-            ))}
-          </div>
-        </div>
       </WorkspacePanel>
       <WorkspacePanel active={section === "flights"} label="Flights">
         <FlightRecommendations
+          active={section === "flights"}
+          onContinue={() => onSectionChange?.("hotels")}
+          onEditTrip={() => {
+            onSectionChange?.("planner");
+            onEditBrief?.();
+          }}
           brief={brief}
           journey={journey}
-          onChange={(next) => {
+          onChange={(next, route) => {
+            const nextBrief = route ? { ...brief, destination: route.destination } : brief;
+            const nextStay = route && route.destination !== brief.destination ? null : stay;
+            if (route) {
+              next = {
+                ...next,
+                departure: route.departure,
+                selectedFlight: next.selectedFlight
+                  ? { ...next.selectedFlight, scope: flightScope(nextBrief, route.departure) }
+                  : undefined,
+              };
+              onRouteUpdate?.(route.destination, route.departure);
+              setStay(nextStay);
+            }
             setJourney(next);
             onEdited();
-            if (!activityEdited) setIdeas(createJourneyIdeas(brief, next, stay));
+            if (!activityEdited) setIdeas(createJourneyIdeas(nextBrief, next, nextStay));
           }}
         />
-        <details className="rounded-2xl border bg-card p-4">
-          <summary className="cursor-pointer text-sm font-medium">
-            Edit route & flight allowance
-          </summary>
-          <JourneyPlanner
-            brief={brief}
-            journey={journey}
-            stay={stay}
-            onChange={(next) => {
-              setJourney(next);
-              onEdited();
-              if (!activityEdited) setIdeas(createJourneyIdeas(brief, next, stay));
-            }}
-          />
-        </details>
       </WorkspacePanel>
       <WorkspacePanel active={section === "hotels"} label="Hotels">
         <HotelRecommendations
+          onContinue={() => onSectionChange?.("attractions")}
+          onEditTrip={() => {
+            onSectionChange?.("planner");
+            onEditBrief?.();
+          }}
           active={section === "hotels"}
           brief={brief}
           journey={journey}
@@ -284,20 +280,6 @@ export function InstantPlan({
             the updated sightseeing allowance.
           </p>
         )}
-        <details className="rounded-xl border bg-card p-4">
-          <summary className="cursor-pointer text-sm font-medium">
-            Use a real hotel quote or browse providers
-          </summary>
-          <AccommodationPlanner
-            brief={effectiveBrief}
-            choice={stay}
-            onChoose={(choice) => {
-              setStay(choice);
-              onEdited();
-              if (journey && !activityEdited) setIdeas(createJourneyIdeas(brief, journey, choice));
-            }}
-          />
-        </details>
       </WorkspacePanel>
       <WorkspacePanel active={section === "attractions"} label="Attractions & Activities">
         <div>
@@ -327,6 +309,26 @@ export function InstantPlan({
             ))}
           </select>
         </div>
+        <AttractionRecommendations
+          brief={brief}
+          day={activeDay}
+          active={section === "attractions"}
+          current={ideas.days.flatMap((day) =>
+            day.items.map((item) => ({ day: day.day, location: item.location })),
+          )}
+          onAdd={(place) => {
+            const target = ideas.days.find((day) => day.day === activeDay);
+            if (!target || target.items.length >= 8) return;
+            editIdeas((current) => ({
+              ...current,
+              days: current.days.map((day) =>
+                day.day === activeDay
+                  ? { ...day, items: [...day.items, extraActivity(place)] }
+                  : day,
+              ),
+            }));
+          }}
+        />
         <MorePlaces
           key={brief.destination}
           destination={brief.destination}

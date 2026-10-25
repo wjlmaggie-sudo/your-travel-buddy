@@ -4,7 +4,7 @@ import {
   type LiveHotelInput,
 } from "../../supabase/functions/_shared/serpapi-hotels";
 import { hotelSearchEndpoint } from "./hotel-search";
-export async function searchLiveHotels(input: LiveHotelInput, signal: AbortSignal) {
+async function requestLiveHotels(input: LiveHotelInput, signal: AbortSignal) {
   const endpoint = hotelSearchEndpoint();
   if (!endpoint) throw new Error("Hotel search is not connected yet.");
   const query = liveHotelInput.parse(input);
@@ -14,7 +14,7 @@ export async function searchLiveHotels(input: LiveHotelInput, signal: AbortSigna
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}`, apikey: key },
     body: JSON.stringify(query),
-    signal,
+    signal: AbortSignal.timeout(55000),
   });
   if (!response.ok)
     throw new Error(
@@ -30,5 +30,30 @@ export async function searchLiveHotels(input: LiveHotelInput, signal: AbortSigna
     result.offers.some((o) => o.currency !== query.currency)
   )
     throw new Error("The hotel results do not match your search.");
+  return result;
+}
+
+const memory = new Map<
+  string,
+  { until: number; result: Awaited<ReturnType<typeof requestLiveHotels>> }
+>();
+const pending = new Map<string, Promise<Awaited<ReturnType<typeof requestLiveHotels>>>>();
+export async function searchLiveHotels(input: LiveHotelInput, signal: AbortSignal) {
+  signal.throwIfAborted();
+  const key = JSON.stringify([hotelSearchEndpoint(), liveHotelInput.parse(input)]),
+    cached = memory.get(key);
+  if (cached && cached.until > Date.now()) return cached.result;
+  let task = pending.get(key);
+  if (!task) {
+    task = requestLiveHotels(input, signal).then((result) => {
+      if (memory.size >= 50) memory.delete(memory.keys().next().value!);
+      memory.set(key, { until: Date.now() + 600000, result });
+      return result;
+    });
+    pending.set(key, task);
+    void task.finally(() => pending.delete(key)).catch(() => {});
+  }
+  const result = await task;
+  signal.throwIfAborted();
   return result;
 }

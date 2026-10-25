@@ -222,7 +222,12 @@ export function AccommodationPlanner({
                     className={`rounded-xl border p-4 ${chosen ? "border-secondary bg-secondary/5" : "bg-background/40"}`}
                   >
                     <p className="text-xs text-muted-foreground">
-                      {quote.type} · {quote.evidence === "demo" ? "DEMO price" : "entered quote"}
+                      {quote.type} ·{" "}
+                      {quote.evidence === "demo"
+                        ? "DEMO price"
+                        : quote.evidence === "live-search"
+                          ? "live search estimate"
+                          : "entered quote"}
                     </p>
                     <h3 className="mt-1 font-semibold">{quote.name}</h3>
                     <p className="mt-2 text-2xl font-semibold">
@@ -390,7 +395,9 @@ export function AccommodationPlanner({
               ? " · spending target, not a hotel quote"
               : active?.evidence === "demo"
                 ? " · DEMONSTRATION price"
-                : " · based on your entered quote"}
+                : active?.evidence === "live-search"
+                  ? " · based on an advertised search estimate"
+                  : " · based on your entered quote"}
           </p>
         )}
         <p className="mt-2 text-sm">

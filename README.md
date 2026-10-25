@@ -6,7 +6,21 @@ See the [Business, Family and Budget Travel specifications](docs/personas/README
 for activity-selection and itinerary-planning behavior. Optional persona controls and
 child ages now adapt local itineraries; the documents also describe future extensions.
 
-## Current provider connection — 23 October 2026
+## Current experience — 24 October 2026
+
+Trip basics → automatic flight comparisons → three hotel suggestions → attractions.
+The compact header keeps the planner in view. Flight routes inherit the trip and
+remain editable with city/airport autocomplete (including Nürnberg / Nuremberg).
+Selected advertised prices update the planning budget and stay labeled as estimates.
+Family attractions balance children, adult interests and shared outdoor time.
+
+Flights and hotels use live SerpApi search results through private Supabase functions.
+Their shared free pilot allowance is capped server-side; no payment or booking is made.
+See [the guided flow](deployment/GUIDED_TRAVEL_FLOW.md),
+[flight setup](deployment/FLIGHT_SEARCH.md) and
+[hotel setup](deployment/HOTEL_SERPAPI_SETUP.md).
+
+## Earlier sandbox connection — 23 October 2026 (superseded above)
 
 Hotel searches now connect to the Nuitee sandbox through a separate Supabase Edge
 Function. Opening Hotels automatically loads up to three previews within the planned

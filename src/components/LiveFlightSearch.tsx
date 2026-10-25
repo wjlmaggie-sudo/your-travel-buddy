@@ -1,251 +1,335 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { resolveFlightAirport, type FlightAirport } from "@/lib/flight-airports";
 import { flightEndpoint, searchFlights } from "@/lib/flight-search";
+import { flightSuggestions, flightOfferId } from "@/lib/travel-suggestions";
+import { flightScope, type FlightChoice } from "@/lib/travel-workspace";
 import type { FlightResult } from "../../supabase/functions/_shared/flight-search";
 import type { StayBrief } from "@/lib/stay-planning";
-import { endDate } from "@/lib/planning";
-import { Button } from "./ui/button";
 import { childCount } from "../../supabase/functions/_shared/travel-persona";
-
-export function LiveFlightSearch({ brief, departure }: { brief: StayBrief; departure: string }) {
-  const id = useId();
-  const [origin, setOrigin] = useState(departure);
-  const [destination, setDestination] = useState(brief.destination);
+import { endDate } from "@/lib/planning";
+import { CityAirportInput } from "./CityAirportInput";
+import { Button } from "./ui/button";
+export function LiveFlightSearch({
+  brief,
+  departure,
+  active = false,
+  chosen,
+  onChoose,
+  onContinue,
+  onEditTrip,
+}: {
+  brief: StayBrief;
+  departure: string;
+  active?: boolean;
+  chosen?: FlightChoice | undefined;
+  onChoose?: (
+    choice: FlightChoice | undefined,
+    route?: { departure: string; destination: string },
+  ) => void;
+  onContinue?: (() => void) | undefined;
+  onEditTrip?: (() => void) | undefined;
+}) {
+  const [origin, setOrigin] = useState(departure),
+    [destination, setDestination] = useState(brief.destination);
+  const [committed, setCommitted] = useState({
+    origin: departure,
+    destination: brief.destination,
+    revision: 0,
+    scope: flightScope(brief, departure),
+  });
   const [resolved, setResolved] = useState<{
     origin: FlightAirport;
     destination: FlightAirport;
   } | null>(null);
-  const [adults, setAdults] = useState(brief.travelers - childCount(brief));
-  const [children, setChildren] = useState(childCount(brief));
-  const [infants, setInfants] = useState(0);
-  const [result, setResult] = useState<FlightResult | null>(null);
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
-  const controller = useRef<AbortController | null>(null);
-  const scope = JSON.stringify([
-    brief.start,
-    brief.days,
-    brief.currency,
-    brief.travelers,
-    brief.childrenAges,
-    brief.childrenAgeRanges,
-    departure,
-    brief.destination,
-  ]);
+  const [result, setResult] = useState<FlightResult | null>(null),
+    [error, setError] = useState(""),
+    [busy, setBusy] = useState(false);
+  const controller = useRef<AbortController | null>(null),
+    lastRequest = useRef("");
+  const party = (() => {
+    let adults = brief.travelers - childCount(brief),
+      children = 0,
+      infants = 0,
+      needsAges = false;
+    if (brief.childrenAges?.length)
+      for (const age of brief.childrenAges) {
+        if (age >= 12) adults++;
+        else if (age < 2) infants++;
+        else children++;
+      }
+    else
+      for (const range of brief.childrenAgeRanges ?? []) {
+        const [min, max] = range.split("-").map(Number);
+        if (min! >= 12) adults++;
+        else if (min! >= 2 && max! <= 11) children++;
+        else needsAges = true;
+      }
+    return { adults, children, infants, needsAges };
+  })();
+  const scope = flightScope(brief, departure);
   useEffect(() => {
     controller.current?.abort();
-    setResult(null);
-    setResolved(null);
-    setError("");
-    setBusy(false);
+    lastRequest.current = "";
     setOrigin(departure);
     setDestination(brief.destination);
-    setAdults(brief.travelers - childCount(brief));
-    setChildren(childCount(brief));
-    setInfants(0);
-    return () => controller.current?.abort();
-  }, [scope]);
-  const edit = () => {
-    controller.current?.abort();
-    setBusy(false);
+    setCommitted({ origin: departure, destination: brief.destination, revision: 0, scope });
     setResult(null);
     setResolved(null);
     setError("");
+    setBusy(false);
+  }, [scope]);
+  const queryIdentity = JSON.stringify([scope, committed, party]);
+  useEffect(() => {
+    if (
+      !active ||
+      committed.scope !== scope ||
+      !flightEndpoint() ||
+      !committed.origin.trim() ||
+      !committed.destination.trim()
+    )
+      return;
+    if (lastRequest.current === queryIdentity) return;
+    if (party.needsAges) {
+      setError(
+        "Add exact child ages in trip preferences so we can search the right airline fares.",
+      );
+      return;
+    }
+    if (brief.days < 2) {
+      setError("Choose at least two travel days for return flights.");
+      return;
+    }
+    lastRequest.current = queryIdentity;
+    const current = new AbortController();
+    controller.current = current;
+    setBusy(true);
+    setError("");
+    setResult(null);
+    void (async () => {
+      try {
+        const [from, to] = await Promise.all([
+          resolveFlightAirport(committed.origin, current.signal),
+          resolveFlightAirport(committed.destination, current.signal),
+        ]);
+        if (current.signal.aborted) return;
+        if (from.code === to.code)
+          throw new Error("Choose different departure and destination airports.");
+        setResolved({ origin: from, destination: to });
+        const data = await searchFlights(
+          {
+            origin: from.code,
+            destination: to.code,
+            outbound: brief.start,
+            returning: endDate(brief.start, brief.days),
+            adults: party.adults,
+            children: party.children,
+            infants: party.infants,
+            currency: brief.currency,
+          },
+          current.signal,
+        );
+        if (!current.signal.aborted) setResult(data);
+      } catch (cause) {
+        if (!current.signal.aborted)
+          setError(cause instanceof Error ? cause.message : "Flight search unavailable.");
+      } finally {
+        if (!current.signal.aborted) setBusy(false);
+      }
+    })();
+    return () => {
+      current.abort();
+      if (lastRequest.current === queryIdentity) lastRequest.current = "";
+    };
+  }, [active, queryIdentity]);
+  const edit = (setter: (value: string) => void, value: string) => {
+    controller.current?.abort();
+    setter(value);
+    setResult(null);
+    setResolved(null);
+    setError("");
+    setBusy(false);
+    if (chosen) onChoose?.(undefined);
   };
-  if (!flightEndpoint()) return null;
+  const commit = (from = origin, to = destination) =>
+    setCommitted((v) => ({ origin: from, destination: to, revision: v.revision + 1, scope }));
+  const choices = flightSuggestions(result?.offers ?? []);
+  const matching =
+    chosen &&
+    result?.offers.some((o) => flightOfferId(o) === chosen.id && o.price === chosen.amount) &&
+    chosen.scope === scope;
+  const dirty = origin !== committed.origin || destination !== committed.destination;
   return (
-    <section className="space-y-4 rounded-2xl border bg-card p-5" aria-labelledby={`${id}-title`}>
+    <section className="space-y-5" aria-label="Flight recommendations">
       <div>
-        <h3 id={`${id}-title`} className="text-xl font-semibold">
-          Search real flights
-        </h3>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {origin} → {destination} · {brief.start} to {endDate(brief.start, brief.days)} · Economy ·{" "}
-          {brief.currency}
+        <p className="text-xs font-semibold uppercase tracking-widest text-secondary">
+          Step 2 · Flights
         </p>
-        <p className="mt-2 text-sm">
-          Your trip’s departure and destination are filled in. Change either city or airport below
-          if you prefer. Infants travel in their own seat; lap-infant searches are not supported
-          here.
+        <h2 className="mt-2 text-3xl font-semibold">Choose how you get there.</h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          {brief.start} – {endDate(brief.start, brief.days)} · {brief.travelers} travelers · Economy
+          · {brief.currency}
         </p>
       </div>
       <form
-        className="grid gap-3 sm:grid-cols-2"
-        onSubmit={async (event) => {
-          event.preventDefault();
-          controller.current?.abort();
-          const current = new AbortController();
-          controller.current = current;
-          setBusy(true);
-          setError("");
-          setResult(null);
-          try {
-            const [from, to] = await Promise.all([
-              resolveFlightAirport(origin, current.signal),
-              resolveFlightAirport(destination, current.signal),
-            ]);
-            if (current.signal.aborted) return;
-            if (from.code === to.code)
-              throw new Error("Choose different departure and arrival airports.");
-            setResolved({ origin: from, destination: to });
-            const data = await searchFlights(
-              {
-                origin: from.code,
-                destination: to.code,
-                outbound: brief.start,
-                returning: endDate(brief.start, brief.days),
-                adults,
-                children,
-                infants,
-                currency: brief.currency,
-              },
-              current.signal,
-            );
-            if (!current.signal.aborted) setResult(data);
-          } catch (cause) {
-            if (!current.signal.aborted)
-              setError(cause instanceof Error ? cause.message : "Flight search unavailable.");
-          } finally {
-            if (!current.signal.aborted) setBusy(false);
-          }
+        className="grid gap-4 rounded-2xl border bg-card p-4 sm:grid-cols-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          commit();
         }}
       >
-        {(
-          [
-            ["origin", "Departure city or airport", origin, setOrigin],
-            ["destination", "Destination city or airport", destination, setDestination],
-          ] as const
-        ).map(([key, label, value, setter]) => (
-          <label key={key} htmlFor={`${id}-${key}`} className="text-sm">
-            {label}
-            <input
-              id={`${id}-${key}`}
-              className="mt-1 w-full rounded-lg border bg-background p-2"
-              value={value}
-              placeholder={key === "origin" ? "e.g. Berlin or BER" : "e.g. Lisbon or LIS"}
-              required
-              maxLength={120}
-              onChange={(e) => {
-                edit();
-                setter(e.target.value);
-              }}
-            />
-          </label>
-        ))}
-        {(
-          [
-            ["adults", "Adults (12+)", adults, setAdults, 1],
-            ["children", "Children (2–11)", children, setChildren, 0],
-            ["infants", "Infants under 2, own seat", infants, setInfants, 0],
-          ] as const
-        ).map(([key, label, value, setter, min]) => (
-          <label key={key} htmlFor={`${id}-${key}`} className="text-sm">
-            {label}
-            <input
-              id={`${id}-${key}`}
-              className="mt-1 w-full rounded-lg border bg-background p-2"
-              type="number"
-              min={min}
-              max={9}
-              required
-              value={value}
-              onChange={(e) => {
-                edit();
-                setter(Number(e.target.value));
-              }}
-            />
-          </label>
-        ))}
-        <p className="text-xs text-muted-foreground sm:col-span-2">
-          {adults + children + infants} passengers · up to 9 total. Searches use the platform’s
-          shared free allowance. No search runs until you press the button.
-        </p>
-        <Button
-          type="submit"
-          disabled={
-            busy ||
-            adults + children + infants !== brief.travelers ||
-            infants > adults ||
-            adults + children + infants > 9 ||
-            brief.days < 2
-          }
-        >
-          {busy ? "Searching flights…" : "Search flight prices"}
-        </Button>
-        {adults + children + infants !== brief.travelers && (
-          <p role="alert" className="text-sm">
-            Passenger counts must match your trip’s {brief.travelers} travelers.
-          </p>
-        )}
-        {brief.days < 2 && (
-          <p className="text-sm">Choose at least two travel days for a return-flight search.</p>
+        <CityAirportInput
+          label="Departure"
+          value={origin}
+          onChange={(v) => edit(setOrigin, v)}
+          onSelect={(v) => commit(v, destination)}
+        />
+        <CityAirportInput
+          label="Destination"
+          value={destination}
+          onChange={(v) => edit(setDestination, v)}
+          onSelect={(v) => commit(origin, v)}
+        />
+        {(dirty || error || (!result && !busy)) && (
+          <Button type="submit" className="sm:col-span-2" disabled={busy}>
+            Update flights
+          </Button>
         )}
       </form>
-      {resolved && (
-        <p className="rounded-xl bg-muted/40 p-3 text-sm" role="status">
-          Airports used: {resolved.origin.name} ({resolved.origin.code}) →{" "}
-          {resolved.destination.name} ({resolved.destination.code}). Change either city or enter
-          another airport code above to search a different route.
-        </p>
+      {!flightEndpoint() && (
+        <p role="alert">Flight search is unavailable. Please try again later.</p>
+      )}
+      {busy && (
+        <div className="rounded-2xl border bg-card p-8 text-center" role="status">
+          <p className="font-semibold">Finding your three flight options…</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Comparing price, journey time and stops.
+          </p>
+        </div>
       )}
       {error && (
-        <p role="alert" className="rounded-xl border p-3 text-sm">
+        <div role="alert" className="rounded-xl border p-4 text-sm">
           {error}
+          {party.needsAges && (
+            <Button variant="link" onClick={onEditTrip}>
+              Edit traveler details
+            </Button>
+          )}
+        </div>
+      )}
+      {resolved && !busy && (
+        <p className="text-xs text-muted-foreground">
+          {resolved.origin.name} ({resolved.origin.code}) → {resolved.destination.name} (
+          {resolved.destination.code})
         </p>
       )}
       {result && (
-        <div className="space-y-3" aria-live="polite">
-          <p className="text-xs text-muted-foreground">
-            Google Flights results via SerpApi · retrieved{" "}
-            {new Date(result.checkedAt).toLocaleString()}
-            {result.sourceTime ? ` · provider search ${result.sourceTime}` : ""}. Results may be
-            cached. Prices and availability can change.
-          </p>
-          {!result.offers.length && (
-            <p>No priced flights were returned for these airports and dates.</p>
-          )}
-          <div className="grid gap-3 lg:grid-cols-2">
-            {result.offers.map((offer, index) => (
-              <article key={index} className="space-y-2 rounded-xl border p-4">
-                <h4 className="font-semibold">
-                  {[...new Set(offer.flights.map((f) => f.airline))].join(" + ")}
-                </h4>
-                {offer.flights.map((flight, leg) => (
-                  <p key={leg} className="text-sm">
-                    {flight.departure_airport.id} {flight.departure_airport.time} →{" "}
-                    {flight.arrival_airport.id} {flight.arrival_airport.time} ·{" "}
-                    {flight.flight_number}
+        <div aria-live="polite" className="space-y-4">
+          {!choices.length && <p>No priced flights found. Try another airport above.</p>}
+          <div className="offer-grid grid gap-4">
+            {choices.map(({ label, detail, offer }) => {
+              const selected =
+                chosen?.id === flightOfferId(offer) &&
+                chosen.amount === offer.price &&
+                chosen.scope === scope;
+              const first = offer.flights[0]!,
+                last = offer.flights.at(-1)!;
+              return (
+                <article
+                  key={label}
+                  className={`flex flex-col rounded-2xl border bg-card p-5 shadow-card ${selected ? "ring-2 ring-secondary" : ""}`}
+                >
+                  <p className="text-xs font-semibold uppercase tracking-widest text-secondary">
+                    {label}
                   </p>
-                ))}
-                <p className="text-xs text-muted-foreground">
-                  Outbound {Math.floor(offer.total_duration / 60)}h {offer.total_duration % 60}m ·{" "}
-                  {offer.flights.length - 1} stops · airport-local times
-                </p>
-                <p className="text-xl font-semibold">
-                  {new Intl.NumberFormat(undefined, {
-                    style: "currency",
-                    currency: result.query.currency,
-                  }).format(offer.price)}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Provider’s round-trip search price for the requested party. Return flight,
-                  baggage, fees and final total must be confirmed on Google Flights.
-                </p>
-              </article>
-            ))}
+                  <p className="mt-1 text-xs text-muted-foreground">{detail}</p>
+                  <h3 className="mt-5 font-sans text-lg font-semibold">
+                    {[...new Set(offer.flights.map((f) => f.airline))].join(" + ")}
+                  </h3>
+                  <div className="my-4 flex justify-between rounded-xl bg-muted/40 p-3">
+                    <div>
+                      <strong>{first.departure_airport.time.slice(11)}</strong>
+                      <p className="text-xs">{first.departure_airport.id}</p>
+                    </div>
+                    <span aria-hidden>→</span>
+                    <div className="text-right">
+                      <strong>{last.arrival_airport.time.slice(11)}</strong>
+                      <p className="text-xs">{last.arrival_airport.id}</p>
+                    </div>
+                  </div>
+                  <p className="text-sm">
+                    {Math.floor(offer.total_duration / 60)}h {offer.total_duration % 60}m ·{" "}
+                    {offer.flights.length === 1
+                      ? "Nonstop"
+                      : `${offer.flights.length - 1} stop${offer.flights.length > 2 ? "s" : ""}`}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Arrives {last.arrival_airport.time.slice(0, 10)} · airport-local times
+                  </p>
+                  <p className="mt-5 text-2xl font-semibold">
+                    {new Intl.NumberFormat(undefined, {
+                      style: "currency",
+                      currency: brief.currency,
+                    }).format(offer.price)}
+                  </p>
+                  <p className="mb-4 text-xs text-muted-foreground">
+                    Advertised return fare · requested group
+                  </p>
+                  <Button
+                    className="mt-auto"
+                    variant={selected ? "secondary" : "outline"}
+                    onClick={() => {
+                      const clean = (value: string, airport: FlightAirport) =>
+                        value.includes(" · ") || /^[A-Za-z]{3}$/.test(value.trim())
+                          ? `${airport.city}, ${new Intl.DisplayNames(["en"], { type: "region" }).of(airport.country)}`
+                          : value.split(" · ")[0]!.trim();
+                      const route =
+                        resolved && (origin !== departure || destination !== brief.destination)
+                          ? {
+                              departure: clean(origin, resolved.origin),
+                              destination: clean(destination, resolved.destination),
+                            }
+                          : undefined;
+                      onChoose?.(
+                        {
+                          id: flightOfferId(offer),
+                          label:
+                            `${label} · ${[...new Set(offer.flights.map((f) => f.airline))].join(" + ")} · ${result.query.origin}–${result.query.destination}`.slice(
+                              0,
+                              150,
+                            ),
+                          amount: offer.price,
+                          scope,
+                          evidence: "live-search",
+                          checkedAt: result.checkedAt,
+                        },
+                        route,
+                      );
+                    }}
+                  >
+                    {selected ? "Selected flight" : `Choose ${label.toLowerCase()}`}
+                  </Button>
+                </article>
+              );
+            })}
           </div>
-          <a
-            href={result.searchUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-block text-sm text-secondary underline"
-          >
-            Choose return flights and check booking options on Google Flights ↗
-          </a>
           <p className="text-xs text-muted-foreground">
-            These search results do not reserve a seat or update your trip budget. Use the confirmed
-            group quote below after checking the full itinerary.
+            Based on {result.offers.length} returned options. Best balance weighs price, outbound
+            duration and stops. Search estimates may be cached; return flights, baggage and final
+            fare are confirmed before booking.
           </p>
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-card p-4">
+            <a
+              href={result.searchUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="text-sm text-secondary underline"
+            >
+              View full fares on Google Flights ↗
+            </a>
+            <Button disabled={!matching} onClick={onContinue}>
+              Continue to hotels →
+            </Button>
+          </div>
         </div>
       )}
     </section>

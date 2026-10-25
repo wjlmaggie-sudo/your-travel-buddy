@@ -21,28 +21,16 @@ Store `SERPAPI_API_KEY` only in Supabase Edge Function secrets. Never add it to 
 configuration: `VITE_FLIGHT_SEARCH_URL` and the existing `VITE_AI_GATEWAY_KEY`.
 The original accounts/trips backend remains unchanged.
 
-Searches run only on an explicit button press. Departure and destination default to the trip and remain editable. City or airport
-inputs resolve against a bundled public-domain scheduled-airport directory; an
-unmatched city uses the existing geocoder to find a nearby airport within 150 km.
-The chosen airport names/codes are displayed, and users can override them. No
-SerpApi searches are used for location resolution. Passenger age categories remain
-editable in the form. Infants use their own seat; lap-infant searches are unsupported.
-Identical requests share an in-flight request and a ten-minute memory cache.
-SerpApi may also serve its own cached results. Each upstream search uses one
-request; there is no automatic return-flight or booking-option lookup.
+The guided flow searches automatically when Flights opens. Departure and destination
+are inherited, editable city/airport comboboxes. Selecting a suggestion or submitting
+Update flights runs a new route search; typing alone uses the local airport directory.
+See `GUIDED_TRAVEL_FLOW.md` for ranking, selection, family ages and step behavior.
 
-Results show actual provider prices, outbound segments, local airport timestamps,
-source/retrieval times and a Google Flights link. The first-stage round-trip search
-has not selected the return leg, so these offers cannot be saved as confirmed
-quotes or used to update trip budgets. Users choose return flights and verify the
-full price, baggage and availability on Google Flights. The existing entered-quote
-flow remains available. Simulated comparison cards are collapsed and labeled.
-
-Validation: new adapter tests cover invalid dates and parties, route matching,
-incomplete offers, caching/concurrent requests, quota failures, provider errors and
-secret redaction. Type checking and a production build passed. The first full suite
-run passed 149/151 tests; two existing guest-planner tests failed following a timeout.
-All nine tests in that planner file passed when rerun in isolation. New flight and
-journey tests passed (nine tests). Live provider verification passed. Publishing is performed after the source checks.
+Clients and backend share identical in-flight requests and use ten-minute memory
+caches. Each upstream search uses one request; there is no automatic return-flight
+or booking-option lookup. Results include real advertised prices and a Google Flights
+link. A user can save a selected search estimate to the planning budget. It remains
+unbooked and unconfirmed; return flight, baggage and final fare are checked on the
+provider website. Simulated comparison and manual quote controls are removed.
 
 Official provider documentation: https://serpapi.com/google-flights-api

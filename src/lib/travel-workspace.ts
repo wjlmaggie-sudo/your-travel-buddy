@@ -24,7 +24,8 @@ export const flightChoiceSchema = z.object({
   label: z.string().max(150),
   amount: z.number().finite().min(0).max(1000000),
   scope: z.string().max(1200),
-  evidence: z.enum(["demo", "entered"]),
+  evidence: z.enum(["demo", "entered", "live-search"]),
+  checkedAt: z.string().datetime().optional(),
 });
 export const estimateSchema = z.object({
   activities: z.number().finite().min(0).max(1000000),

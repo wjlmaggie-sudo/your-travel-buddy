@@ -21,7 +21,10 @@ it("generates a plan with a blank optional budget, shows the assumptions and ret
   expect(screen.getByLabelText("Total group budget (EUR)")).not.toBeRequired();
   expect(screen.getByLabelText("Total group budget (EUR)")).toHaveValue(null);
   fireEvent.click(screen.getByText("Lisbon", { exact: true }));
-  fireEvent.click(screen.getByRole("button", { name: "Create my travel plan", hidden: true }));
+  fireEvent.click(
+    screen.getByRole("button", { name: /^Continue to (flights|hotels)/, hidden: true }),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "AI Travel Planner", hidden: true }));
   expect(screen.getByText("Suggested starting budget: €1,300.00")).toBeVisible();
   expect(readGuestSimulation()?.budget).toBe(1300);
   expect(readGuestSimulation()?.journey?.budgetSuggestion?.profile).toBe("Lisbon reference");
@@ -33,7 +36,9 @@ it("respects an explicit zero budget instead of treating it as missing", () => {
   setup();
   fireEvent.change(screen.getByLabelText("Total group budget (EUR)"), { target: { value: "0" } });
   fireEvent.click(screen.getByText("Lisbon", { exact: true }));
-  fireEvent.click(screen.getByRole("button", { name: "Create my travel plan", hidden: true }));
+  fireEvent.click(
+    screen.getByRole("button", { name: /^Continue to (flights|hotels)/, hidden: true }),
+  );
   expect(readGuestSimulation()?.budget).toBe(0);
   expect(readGuestSimulation()?.journey?.budgetSuggestion).toBeUndefined();
   expect(screen.queryByLabelText("Suggested budget estimate")).not.toBeInTheDocument();
@@ -42,10 +47,12 @@ it("respects an explicit zero budget instead of treating it as missing", () => {
 it("lets the guest replace a suggested total with their own budget", () => {
   setup();
   fireEvent.click(screen.getByText("Lisbon", { exact: true }));
-  fireEvent.click(screen.getByRole("button", { name: "Create my travel plan", hidden: true }));
-  fireEvent.click(screen.getByRole("button", { name: "Edit trip details", hidden: true }));
+  fireEvent.click(
+    screen.getByRole("button", { name: /^Continue to (flights|hotels)/, hidden: true }),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Edit trip details" }));
   fireEvent.change(screen.getByLabelText("Total group budget (EUR)"), { target: { value: "800" } });
-  fireEvent.click(screen.getByRole("button", { name: "Rebuild my whole trip", hidden: true }));
+  fireEvent.click(screen.getByRole("button", { name: "Update trip & continue", hidden: true }));
   expect(readGuestSimulation()?.budget).toBe(800);
   expect(readGuestSimulation()?.journey?.budgetSuggestion).toBeUndefined();
 }, 15000);

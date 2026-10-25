@@ -195,7 +195,9 @@ export function JourneyPlanner({
                   {selected
                     ? selected.evidence === "demo"
                       ? "selected demo"
-                      : "entered quote"
+                      : selected.evidence === "live-search"
+                        ? "live search estimate"
+                        : "entered quote"
                     : "return allowance"}
                 </p>
                 {values.flightsRequired !== false && (
@@ -218,7 +220,9 @@ export function JourneyPlanner({
                   {costs.quoted !== null
                     ? stay?.evidence === "demo"
                       ? "selected DEMO price"
-                      : "your chosen quote"
+                      : stay?.evidence === "live-search"
+                        ? "live search estimate"
+                        : "your chosen quote"
                     : `${values.hotelComfort.toLowerCase()} allowance`}
                   {costs.nights
                     ? ` · ${money(costs.accommodation / costs.nights)} / group / night`

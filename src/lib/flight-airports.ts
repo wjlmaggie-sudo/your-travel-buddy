@@ -104,3 +104,42 @@ export async function resolveFlightAirport(query: string, signal: AbortSignal) {
     `We couldn't find a suitable airport for ${query}. Change the city or enter its three-letter airport code.`,
   );
 }
+
+export function airportLabel(airport: FlightAirport) {
+  const city = /nuremberg|nurnberg/i.test(normalize(airport.city))
+    ? "Nuremberg (Nürnberg)"
+    : airport.city;
+  return `${city || airport.name}, ${countryNames.of(airport.country) ?? airport.country} · ${airport.code}`;
+}
+export async function suggestFlightAirports(query: string) {
+  const term = normalize(query).replace("nuremberg", "nurnberg");
+  if (term.length < 2) return [];
+  const directory = await airportDirectory();
+  const score = (a: FlightAirport) => {
+    const words = normalize(`${a.city} ${a.name}`).replaceAll("nuremberg", "nurnberg").split(" ");
+    if (a.code.toLowerCase() === term) return 0;
+    if (words.some((w) => w === term)) return 1;
+    if (a.code.toLowerCase().startsWith(term) || words.some((w) => w.startsWith(term))) return 2;
+    // Prefer a close city-name prefix over a loose match in a long airport name.
+    const cityWords = normalize(a.city).replaceAll("nuremberg", "nurnberg").split(" ");
+    const similar = (word: string) =>
+      word.length >= term.length && [...term].filter((c, i) => c !== word[i]).length <= 1;
+    if (term.length >= 4) {
+      if (cityWords.some((w) => w.slice(0, 2) === term.slice(0, 2) && similar(w))) return 3;
+      if (words.some((w) => w.slice(0, 2) === term.slice(0, 2) && similar(w))) return 4;
+      if (cityWords.some(similar)) return 5;
+    }
+    return 9;
+  };
+  return directory
+    .map((airport) => ({ airport, score: score(airport) }))
+    .filter((a) => a.score < 9)
+    .sort(
+      (a, b) =>
+        a.score - b.score ||
+        Number(b.airport.large) - Number(a.airport.large) ||
+        a.airport.code.localeCompare(b.airport.code),
+    )
+    .slice(0, 6)
+    .map((a) => a.airport);
+}

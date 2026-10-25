@@ -3,6 +3,7 @@ import {
   matchFlightAirport,
   nearbyFlightAirport,
   resolveFlightAirport,
+  suggestFlightAirports,
   type FlightAirport,
 } from "@/lib/flight-airports";
 const directory: FlightAirport[] = [
@@ -42,4 +43,8 @@ describe("flight airport defaults", () => {
     expect(nearbyFlightAirport(52.5, 13.4, directory, "DE")?.code).toBe("BER");
     expect(nearbyFlightAirport(52.5, 13.4, directory, "PT")).toBeUndefined();
   });
+});
+
+it("ranks Nuremberg first for the nurm prefix typo", async () => {
+  expect((await suggestFlightAirports("nurm"))[0]?.code).toBe("NUE");
 });

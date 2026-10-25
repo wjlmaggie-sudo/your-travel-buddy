@@ -28,7 +28,7 @@ export const Route = createFileRoute("/")({
 function Index() {
   return (
     <div className="min-h-screen">
-      <header className="mx-auto flex max-w-7xl items-center justify-between px-6 py-6">
+      <header className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
         <Link to="/" className="flex items-center gap-2 font-display text-2xl font-semibold">
           <img src={publicAsset("ai-travel-logo.svg")} alt="" className="h-7 w-7" /> Travel Buddy
         </Link>
@@ -39,45 +39,42 @@ function Index() {
       <main className="mx-auto max-w-7xl px-4 sm:px-6">
         <section
           aria-label="Travel inspiration"
-          className="relative isolate flex min-h-[210px] items-center overflow-hidden rounded-3xl bg-secondary px-6 py-6 text-white md:min-h-[240px] md:px-10"
+          className="flex items-center justify-between gap-5 rounded-2xl border bg-card px-5 py-4 sm:px-6"
         >
-          <img
-            src={travelLake}
-            alt="An alpine lake and mountains at Lago di Braies, Italy"
-            width={1280}
-            height={853}
-            fetchPriority="high"
-            className="absolute inset-0 -z-20 h-full w-full object-cover object-[center_45%]"
-          />
-          <div className="absolute inset-0 -z-10 bg-gradient-to-r from-black/75 via-black/40 to-black/15" />
-          <div className="max-w-xl">
-            <p className="text-xs font-medium uppercase tracking-[.22em] text-white/85">
-              A world of possibilities. One simple plan.
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[.2em] text-secondary">
+              Your next adventure, made simple
             </p>
-            <h1 className="mt-3 text-3xl font-semibold leading-tight sm:text-5xl">
-              Where will your
-              <br />
-              <em>curiosity take you?</em>
+            <h1 className="mt-1 text-2xl font-semibold sm:text-3xl">
+              One trip. Every choice connected.
             </h1>
-            <p className="mt-3 max-w-md text-sm leading-relaxed text-white/90">
-              Build a trip around your days, your people and your budget. Explore first. Save when
-              you’re ready.
+            <p className="mt-1 text-sm text-muted-foreground">
+              Start with the basics. Choose your flights, stay and favorite places.
             </p>
           </div>
-          <a
-            href="https://commons.wikimedia.org/wiki/File:Lago_di_Braies_(Unsplash_VowIFDxogG4).jpg"
-            target="_blank"
-            rel="noreferrer"
-            className="absolute bottom-3 right-4 text-[10px] text-white/80 underline"
-          >
-            Lago di Braies · Luca Bravo · CC0
-          </a>
+          <div className="relative hidden shrink-0 sm:block">
+            <img
+              src={travelLake}
+              alt="An alpine lake and mountains at Lago di Braies, Italy"
+              width={160}
+              height={88}
+              className="h-20 w-36 rounded-xl object-cover"
+            />
+            <a
+              href="https://commons.wikimedia.org/wiki/File:Lago_di_Braies_(Unsplash_VowIFDxogG4).jpg"
+              target="_blank"
+              rel="noreferrer"
+              className="absolute bottom-1 right-2 text-[8px] text-white underline"
+            >
+              Luca Bravo · CC0
+            </a>
+          </div>
         </section>
       </main>
       <TravelPlanner />
       <footer className="mx-auto max-w-7xl border-t px-6 py-8 text-xs text-muted-foreground">
-        Travel Buddy · Plan thoughtfully. Explore freely. Prototype suggestions and simulated offers
-        are labeled; verify prices and availability with providers.
+        Travel Buddy · Plan thoughtfully. Explore freely. Confirm prices, availability and booking
+        terms with providers.
       </footer>
     </div>
   );

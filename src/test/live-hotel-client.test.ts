@@ -36,12 +36,15 @@ it("sends only public gateway credentials and rejects mismatched replies", async
     Authorization: "Bearer public-gateway-token",
     apikey: "public-gateway-token",
   });
+  await searchLiveHotels(input, new AbortController().signal);
+  expect(fetcher).toHaveBeenCalledTimes(1);
+  const changed = { ...input, adults: 3 };
   fetcher.mockResolvedValue(Response.json({ ...result, query: { ...input, adults: 1 } }));
-  await expect(searchLiveHotels(input, new AbortController().signal)).rejects.toThrow(
+  await expect(searchLiveHotels(changed, new AbortController().signal)).rejects.toThrow(
     /do not match/,
   );
   fetcher.mockResolvedValue(Response.json({ error: "limit" }, { status: 429 }));
-  await expect(searchLiveHotels(input, new AbortController().signal)).rejects.toThrow(
+  await expect(searchLiveHotels(changed, new AbortController().signal)).rejects.toThrow(
     /shared free/,
   );
 });

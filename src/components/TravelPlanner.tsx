@@ -38,6 +38,8 @@ import type { TripIdeas } from "../../supabase/functions/_shared/trip-ideas";
 export function TravelPlanner() {
   const preferencesTrigger = useRef<HTMLButtonElement>(null);
   const planningRequest = useRef(0);
+  const formRef = useRef<HTMLFormElement>(null);
+  const requestedSection = useRef<TravelSection | null>(null);
   const [budgetInput, setBudgetInput] = useState("");
   const [estimatingBudget, setEstimatingBudget] = useState(false);
   const [findingPlaces, setFindingPlaces] = useState(false);
@@ -106,6 +108,7 @@ export function TravelPlanner() {
           departure: draft.journey?.departure ?? "",
           hotelComfort: draft.journey?.hotelComfort ?? "Comfortable",
           selectedFlight: undefined,
+          hotelRooms: draft.journey?.hotelRooms ?? (childCount(draft) > 0 ? 1 : undefined),
         },
         ideas: undefined,
         stay: undefined,
@@ -146,7 +149,12 @@ export function TravelPlanner() {
   }
   function applyPlan(next: PlannerDraft) {
     const request = ++planningRequest.current;
-    if (next.persona && !curatedPersonaDay(next.destination, 1, next)) {
+    if (
+      !next.journey?.flightsRequired &&
+      !requestedSection.current &&
+      next.persona &&
+      !curatedPersonaDay(next.destination, 1, next)
+    ) {
       setFindingPlaces(true);
       setPendingPlan(null);
       void personaReferences(next.destination, next.days, next.style, next)
@@ -169,6 +177,8 @@ export function TravelPlanner() {
       ideas,
       revision: (current?.revision ?? 0) + 1,
     }));
+    setSection(requestedSection.current ?? (next.journey?.flightsRequired ? "flights" : "hotels"));
+    requestedSection.current = null;
     setEdited(false);
     setEditing(false);
     setPendingPlan(null);
@@ -215,7 +225,13 @@ export function TravelPlanner() {
       </Dialog>
       <TravelWorkspace
         section={section}
-        onChange={setSection}
+        onChange={(next) => {
+          if (estimatingBudget) return;
+          if ((next === "flights" || next === "hotels") && (!result || editing)) {
+            requestedSection.current = next;
+            formRef.current?.requestSubmit();
+          } else setSection(next);
+        }}
         title={
           result
             ? `${result.brief.destination} · ${result.brief.days} days`
@@ -243,7 +259,7 @@ export function TravelPlanner() {
             <p className="mt-3 text-sm text-muted-foreground">
               A few details are all you need. Explore every section without an account.
             </p>
-            <form className="mt-6" onSubmit={generate}>
+            <form ref={formRef} className="mt-6" onSubmit={generate}>
               <fieldset disabled={estimatingBudget} className="space-y-5">
                 <PersonaPreferences
                   value={draft}
@@ -375,14 +391,19 @@ export function TravelPlanner() {
                     disabled={findingPlaces || estimatingBudget}
                     type="submit"
                     className="h-11"
+                    onClick={() => {
+                      requestedSection.current = null;
+                    }}
                   >
                     {estimatingBudget
                       ? "Estimating a starting budget…"
                       : findingPlaces
                         ? "Finding matching places…"
                         : result
-                          ? "Rebuild my whole trip"
-                          : "Create my travel plan"}
+                          ? "Update trip & continue"
+                          : draft.journey?.departure.trim()
+                            ? "Continue to flights →"
+                            : "Continue to hotels →"}
                   </Button>
                   <Button
                     type="button"
@@ -401,8 +422,8 @@ export function TravelPlanner() {
                   )}
                 </div>
                 <p className="text-xs leading-relaxed text-muted-foreground">
-                  Free template suggestions · yours to edit. Check Flights and Hotels for provider
-                  connection status. Live AI is not connected. Demo prices are clearly labeled.
+                  Your trip details carry into each step. Flight and hotel searches use real
+                  advertised prices; attractions are editable suggestions.
                 </p>
               </fieldset>
             </form>
@@ -500,6 +521,25 @@ export function TravelPlanner() {
             onSectionChange={setSection}
             brief={result.brief}
             initialIdeas={result.ideas}
+            onRouteUpdate={(destination, departure) => {
+              setResult((current) =>
+                current
+                  ? {
+                      ...current,
+                      brief: {
+                        ...current.brief,
+                        destination,
+                        journey: { ...current.brief.journey!, departure },
+                      },
+                    }
+                  : current,
+              );
+              setDraft((current) => ({
+                ...current,
+                destination,
+                journey: { ...current.journey!, departure },
+              }));
+            }}
             onBudgetChange={setBudget}
             onEdited={() => setEdited(true)}
           />
