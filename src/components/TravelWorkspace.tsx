@@ -3,7 +3,7 @@ import { dailyMoney } from "./DailyBudget";
 import { TravelNavigation } from "./TravelNavigation";
 import { SECTIONS, type TravelSection } from "@/lib/travel-workspace";
 
-/** Each mounted panel owns its scroll position. Switching never resizes the document. */
+/** Panels stay mounted to preserve edits; their content scrolls with the document. */
 export function TravelWorkspace({
   section,
   onChange,

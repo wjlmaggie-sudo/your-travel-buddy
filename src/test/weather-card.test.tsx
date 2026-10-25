@@ -12,7 +12,7 @@ afterEach(() => {
   cleanup();
   vi.clearAllMocks();
 });
-it("keeps forecast results in a reserved card, loads only on request and converts units", async () => {
+it("keeps forecast results in the same card, loads only on request and converts units", async () => {
   vi.mocked(findWeatherPlaces).mockResolvedValue([
     { id: 1, name: "Lisbon", latitude: 38.7, longitude: -9.1, country: "Portugal" },
   ]);
@@ -33,7 +33,6 @@ it("keeps forecast results in a reserved card, loads only on request and convert
     </QueryClientProvider>,
   );
   const result = screen.getByTestId("weather-results");
-  expect(result).toHaveClass("h-[320px]");
   expect(findWeatherPlaces).not.toHaveBeenCalled();
   fireEvent.click(screen.getByRole("button", { name: "Check destination weather" }));
   expect(await screen.findByText("20°C")).toBeVisible();

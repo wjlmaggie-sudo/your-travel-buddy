@@ -25,3 +25,9 @@ Tests cover guest planning without auth calls; sign-in prompt/cancel and save ha
 Browser checks cover document height/scroll before and after generation, feature switching and tool data loading; per-view scroll restoration; guest exploration and optional Save prompt; actual exchange/weather requests; desktop/mobile overflow, saved-trip compatibility and the published Pages artifact. Viewport offsets caused by browser automation scrolling a target into view are distinguished from application-triggered scrolling.
 
 The final dialog check also caught a 12 px horizontal contraction from combining a stable root scrollbar gutter with the modal library's extra body margin. A scoped `@supports (scrollbar-gutter: stable)` rule removes the redundant margin while retaining modal scroll locking. Dialog closing restores focus with `preventScroll: true`.
+
+## Single-page scrolling update — 25 October 2026
+
+The earlier fixed-height workspace and independent panel scrolling above have been replaced at the user's request. The active workspace panel, additional place recommendations and weather results now grow with their content and use the document scrollbar. Mounted sections still retain edits when switching views. Desktop section navigation stays visible on sufficiently tall screens without its own scrollbar; mobile uses the existing compact selector. Standard modal and selection-menu scrolling remains scoped to temporary overlays.
+
+Verification now checks preserved edits rather than independent panel scroll offsets, plus desktop/mobile document scrolling and overflow.

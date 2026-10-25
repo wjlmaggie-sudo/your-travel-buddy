@@ -9,7 +9,7 @@ export function TravelNavigation({
   onChange: (section: TravelSection) => void;
 }) {
   return (
-    <nav aria-label="Travel sections" className="travel-navigation h-full p-3">
+    <nav aria-label="Travel sections" className="travel-navigation p-3">
       <label className="block w-full px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground md:hidden">
         Travel section
         <select
@@ -25,7 +25,7 @@ export function TravelNavigation({
           ))}
         </select>
       </label>
-      <div className="hidden h-full flex-col gap-1 md:flex">
+      <div className="hidden flex-col gap-1 md:flex">
         {SECTIONS.map((item, index) => {
           const Icon = icons[index]!;
           return (
