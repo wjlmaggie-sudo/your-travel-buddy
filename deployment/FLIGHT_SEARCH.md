@@ -34,3 +34,12 @@ unbooked and unconfirmed; return flight, baggage and final fare are checked on t
 provider website. Simulated comparison and manual quote controls are removed.
 
 Official provider documentation: https://serpapi.com/google-flights-api
+
+## Connection details
+
+Flight tickets display each outbound connection airport and provider layover minutes,
+with overnight and airport-change warnings. Expanded details show every segment’s
+flight number, local times and duration. The adapter preserves SerpApi `layovers`;
+older single-stop responses can recover waiting time from total duration minus leg
+durations. Missing individual waits on older multi-stop responses are labeled unavailable.
+Airport-local timestamps are never subtracted across time zones to invent durations.

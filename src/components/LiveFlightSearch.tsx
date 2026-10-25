@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import { ArrowRight, Check, ChevronDown, Clock3, Wallet, Plane, Sparkles, Zap } from "lucide-react";
+import { flightConnections, flightDuration } from "@/lib/flight-journey";
 import { resolveFlightAirport, type FlightAirport } from "@/lib/flight-airports";
 import { flightEndpoint, searchFlights } from "@/lib/flight-search";
 import { flightSuggestions, flightOfferId } from "@/lib/travel-suggestions";
@@ -225,7 +227,7 @@ export function LiveFlightSearch({
       {result && (
         <div aria-live="polite" className="space-y-4">
           {!choices.length && <p>No priced flights found. Try another airport above.</p>}
-          <div className="offer-grid grid gap-4">
+          <div className="flight-ticket-list">
             {choices.map(({ label, detail, offer }) => {
               const selected =
                 chosen?.id === flightOfferId(offer) &&
@@ -233,81 +235,171 @@ export function LiveFlightSearch({
                 chosen.scope === scope;
               const first = offer.flights[0]!,
                 last = offer.flights.at(-1)!;
+              const connections = flightConnections(offer);
+              const BadgeIcon =
+                label === "Cheapest" ? Wallet : label === "Fastest" ? Zap : Sparkles;
               return (
                 <article
                   key={label}
-                  className={`flex flex-col rounded-2xl border bg-card p-5 shadow-card ${selected ? "ring-2 ring-secondary" : ""}`}
+                  className={`flight-ticket ${selected ? "is-selected" : ""}`}
+                  aria-label={`${label} flight`}
                 >
-                  <p className="text-xs font-semibold uppercase tracking-widest text-secondary">
-                    {label}
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">{detail}</p>
-                  <h3 className="mt-5 font-sans text-lg font-semibold">
-                    {[...new Set(offer.flights.map((f) => f.airline))].join(" + ")}
-                  </h3>
-                  <div className="my-4 flex justify-between rounded-xl bg-muted/40 p-3">
-                    <div>
-                      <strong>{first.departure_airport.time.slice(11)}</strong>
-                      <p className="text-xs">{first.departure_airport.id}</p>
+                  <div className="flight-ticket-main">
+                    <div className="flight-ticket-topline">
+                      <span className="flight-ticket-badge">
+                        <BadgeIcon size={13} aria-hidden />
+                        {label}
+                      </span>
+                      {selected && (
+                        <span className="flight-selected">
+                          <Check size={13} aria-hidden /> Selected
+                        </span>
+                      )}
+                      <span className="flight-ticket-reason">{detail}</span>
                     </div>
-                    <span aria-hidden>→</span>
-                    <div className="text-right">
-                      <strong>{last.arrival_airport.time.slice(11)}</strong>
-                      <p className="text-xs">{last.arrival_airport.id}</p>
+                    <h3 className="flight-airline">
+                      {[...new Set(offer.flights.map((f) => f.airline))].join(" + ")}
+                    </h3>
+                    <p className="flight-direction-label">Outbound · airport-local times</p>
+                    <div className="flight-route">
+                      <div className="flight-endpoint">
+                        <strong>{first.departure_airport.time.slice(11)}</strong>
+                        <span title={first.departure_airport.name}>
+                          {first.departure_airport.id}
+                        </span>
+                        <small>{first.departure_airport.time.slice(0, 10)}</small>
+                      </div>
+                      <div className="flight-route-middle">
+                        <span className="flight-total-time">
+                          <Clock3 size={12} aria-hidden />
+                          {flightDuration(offer.total_duration)}
+                        </span>
+                        <div className="flight-route-line" aria-hidden="true">
+                          <span />
+                          {connections.map((_, index) => (
+                            <i key={index} />
+                          ))}
+                          <Plane size={17} />
+                        </div>
+                        <span
+                          className={connections.length ? "flight-stop-count" : "flight-nonstop"}
+                        >
+                          {connections.length
+                            ? `${connections.length} stop${connections.length > 1 ? "s" : ""} · ${connections.map((c) => (c.airportChange ? `${c.airport.id} / ${c.nextAirport.id}` : c.airport.id)).join(" · ")}`
+                            : "Nonstop"}
+                        </span>
+                      </div>
+                      <div className="flight-endpoint flight-endpoint-arrival">
+                        <strong>{last.arrival_airport.time.slice(11)}</strong>
+                        <span title={last.arrival_airport.name}>{last.arrival_airport.id}</span>
+                        <small>{last.arrival_airport.time.slice(0, 10)}</small>
+                      </div>
                     </div>
+                    {connections.length > 0 && (
+                      <ul className="flight-connections" aria-label="Layovers">
+                        {connections.map((connection, index) => (
+                          <li key={index}>
+                            <Clock3 size={14} aria-hidden />
+                            <span>
+                              <strong>
+                                {connection.duration === null
+                                  ? "Duration unavailable"
+                                  : flightDuration(connection.duration)}{" "}
+                                layover
+                              </strong>{" "}
+                              in {connection.airport.name} ({connection.airport.id})
+                              {connection.overnight && <em> · Overnight</em>}
+                              {connection.airportChange && (
+                                <em>
+                                  {" "}
+                                  · Change airports to {connection.nextAirport.name} (
+                                  {connection.nextAirport.id}); transfer time to confirm
+                                </em>
+                              )}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    <details className="flight-leg-details">
+                      <summary>
+                        Flight details <ChevronDown size={14} aria-hidden />
+                      </summary>
+                      <ol>
+                        {offer.flights.map((leg, index) => (
+                          <li key={`${leg.flight_number}-${index}`}>
+                            <span className="flight-leg-number">{index + 1}</span>
+                            <div>
+                              <strong>
+                                {leg.departure_airport.id}{" "}
+                                <ArrowRight size={12} className="inline" aria-hidden />{" "}
+                                {leg.arrival_airport.id}
+                              </strong>
+                              <p>
+                                {leg.airline} · {leg.flight_number} · {flightDuration(leg.duration)}
+                              </p>
+                              <p>
+                                {leg.departure_airport.time} → {leg.arrival_airport.time}
+                              </p>
+                            </div>
+                          </li>
+                        ))}
+                      </ol>
+                      <p className="flight-time-note">
+                        All times are local to each airport. Details shown are for the outbound
+                        journey.
+                      </p>
+                    </details>
                   </div>
-                  <p className="text-sm">
-                    {Math.floor(offer.total_duration / 60)}h {offer.total_duration % 60}m ·{" "}
-                    {offer.flights.length === 1
-                      ? "Nonstop"
-                      : `${offer.flights.length - 1} stop${offer.flights.length > 2 ? "s" : ""}`}
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Arrives {last.arrival_airport.time.slice(0, 10)} · airport-local times
-                  </p>
-                  <p className="mt-5 text-2xl font-semibold">
-                    {new Intl.NumberFormat(undefined, {
-                      style: "currency",
-                      currency: brief.currency,
-                    }).format(offer.price)}
-                  </p>
-                  <p className="mb-4 text-xs text-muted-foreground">
-                    Advertised return fare · requested group
-                  </p>
-                  <Button
-                    className="mt-auto"
-                    variant={selected ? "secondary" : "outline"}
-                    onClick={() => {
-                      const clean = (value: string, airport: FlightAirport) =>
-                        value.includes(" · ") || /^[A-Za-z]{3}$/.test(value.trim())
-                          ? `${airport.city}, ${new Intl.DisplayNames(["en"], { type: "region" }).of(airport.country)}`
-                          : value.split(" · ")[0]!.trim();
-                      const route =
-                        resolved && (origin !== departure || destination !== brief.destination)
-                          ? {
-                              departure: clean(origin, resolved.origin),
-                              destination: clean(destination, resolved.destination),
-                            }
-                          : undefined;
-                      onChoose?.(
-                        {
-                          id: flightOfferId(offer),
-                          label:
-                            `${label} · ${[...new Set(offer.flights.map((f) => f.airline))].join(" + ")} · ${result.query.origin}–${result.query.destination}`.slice(
-                              0,
-                              150,
-                            ),
-                          amount: offer.price,
-                          scope,
-                          evidence: "live-search",
-                          checkedAt: result.checkedAt,
-                        },
-                        route,
-                      );
-                    }}
-                  >
-                    {selected ? "Selected flight" : `Choose ${label.toLowerCase()}`}
-                  </Button>
+                  <div className="flight-ticket-fare">
+                    <span className="flight-fare-label">
+                      RETURN · {brief.travelers} {brief.travelers === 1 ? "TRAVELER" : "TRAVELERS"}
+                    </span>
+                    <p className="flight-price">
+                      {new Intl.NumberFormat(undefined, {
+                        style: "currency",
+                        currency: brief.currency,
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 2,
+                      }).format(offer.price)}
+                    </p>
+                    <p className="flight-price-note">Advertised group fare</p>
+                    <Button
+                      className="flight-choose"
+                      variant={selected ? "secondary" : "default"}
+                      onClick={() => {
+                        const clean = (value: string, airport: FlightAirport) =>
+                          value.includes(" · ") || /^[A-Za-z]{3}$/.test(value.trim())
+                            ? `${airport.city}, ${new Intl.DisplayNames(["en"], { type: "region" }).of(airport.country)}`
+                            : value.split(" · ")[0]!.trim();
+                        const route =
+                          resolved && (origin !== departure || destination !== brief.destination)
+                            ? {
+                                departure: clean(origin, resolved.origin),
+                                destination: clean(destination, resolved.destination),
+                              }
+                            : undefined;
+                        onChoose?.(
+                          {
+                            id: flightOfferId(offer),
+                            label:
+                              `${label} · ${[...new Set(offer.flights.map((f) => f.airline))].join(" + ")} · ${result.query.origin}–${result.query.destination}`.slice(
+                                0,
+                                150,
+                              ),
+                            amount: offer.price,
+                            scope,
+                            evidence: "live-search",
+                            checkedAt: result.checkedAt,
+                          },
+                          route,
+                        );
+                      }}
+                    >
+                      {selected ? "Selected flight" : `Choose ${label.toLowerCase()}`}
+                      <ArrowRight size={15} aria-hidden />
+                    </Button>
+                  </div>
                 </article>
               );
             })}

@@ -67,6 +67,22 @@ describe("real flight adapter", () => {
     expect(result.offers[0]?.price).toBe(900);
     expect(result.offers[0]?.flights[0]?.arrival_airport.time).toBe("2027-01-11 08:00");
   });
+  it("preserves provider layovers for the flight cards", () => {
+    const result = normalizeFlights(
+      {
+        best_flights: [
+          {
+            ...raw.best_flights[0],
+            layovers: [{ id: "AMS", name: "Amsterdam Schiphol", duration: 95, overnight: true }],
+          },
+        ],
+      },
+      query,
+    );
+    expect(result.offers[0]?.layovers).toEqual([
+      { id: "AMS", name: "Amsterdam Schiphol", duration: 95, overnight: true },
+    ]);
+  });
   it("blocks unallowed origins, missing credentials and exhausted quota before upstream requests", async () => {
     const fetcher = vi.fn();
     const claim = vi.fn(async () => false);

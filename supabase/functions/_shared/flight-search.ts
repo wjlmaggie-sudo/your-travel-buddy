@@ -45,6 +45,17 @@ const offer = z.object({
     )
     .min(1)
     .max(8),
+  layovers: z
+    .array(
+      z.object({
+        id: z.string().regex(/^[A-Z]{3}$/),
+        name: z.string().max(250),
+        duration: z.number().nonnegative(),
+        overnight: z.boolean().optional(),
+      }),
+    )
+    .max(7)
+    .optional(),
   total_duration: z.number().nonnegative(),
   price: z.number().positive(),
   type: z.literal("Round trip"),

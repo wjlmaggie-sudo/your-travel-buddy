@@ -135,3 +135,30 @@ it("can resume a search after an edited route is reverted to the original city",
   fireEvent.click(screen.getByRole("button", { name: "Update flights" }));
   await screen.findByRole("button", { name: "Choose cheapest" });
 });
+
+it("shows connection airport and wait time with expandable leg details", async () => {
+  const connection = {
+    ...offers[0]!,
+    total_duration: 375,
+    flights: [
+      {
+        ...offers[0]!.flights[0]!,
+        arrival_airport: { id: "AMS", name: "Amsterdam Schiphol", time: "2027-01-10 11:30" },
+        duration: 90,
+      },
+      {
+        ...offers[0]!.flights[0]!,
+        departure_airport: { id: "AMS", name: "Amsterdam Schiphol", time: "2027-01-10 13:15" },
+        duration: 180,
+        flight_number: "EX2",
+      },
+    ],
+    layovers: [{ id: "AMS", name: "Amsterdam Schiphol", duration: 105 }],
+  };
+  vi.mocked(searchFlights).mockResolvedValue({ ...result, offers: [connection] });
+  render(<LiveFlightSearch brief={brief} departure="Berlin" active />);
+  await screen.findByRole("button", { name: "Choose cheapest" });
+  expect(screen.getAllByText("1h 45m layover").length).toBeGreaterThan(0);
+  expect(screen.getAllByText(/Amsterdam Schiphol \(AMS\)/).length).toBeGreaterThan(0);
+  expect(screen.getAllByText("Flight details").length).toBeGreaterThan(0);
+});
