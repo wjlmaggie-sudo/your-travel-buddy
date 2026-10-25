@@ -58,7 +58,7 @@ it("uses trip dates and actual driver details, then selects a real response for 
   expect(screen.getByLabelText("Car return date")).toHaveValue("2026-12-04");
   fireEvent.change(screen.getByLabelText("Driver age"), { target: { value: "35" } });
   fireEvent.change(screen.getByLabelText("Driver country of residence"), {
-    target: { value: "de" },
+    target: { value: "DE" },
   });
   fireEvent.click(screen.getByRole("button", { name: "Find rental cars" }));
   expect(await screen.findByText("Test vehicle or similar")).toBeVisible();
@@ -79,5 +79,26 @@ it("uses trip dates and actual driver details, then selects a real response for 
       pickup: "Lisbon Airport (LIS)",
       pickupDate: "2026-12-01",
     }),
+  );
+});
+
+it("allows standalone car searches without a travel plan or account", async () => {
+  vi.mocked(carSearchAvailable).mockResolvedValue(true);
+  render(
+    <CarRental
+      active
+      standalone
+      brief={{ ...brief, destination: "" }}
+      allowance={0}
+      onChoose={vi.fn()}
+    />,
+  );
+  expect(screen.getByLabelText("Pickup airport")).toHaveValue("");
+  expect(screen.getByLabelText("Car travelers")).toHaveValue(2);
+  expect(screen.getByLabelText("Car currency")).toHaveValue("EUR");
+  expect(screen.queryByText(/Local transport allowance:/)).toBeNull();
+  expect(screen.getByText(/without creating a trip or signing in/)).toBeVisible();
+  await vi.waitFor(() =>
+    expect(screen.getByRole("button", { name: "Find rental cars" })).toBeEnabled(),
   );
 });

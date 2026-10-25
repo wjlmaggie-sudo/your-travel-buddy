@@ -1,3 +1,4 @@
+import { CarRental } from "./CarRental";
 import {
   suggestBudget,
   convertBudgetSuggestion,
@@ -495,7 +496,18 @@ export function TravelPlanner() {
             <Button onClick={() => setPreferences(false)}>Done</Button>
           </DialogContent>
         </Dialog>
-        {!result && !["planner", "currency"].includes(section) && (
+        {!result && (
+          <WorkspacePanel active={section === "cars"} label="Car Rental">
+            <CarRental
+              active={section === "cars"}
+              standalone
+              brief={draft}
+              allowance={0}
+              onChoose={() => {}}
+            />
+          </WorkspacePanel>
+        )}
+        {!result && !["planner", "currency", "cars"].includes(section) && (
           <WorkspacePanel
             active
             label={SECTIONS.find((item) => item.id === section)?.label ?? "Travel options"}

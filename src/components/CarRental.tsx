@@ -9,19 +9,29 @@ import type { StayBrief } from "@/lib/stay-planning";
 import { CityAirportInput } from "./CityAirportInput";
 import { dailyMoney } from "./DailyBudget";
 import { Button } from "./ui/button";
+const countryNames = new Intl.DisplayNames(["en"], { type: "region" });
+const countries =
+  "AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ DE DJ DK DM DO DZ EC EE EG EH ER ES ET FI FJ FK FM FO FR GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GS GT GU GW GY HK HM HN HR HT HU ID IE IL IM IN IO IQ IR IS IT JE JM JO JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MH MK ML MM MN MO MP MQ MR MS MT MU MV MW MX MY MZ NA NC NE NF NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL PM PN PR PS PT PW PY QA RE RO RS RU RW SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ UA UG UM US UY UZ VA VC VE VG VI VN VU WF WS YE YT ZA ZM ZW"
+    .split(" ")
+    .map((code) => ({ code, name: countryNames.of(code) ?? code }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 export function CarRental({
   brief,
   active = false,
+  standalone = false,
   allowance,
   chosen,
   onChoose,
 }: {
   brief: StayBrief;
   active?: boolean;
+  standalone?: boolean;
   allowance: number;
   chosen?: CarChoice | undefined;
   onChoose: (choice: CarChoice | undefined) => void;
 }) {
+  const [travelers, setTravelers] = useState(brief.travelers),
+    [currency, setCurrency] = useState(brief.currency);
   const [pickup, setPickup] = useState(brief.destination),
     [age, setAge] = useState(""),
     [residence, setResidence] = useState("");
@@ -65,7 +75,7 @@ export function CarRental({
       });
     return () => signal.abort();
   }, [active]);
-  const money = (n: number) => dailyMoney(n, brief.currency),
+  const money = (n: number) => dailyMoney(n, result?.query.currency ?? currency),
     selected = chosen?.scope === scope ? chosen : null;
   return (
     <section aria-label="Car rental search" className="space-y-5">
@@ -76,13 +86,16 @@ export function CarRental({
         </p>
         <h2 className="mt-2 text-3xl font-semibold">A car for your kind of trip.</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          Search real advertised rental prices. Destination and dates come from your trip; confirm
-          the pickup airport and driver details.
+          {standalone
+            ? "Search rental cars without creating a trip or signing in. Choose your pickup airport, dates and driver details."
+            : "Search real advertised rental prices. Destination and dates come from your trip; confirm the pickup airport and driver details."}
         </p>
-        <p className="mt-2 text-sm">
-          Local transport allowance: {money(allowance)}. A selected rental is added separately;
-          fuel, parking and other transport remain estimates.
-        </p>
+        {!standalone && (
+          <p className="mt-2 text-sm">
+            Local transport allowance: {money(allowance)}. A selected rental is added separately;
+            fuel, parking and other transport remain estimates.
+          </p>
+        )}
       </div>
       {available !== true && (
         <p role="status" className="rounded-xl border bg-muted/30 p-4 text-sm">
@@ -114,8 +127,8 @@ export function CarRental({
               dropoffTime,
               age: Number(age),
               residence: residence.toUpperCase(),
-              currency: brief.currency,
-              travelers: brief.travelers,
+              currency: standalone ? currency : brief.currency,
+              travelers: standalone ? travelers : brief.travelers,
             });
             const next = await searchCars(query, current.signal);
             if (!current.signal.aborted) setResult(next);
@@ -142,6 +155,37 @@ export function CarRental({
           searching.
         </p>
         <div className="grid gap-3 sm:grid-cols-2">
+          {standalone && (
+            <>
+              <label className="text-sm">
+                Travelers
+                <input
+                  aria-label="Car travelers"
+                  className="mt-2 h-11 w-full rounded-xl border bg-background px-3"
+                  type="number"
+                  min={1}
+                  max={20}
+                  value={travelers}
+                  onChange={(e) => setTravelers(Number(e.target.value))}
+                  required
+                />
+              </label>
+              <label className="text-sm">
+                Currency
+                <select
+                  aria-label="Car currency"
+                  className="mt-2 h-11 w-full rounded-xl border bg-background px-3"
+                  value={currency}
+                  onChange={(e) => setCurrency(e.target.value)}
+                >
+                  {["EUR", "GBP", "USD", "CHF", "AUD", "CAD", "JPY"].map((code) => (
+                    <option key={code}>{code}</option>
+                  ))}
+                </select>
+              </label>
+            </>
+          )}
+
           <label className="text-sm">
             Pickup date
             <input
@@ -201,16 +245,20 @@ export function CarRental({
           </label>
           <label className="text-sm">
             Country of residence
-            <input
+            <select
               aria-label="Driver country of residence"
-              className="mt-2 h-11 w-full rounded-xl border bg-background px-3 uppercase"
-              placeholder="Two letters, e.g. DE"
-              pattern="[A-Za-z]{2}"
-              maxLength={2}
+              className="mt-2 h-11 w-full rounded-xl border bg-background px-3"
               value={residence}
               onChange={(e) => setResidence(e.target.value)}
               required
-            />
+            >
+              <option value="">Choose your country</option>
+              {countries.map((country) => (
+                <option key={country.code} value={country.code}>
+                  {country.name}
+                </option>
+              ))}
+            </select>
           </label>
         </div>
         <p className="text-xs text-muted-foreground">
@@ -263,9 +311,11 @@ export function CarRental({
                 <p className="mt-3 text-2xl font-semibold">{money(offer.amount)}</p>
                 <p className="text-xs text-muted-foreground">
                   Whole rental ·{" "}
-                  {offer.amount <= allowance
-                    ? "Within local transport allowance"
-                    : "Above local transport allowance"}
+                  {standalone
+                    ? "Advertised price"
+                    : offer.amount <= allowance
+                      ? "Within local transport allowance"
+                      : "Above local transport allowance"}
                 </p>
                 <p className="mt-3 text-xs text-muted-foreground">
                   Mileage: {offer.mileage}. Fuel: {offer.fuelPolicy}. Cancellation:{" "}
@@ -277,23 +327,25 @@ export function CarRental({
                   . Deposit: {offer.deposit === null ? "not supplied" : money(offer.deposit)}.
                   Insurance, excess and optional extras: confirm with provider.
                 </p>
-                <Button
-                  className="mt-4"
-                  onClick={() =>
-                    onChoose({
-                      ...offer,
-                      scope,
-                      checkedAt: result.checkedAt,
-                      pickup: resolved,
-                      pickupDate: result.query.pickupDate,
-                      dropoffDate: result.query.dropoffDate,
-                      pickupTime: result.query.pickupTime,
-                      dropoffTime: result.query.dropoffTime,
-                    })
-                  }
-                >
-                  Use this rental in budget
-                </Button>
+                {!standalone && (
+                  <Button
+                    className="mt-4"
+                    onClick={() =>
+                      onChoose({
+                        ...offer,
+                        scope,
+                        checkedAt: result.checkedAt,
+                        pickup: resolved,
+                        pickupDate: result.query.pickupDate,
+                        dropoffDate: result.query.dropoffDate,
+                        pickupTime: result.query.pickupTime,
+                        dropoffTime: result.query.dropoffTime,
+                      })
+                    }
+                  >
+                    Use this rental in budget
+                  </Button>
+                )}
               </article>
             ))}
           </div>

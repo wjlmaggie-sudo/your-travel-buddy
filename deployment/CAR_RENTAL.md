@@ -1,6 +1,6 @@
 # Car rental search — Scrappa free-tier adapter
 
-The website has a separate Car Rental section for guests and saved trips. It reuses trip dates and destination, lets the traveler confirm an airport pickup, and requires actual driver age and country of residence because these affect rental prices. It searches one car with return to the same airport. No demo inventory, reservation or payment is created.
+The website has a separate Car Rental section for guests and saved trips. Guests can open it and search directly without generating a travel plan; pickup location, dates, traveler count and currency are editable. It reuses trip dates and destination, lets the traveler confirm an airport pickup, and requires actual driver age and country of residence because these affect rental prices. It searches one car with return to the same airport. No demo inventory, reservation or payment is created.
 
 ## Provider and activation
 
@@ -26,3 +26,7 @@ The API's documented search response does not provide a verified offer-specific 
 ## Verification
 
 Focused tests cover date validation, driver-specific pricing mismatches, currency and seat filtering, origin/activation gates, quota exhaustion, caching, private header handling, payment-error handling and budget/session-schema behavior. Activation is complete only after a real response is validated through the deployed function; mocked tests do not prove live access.
+
+## Activation verified — 25 October 2026
+
+The user approved creating the Travel Buddy provider key and storing it privately in Supabase. `SCRAPPA_API_KEY` is stored only in Edge Function secrets. The protected quota migration and search-cars function were deployed. A live request through the deployed gateway returned HTTP 200 and 12 normalized rental offers for BER, 1–4 December 2026, age 35, DE residence, EUR and two travelers. This used one free provider request, with no paid credits purchased or billing details added. Prices are time-sensitive advertised results and require reconfirmation.
