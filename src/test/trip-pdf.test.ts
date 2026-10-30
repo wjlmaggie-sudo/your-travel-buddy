@@ -98,7 +98,7 @@ describe("complete PDF document", () => {
       "1500.00 EUR",
       "750.00 EUR",
       "Remaining:",
-      "separate from your edited itinerary",
+      "Only itinerary stops with known coordinates are marked",
     ])
       expect(text).toContain(value);
     expect(text).not.toContain("Flight comparison · DEMONSTRATION ONLY");

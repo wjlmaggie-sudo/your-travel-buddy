@@ -217,7 +217,7 @@ export function itineraryGuide(
     const place = pool.find((p) => p.name.toLowerCase() === item.location?.trim().toLowerCase());
     if (place && !selected.some((p) => p.name === place.name)) selected.push(place);
   }
-  return selected.length || details.persona ? { places: selected, restaurants: [] } : base;
+  return { places: selected, restaurants: selected.length ? base.restaurants : [] };
 }
 
 export async function personaReferences(

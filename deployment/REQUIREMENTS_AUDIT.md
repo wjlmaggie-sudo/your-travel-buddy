@@ -33,7 +33,7 @@ This audit uses the latest requested behavior where earlier requests conflict. I
 | Real flight recommendations | Existing private-backend flight search retained; no demo flight cards. Initial recommendations now follow the allocated flight budget; over-budget choices are explicit. Distinct advertised offers, airline/times/stops/duration, source time and external search links remain available. |
 | Real car search and pictures | Search supports pickup airport, dates/times, travelers, driver age and residence. Real provider model photos, seats, bags, transmission, whole-rental price and conditions retained. Backend availability GET returned HTTP 200 with `available: true` during this audit. |
 | Connected budget and daily costs | Existing selections replace allowances and update the total/remaining budget. Editable operating estimates, daily group and per-person amounts, over-budget warnings, room-night/person-night/whole-stay quote units remain supported. |
-| Maps, distance, transportation and tickets | Actual itinerary locations feed day maps; straight-line/estimated logistics, admission references and official access links remain. Live in-app routing is not configured; links open provider directions. The reviewed Lisbon timing preview stays explicitly labeled non-live. |
+| Maps, distance, transportation and tickets | Actual itinerary locations feed day maps; straight-line/estimated logistics, admission references and official access links remain. Known edited locations map without falling back to unrelated default stops; matching visits retain restaurant suggestions. Live in-app routing is not configured; links open provider directions. The reviewed Lisbon timing preview stays explicitly labeled non-live. |
 | History/stories and restaurants | Existing place stories, sources, photos, restaurant suggestions and map links retained. Coverage is conditional on the source directory; the app does not claim unknown opening hours or invent venues. |
 | Local shopping and product search | Search and product idea chips retained; stores, location/directions and source details are available. Stock and product prices remain explicitly unverified; this is not a live inventory integration. |
 | Currency converter | Existing public rate source, date/source labels, currency selection and conversion tests retained. |
@@ -55,7 +55,7 @@ This audit uses the latest requested behavior where earlier requests conflict. I
 
 ## Verification and release
 
-- Full Vitest suite: **61 files / 239 tests passed** after the fixes. TypeScript passed. Release safeguards: **3 tests passed**. Targeted lint has no errors; existing effect-dependency warnings remain in legacy quote/search components.
+- Full Vitest suite: **61 files / 239 tests passed** after the main fixes; the final map/restaurant correction also passed its focused regression checks. TypeScript passed. Release safeguards: **3 tests passed**. Targeted lint has no errors; existing effect-dependency warnings remain in legacy quote/search components.
 - Targeted tests cover no duplicate activities, whole-trip backup exclusions, flight/hotel budget opt-in, saved room/comfort controls, free guest planning, exact-age family pricing, PDF maps/stories, and saved-trip retries.
 - `node --test scripts/test/pages-release.test.mjs` verifies that older branches/artifacts cannot overwrite the combined release.
 - Browser checks cover desktop and narrow navigation, one document scrollbar, actual destination weather and the corrected three-stop/backup layout.

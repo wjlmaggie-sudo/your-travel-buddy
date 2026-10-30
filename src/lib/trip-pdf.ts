@@ -348,7 +348,7 @@ export async function buildTripPdf(
                   "https://www.openstreetmap.org/copyright",
                 ),
                 paragraph(
-                  "Numbered pins match the suggested stops below. Dotted lines show visit order, not walking or driving routes. These reference stops are separate from your edited itinerary.",
+                  "Numbered pins match the suggested stops below. Dotted lines show visit order, not walking or driving routes. Only itinerary stops with known coordinates are marked.",
                 ),
               ]
             : []),
@@ -392,7 +392,7 @@ export async function buildTripPdf(
       paragraph(
         b.persona
           ? "Marked stops follow the named locations in your itinerary. Ticket figures are adult reference prices only; child fares need exact ages and current operator confirmation. They are not an automatic budget charge."
-          : "These reference stops and restaurants are suggestions, separate from your edited itinerary above. Ticket estimates are EUR adult prices, not an additional automatic budget charge.",
+          : "Mapped stops follow the known locations in your itinerary. Restaurants are optional suggestions. Ticket estimates are EUR adult prices, not an additional automatic budget charge.",
       ),
     );
     if (!guide.places.length)

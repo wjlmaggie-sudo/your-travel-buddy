@@ -61,3 +61,16 @@ describe("visual day guides", () => {
     expect(groups.flat()).toHaveLength(6);
   });
 });
+
+it("keeps restaurants for mapped itinerary stops and never substitutes a default map for unknown edits", async () => {
+  const { itineraryGuide } = await import("@/lib/city-guides");
+  const guide = await loadCityGuide("Lisbon");
+  const matched = itineraryGuide(guide, "Lisbon", 1, "Balanced", {}, [{ location: "Alfama" }]);
+  expect(matched.places.map((place) => place.name)).toEqual(["Alfama"]);
+  expect(matched.restaurants.length).toBeGreaterThan(0);
+  const manual = itineraryGuide(guide, "Lisbon", 1, "Balanced", {}, [
+    { location: "My unlisted place" },
+  ]);
+  expect(manual.places).toEqual([]);
+  expect(manual.restaurants).toEqual([]);
+});
