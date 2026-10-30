@@ -1,3 +1,5 @@
+import { HotelRoomFacts } from "./HotelRoomFacts";
+import { roomRecommendation } from "@/lib/room-recommendation";
 import { OfferImage } from "./OfferImage";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { childCount } from "../../supabase/functions/_shared/travel-persona";
@@ -87,7 +89,10 @@ export function LiveHotelSearch({
   const current = state?.identity === identity ? state : null;
   const available = current?.result?.offers ?? [],
     within = available.filter((o) => o.amount <= allowance);
-  const suggestions = hotelSuggestions(within.length >= 3 ? within : available);
+  const [overBudgetScope, setOverBudgetScope] = useState<string | null>(null);
+  const budgetScope = JSON.stringify([identity, allowance]);
+  const showOverBudget = overBudgetScope === budgetScope;
+  const suggestions = hotelSuggestions(showOverBudget ? available : within);
   const matched =
     chosen &&
     chosen.scope === stayScope(brief) &&
@@ -145,7 +150,24 @@ export function LiveHotelSearch({
       )}
       {current?.result && (
         <>
-          {!suggestions.length && (
+          {available.some((o) => o.amount > allowance) && (
+            <div className="rounded-xl border bg-card p-4 text-sm">
+              <p>
+                {within.length
+                  ? `${within.length} priced stays fit your hotel allowance.`
+                  : "No returned stays fit your current hotel allowance."}
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                className="mt-2"
+                onClick={() => setOverBudgetScope(showOverBudget ? null : budgetScope)}
+              >
+                {showOverBudget ? "Show only within budget" : "Show options above allowance"}
+              </Button>
+            </div>
+          )}
+          {!available.length && (
             <p>
               No hotels with complete stay prices were returned. Try a nearby destination in your
               trip details.
@@ -154,7 +176,8 @@ export function LiveHotelSearch({
           {suggestions.length > 0 && suggestions.length < 3 && (
             <p className="text-sm text-muted-foreground">
               Only {suggestions.length} priced{" "}
-              {suggestions.length === 1 ? "hotel was" : "hotels were"} returned for these dates.
+              {suggestions.length === 1 ? "hotel was" : "hotels were"}{" "}
+              {showOverBudget ? "returned for these dates" : "within your hotel allowance"}.
             </p>
           )}
           <div className="offer-grid grid gap-4">
@@ -175,6 +198,9 @@ export function LiveHotelSearch({
                     </p>
                     <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{detail}</p>
                     <h3 className="mt-3 text-xl font-semibold">{offer.name}</h3>
+                    <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                      {offer.description}
+                    </p>
                     <p className="mt-2 text-sm">
                       {offer.rating !== null
                         ? `${offer.rating}/5 guest rating`
@@ -188,11 +214,29 @@ export function LiveHotelSearch({
                       Entire stay · one room ·{" "}
                       {offer.taxesIncluded ? "listed taxes included" : "taxes to confirm"}
                     </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {dailyMoney(offer.amount / Math.max(1, brief.days - 1), offer.currency)} per
+                      night · {brief.days - 1} nights
+                    </p>
+                    <p className="mt-3 text-xs">
+                      Suggested setup: {roomRecommendation(brief).title}
+                    </p>
+                    <HotelRoomFacts />
                     {offer.amount > allowance && (
                       <p className="mt-2 text-xs text-primary">
                         {dailyMoney(offer.amount - allowance, brief.currency)} above hotel allowance
                       </p>
                     )}
+                    <a
+                      className="mt-3 text-xs text-secondary underline"
+                      href={offer.website ?? current.result!.searchUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {offer.website
+                        ? "Hotel website & booking information ↗"
+                        : "Search current hotel offers ↗"}
+                    </a>
                     <div className="mt-auto pt-5">
                       <Button
                         className="w-full shrink-0 whitespace-nowrap px-3"
@@ -208,6 +252,7 @@ export function LiveHotelSearch({
                             scope: stayScope(brief),
                             evidence: "live-search",
                             checkedAt: current.result!.checkedAt,
+                            photo: offer.photo ?? undefined,
                           })
                         }
                       >

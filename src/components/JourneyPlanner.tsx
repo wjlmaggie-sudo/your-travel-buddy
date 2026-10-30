@@ -145,32 +145,6 @@ export function JourneyPlanner({
               onChange={(e) => change({ ...values, flightBudget: Number(e.target.value) })}
             />
           </div>
-          <fieldset className="sm:col-span-2">
-            <legend className="flex items-center gap-2 text-sm font-medium">
-              <Building2 className="h-4 w-4 text-primary" />
-              Your hotel comfort
-            </legend>
-            <div className="mt-2 grid gap-2 sm:grid-cols-3">
-              {(["Simple", "Comfortable", "Premium"] as const).map((comfort) => (
-                <button
-                  type="button"
-                  key={comfort}
-                  aria-pressed={values.hotelComfort === comfort}
-                  onClick={() => change({ ...values, hotelComfort: comfort })}
-                  className={`rounded-xl border p-3 text-left text-sm ${values.hotelComfort === comfort ? "border-secondary bg-secondary/10" : "bg-background/40"}`}
-                >
-                  <span className="font-semibold">{comfort}</span>
-                  <span className="mt-1 block text-xs text-muted-foreground">
-                    {comfort === "Simple"
-                      ? "More for food and sightseeing"
-                      : comfort === "Comfortable"
-                        ? "A balance of rest and experiences"
-                        : "A larger share for your stay"}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </fieldset>
           {tripId && (
             <>
               <p className="text-xs text-muted-foreground sm:col-span-2">
@@ -223,7 +197,7 @@ export function JourneyPlanner({
                       : stay?.evidence === "live-search"
                         ? "live search estimate"
                         : "your chosen quote"
-                    : `${values.hotelComfort.toLowerCase()} allowance`}
+                    : "planned allowance"}
                   {costs.nights
                     ? ` · ${money(costs.accommodation / costs.nights)} / group / night`
                     : ""}
@@ -258,7 +232,7 @@ export function JourneyPlanner({
             )}
             {costs.quoted !== null && (
               <p className="text-xs text-muted-foreground">
-                Your chosen hotel quote overrides the comfort allowance. Choose another hotel quote
+                Your chosen hotel quote overrides the planned allowance. Choose another hotel quote
                 below to change that cost.
               </p>
             )}
@@ -268,8 +242,8 @@ export function JourneyPlanner({
           Flight allowance starts at 25% of the total budget. It is a planning target, not an
           airfare estimate based on this route. Live airline availability and schedules have not
           been retrieved. Check dates, passenger ages, baggage, transfers and full prices on the
-          provider’s site. Hotel comfort changes the allocation, not a star-rating guarantee. All
-          amounts use {brief.currency}; no currency conversion is assumed.
+          provider’s site. Hotel recommendations follow your allocated stay budget. All amounts use{" "}
+          {brief.currency}; no currency conversion is assumed.
         </p>
         {brief.days === 1 && (
           <p className="text-xs text-primary">

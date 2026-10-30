@@ -548,7 +548,13 @@ export function TravelPlanner() {
             onEdited={() => setEdited(true)}
           />
         )}
-        <TravelTools section={section} currency={(result?.brief ?? draft).currency} />
+        <TravelTools
+          section={section}
+          currency={(result?.brief ?? draft).currency}
+          destination={(result?.brief ?? draft).destination}
+          startDate={(result?.brief ?? draft).start}
+          days={(result?.brief ?? draft).days}
+        />
       </TravelWorkspace>
     </section>
   );

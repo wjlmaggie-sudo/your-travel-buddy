@@ -124,6 +124,7 @@ function TripPage() {
     budget: "planner",
     places: "planner",
     currency: "currency",
+    weather: "weather",
   };
   const tabMap: Record<TravelSection, string> = {
     planner: "ideas",
@@ -133,6 +134,7 @@ function TripPage() {
     attractions: "itinerary",
     shopping: "shop",
     currency: "currency",
+    weather: "weather",
   };
 
   async function deleteTrip() {
@@ -416,7 +418,13 @@ function TripPage() {
                 <TravelShop tripId={tripId} destination={trip.destination} />
               </details>
             </WorkspacePanel>
-            <TravelTools section={sectionMap[tab] ?? "planner"} currency={trip.currency} />
+            <TravelTools
+              section={sectionMap[tab] ?? "planner"}
+              currency={trip.currency}
+              destination={trip.destination}
+              startDate={trip.start_date}
+              days={tripDays(trip.start_date, trip.end_date)}
+            />
           </TravelWorkspace>
         </div>
       </main>

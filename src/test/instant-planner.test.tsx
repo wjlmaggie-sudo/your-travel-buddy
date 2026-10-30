@@ -150,7 +150,7 @@ describe("guest workspace", () => {
     go("Currency");
     expect(screen.getByRole("region", { name: "Currency converter" })).toBeVisible();
     expect(screen.queryByRole("region", { name: "Connected trip budget" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /^Weather$/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Weather$/ })).toBeVisible();
     go("Attractions & Activities");
     expect(
       screen.queryByRole("heading", { name: "Three ideas for your day." }),

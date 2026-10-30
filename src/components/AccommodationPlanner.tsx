@@ -328,17 +328,6 @@ export function AccommodationPlanner({
                 </select>
               </div>
               <div>
-                <Label htmlFor={`${id}-rooms`}>Rooms (default: two people per room)</Label>
-                <Input
-                  id={`${id}-rooms`}
-                  type="number"
-                  min={1}
-                  max={brief.travelers}
-                  value={form.rooms}
-                  onChange={(e) => setForm({ ...form, rooms: Number(e.target.value) })}
-                />
-              </div>
-              <div>
                 <Label htmlFor={`${id}-extras`}>Extra fees for whole stay ({brief.currency})</Label>
                 <Input
                   id={`${id}-extras`}

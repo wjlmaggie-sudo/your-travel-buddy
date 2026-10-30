@@ -162,3 +162,13 @@ it("shows connection airport and wait time with expandable leg details", async (
   expect(screen.getAllByText(/Amsterdam Schiphol \(AMS\)/).length).toBeGreaterThan(0);
   expect(screen.getAllByText("Flight details").length).toBeGreaterThan(0);
 });
+
+it("keeps flight suggestions within the allocated budget until expensive alternatives are requested", async () => {
+  vi.mocked(searchFlights).mockResolvedValue(result);
+  render(<LiveFlightSearch brief={brief} departure="Berlin" allowance={200} active />);
+  await screen.findByRole("button", { name: "Choose cheapest" }, { timeout: 5000 });
+  expect(screen.queryByRole("button", { name: "Choose fastest" })).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Show flights above allowance" }));
+  expect(screen.getByRole("button", { name: "Choose fastest" })).toBeVisible();
+  expect(searchFlights).toHaveBeenCalledTimes(1);
+});

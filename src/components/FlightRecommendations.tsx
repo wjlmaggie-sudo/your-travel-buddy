@@ -40,6 +40,7 @@ export function FlightRecommendations({
         key={flightScope(brief, journey.departure)}
         brief={brief}
         departure={journey.departure}
+        allowance={journey.flightBudget}
         active={active}
         chosen={journey.selectedFlight}
         onChoose={(choice, route) => onChange({ ...journey, selectedFlight: choice }, route)}

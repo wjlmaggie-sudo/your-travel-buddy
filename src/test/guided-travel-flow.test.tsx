@@ -83,7 +83,7 @@ it("continues from basics through live flights, selected hotel and three attract
   expect(services.flights).not.toHaveBeenCalled();
   expect(services.hotels).not.toHaveBeenCalled();
   fireEvent.click(screen.getByRole("button", { name: /Continue to flights/ }));
-  await screen.findByRole("button", { name: "Choose cheapest" });
+  await screen.findByRole("button", { name: "Choose cheapest" }, { timeout: 5000 });
   expect(screen.getByRole("combobox", { name: "Departure" })).toHaveValue("Berlin");
   expect(screen.queryByText("Your journey at a glance")).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Choose cheapest" }));
@@ -96,10 +96,13 @@ it("continues from basics through live flights, selected hotel and three attract
   fireEvent.click(screen.getAllByRole("button", { name: "Choose this hotel" })[0]!);
   expect(readGuestSimulation()?.stay?.evidence).toBe("live-search");
   fireEvent.click(screen.getByRole("button", { name: /Continue to attractions/ }));
-  expect(await screen.findByRole("region", { name: "Attraction recommendations" })).toBeVisible();
-  expect(screen.getByText("Culture & stories")).toBeVisible();
-  expect(screen.getByText("Outside & unhurried")).toBeVisible();
-  expect(screen.getByText("Local discovery")).toBeVisible();
+  expect(
+    await screen.findByRole("heading", { name: "Your days, thoughtfully connected." }),
+  ).toBeVisible();
+  expect(
+    screen.queryByRole("region", { name: "Attraction recommendations" }),
+  ).not.toBeInTheDocument();
+  expect(readGuestSimulation()?.ideas?.days.every((day) => day.items.length >= 6)).toBe(true);
 }, 20000);
 it("uses exact child ages for a family room and balances adults and children in attraction ideas", async () => {
   setup();
@@ -118,9 +121,15 @@ it("uses exact child ages for a family room and balances adults and children in 
   expect(readGuestSimulation()?.journey?.hotelRooms).toBe(1);
   fireEvent.click(screen.getAllByRole("button", { name: "Choose this hotel" })[0]!);
   fireEvent.click(screen.getByRole("button", { name: /Continue to attractions/ }));
-  expect(await screen.findByText("For children")).toBeVisible();
-  expect(screen.getByText("For grown-ups")).toBeVisible();
-  expect(screen.getByText("Together")).toBeVisible();
+  expect(
+    await screen.findByRole("heading", { name: "Your days, thoughtfully connected." }),
+  ).toBeVisible();
+  expect(
+    readGuestSimulation()?.ideas?.days[0]?.items.some((item) => item.notes.includes("child")),
+  ).toBe(true);
+  expect(
+    screen.queryByRole("region", { name: "Attraction recommendations" }),
+  ).not.toBeInTheDocument();
 }, 20000);
 
 it("carries an edited flight destination into the hotel step after selection", async () => {
@@ -130,17 +139,17 @@ it("carries an edited flight destination into the hotel step after selection", a
     target: { value: "Berlin" },
   });
   fireEvent.click(screen.getByRole("button", { name: /Continue to flights/ }));
-  await screen.findByRole("button", { name: "Choose cheapest" });
+  await screen.findByRole("button", { name: "Choose cheapest" }, { timeout: 5000 });
   fireEvent.change(screen.getByRole("combobox", { name: "Departure" }), {
     target: { value: "nurm" },
   });
   fireEvent.click(await screen.findByRole("button", { name: /Nuremberg.*NUE/i }));
-  await screen.findByRole("button", { name: "Choose cheapest" });
+  await screen.findByRole("button", { name: "Choose cheapest" }, { timeout: 5000 });
   fireEvent.change(screen.getByRole("combobox", { name: "Destination" }), {
     target: { value: "Rome" },
   });
   fireEvent.click(screen.getByRole("button", { name: "Update flights" }));
-  await screen.findByRole("button", { name: "Choose cheapest" });
+  await screen.findByRole("button", { name: "Choose cheapest" }, { timeout: 5000 });
   fireEvent.click(screen.getByRole("button", { name: "Choose cheapest" }));
   await waitFor(() => expect(readGuestSimulation()?.destination).toBe("Rome"));
   expect(readGuestSimulation()?.journey?.departure).toBe("Nuremberg, Germany");

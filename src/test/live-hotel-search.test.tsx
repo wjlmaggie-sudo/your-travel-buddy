@@ -122,3 +122,16 @@ it("does not multiply a single-room price for a multi-room party", () => {
   );
   expect(mocks.search).not.toHaveBeenCalled();
 });
+
+it("keeps initial hotels within allowance, explains rooms, and makes expensive alternatives opt-in", async () => {
+  render(<LiveHotelSearch brief={brief} allowance={250} active />);
+  await screen.findByText("Low cost hotel");
+  expect(screen.queryByText("Comfortable hotel")).not.toBeInTheDocument();
+  expect(screen.queryByText("Value hotel")).not.toBeInTheDocument();
+  expect(screen.getByText(/Double or twin room/)).toBeVisible();
+  expect(screen.getByText(/Room type & beds:/)).toBeVisible();
+  expect(screen.getByText(/€100.00 per night/)).toBeVisible();
+  fireEvent.click(screen.getByRole("button", { name: "Show options above allowance" }));
+  expect(screen.getByText("Comfortable hotel")).toBeVisible();
+  expect(mocks.search).toHaveBeenCalledTimes(1);
+});

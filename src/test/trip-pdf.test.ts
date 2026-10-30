@@ -95,14 +95,14 @@ describe("complete PDF document", () => {
       "Local café",
       "Raincoat",
       "23.50 EUR",
-      "DEMONSTRATION ONLY",
-      "fictional",
       "1500.00 EUR",
       "750.00 EUR",
       "Remaining:",
       "separate from your edited itinerary",
     ])
       expect(text).toContain(value);
+    expect(text).not.toContain("Flight comparison · DEMONSTRATION ONLY");
+    expect(text).not.toContain("FICTIONAL PROPERTIES");
     expect(missingPhotos).toBe(1); // unique missing photo, not per repeated day
     expect(
       (definition.content as { pageBreak?: string }[]).filter((n) => n.pageBreak === "before"),

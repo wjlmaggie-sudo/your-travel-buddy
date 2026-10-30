@@ -1,7 +1,6 @@
 import { roomRecommendation } from "./room-recommendation";
 import { childCount } from "../../supabase/functions/_shared/travel-persona";
 import { personaSummary } from "./travel-personas";
-import { hotelSearchEndpoint } from "./hotel-search";
 import { streetMapWays, streetMapSvg } from "./pdf-street-map";
 import type { Content, TDocumentDefinitions } from "pdfmake/interfaces";
 import { itineraryGuide, loadCityGuide, type VisualPlace } from "./city-guides";
@@ -9,7 +8,7 @@ import { curatedStory, fetchPlaceStory, type PlaceStory } from "./place-stories"
 import { fetchPlacePhoto } from "./place-photos";
 import { admissionFor, routeLegs } from "./visit-logistics";
 import { budgetAllocation, dailyBudgets, endDate } from "./planning";
-import { connectedBudget, demoFlights, demoHotels } from "./travel-workspace";
+import { connectedBudget } from "./travel-workspace";
 import {
   bookingSearch,
   requestedRooms,
@@ -139,6 +138,7 @@ export async function buildTripPdf(
   progress: (message: string) => void = () => {},
 ): Promise<{ definition: TDocumentDefinitions; missingPhotos: number; missingMaps: number }> {
   const { journey, stay } = trip;
+  let missingOfferPhotos = 0;
   const b = { ...trip.brief, hotelRooms: journey?.hotelRooms ?? trip.brief.hotelRooms };
   const money = (n: number) => `${n.toFixed(2)} ${b.currency}`;
   progress("Loading all days and stories…");
@@ -248,6 +248,7 @@ export async function buildTripPdf(
   if (connected?.carChoice) {
     const car = connected.carChoice;
     const carImage = car.photo ? await pdfImage(car.photo) : null;
+    if (car.photo && !carImage) missingOfferPhotos++;
     content.push(
       heading("Car rental"),
       ...(carImage ? [{ image: carImage, fit: [250, 150], margin: [0, 0, 0, 8] } as Content] : []),
@@ -267,15 +268,15 @@ export async function buildTripPdf(
         flightSearch(b, journey.departure),
       ),
     );
-    content.push(heading("Flight comparison · DEMONSTRATION ONLY"));
-    demoFlights(b, journey).forEach((f) =>
-      content.push(
-        paragraph(
-          `${f.label}: ${f.airline} · ${f.dates} · outbound ${f.depart} to ${f.arrive}, ${f.duration}, ${f.route} · inbound ${f.inbound} · ${money(f.amount)} group return total (fictional)`,
-        ),
-      ),
-    );
   } else content.push(paragraph("No flights selected or included in this plan."));
+  if (stay?.photo) {
+    const hotelImage = await pdfImage(stay.photo);
+    if (!hotelImage) {
+      missingOfferPhotos++;
+      content.push(paragraph("Hotel photo unavailable at export time."));
+    }
+    if (hotelImage) content.push({ image: hotelImage, fit: [300, 180], margin: [0, 4, 0, 8] });
+  }
   if (stay)
     content.push(
       paragraph(
@@ -314,16 +315,6 @@ export async function buildTripPdf(
         bookingSearch(b, requestedRooms(b), stay?.evidence === "entered" ? stay.name : undefined),
       ),
     );
-    if (journey && !hotelSearchEndpoint()) {
-      content.push(heading("Hotel comparison · FICTIONAL PROPERTIES"));
-      demoHotels(b, journey).forEach((h) =>
-        content.push(
-          paragraph(
-            `${h.tag}: ${h.name} · ${h.location} · ${h.rating} · ${money(h.amount / (b.days - 1))} / night · ${money(h.amount)} whole group / ${b.days - 1} nights (simulated)`,
-          ),
-        ),
-      );
-    }
   }
   const budgets = dailyBudgets(b.budget, b.days, b.travelers, b.start);
   const operating = connected
@@ -523,7 +514,7 @@ export async function buildTripPdf(
   });
   return {
     missingMaps: guides.filter((g) => !g.places.length || !maps.get(mapKey(g.places))).length,
-    missingPhotos: unique.filter((p) => !media.get(keyFor(p))?.data).length,
+    missingPhotos: unique.filter((p) => !media.get(keyFor(p))?.data).length + missingOfferPhotos,
     definition: {
       pageSize: "A4",
       pageMargins: [48, 48, 48, 48],

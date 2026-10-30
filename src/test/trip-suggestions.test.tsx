@@ -76,7 +76,7 @@ describe("whole-trip suggestion workflow", () => {
     expect(
       screen.queryByRole("button", { name: /AI enhancement|live AI/i }),
     ).not.toBeInTheDocument();
-    expect(screen.getAllByLabelText("Activity")).toHaveLength(10);
+    expect(screen.getAllByLabelText("Activity")).toHaveLength(12);
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
   it("lets users edit the suggestion before saving every day together", async () => {
@@ -90,7 +90,7 @@ describe("whole-trip suggestion workflow", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Save whole itinerary" }));
     await waitFor(() => expect(onApplied).toHaveBeenCalledOnce());
-    expect(api.save.mock.calls[0]?.[0]).toHaveLength(10);
+    expect(api.save.mock.calls[0]?.[0]).toHaveLength(12);
     expect(api.save.mock.calls[0]?.[0][0].title).toBe("My custom walk");
     expect(onSaved).toHaveBeenCalledOnce();
   });
@@ -117,6 +117,6 @@ describe("whole-trip suggestion workflow", () => {
     );
     await screen.findByText(/This is a template-based plan/);
     expect(api.generate).not.toHaveBeenCalled();
-    expect(screen.getAllByLabelText("Activity")).toHaveLength(10);
+    expect(screen.getAllByLabelText("Activity")).toHaveLength(12);
   });
 });

@@ -14,6 +14,7 @@ import { Button } from "./ui/button";
 export function LiveFlightSearch({
   brief,
   departure,
+  allowance,
   active = false,
   chosen,
   onChoose,
@@ -22,6 +23,7 @@ export function LiveFlightSearch({
 }: {
   brief: StayBrief;
   departure: string;
+  allowance?: number;
   active?: boolean;
   chosen?: FlightChoice | undefined;
   onChoose?: (
@@ -154,7 +156,13 @@ export function LiveFlightSearch({
   };
   const commit = (from = origin, to = destination) =>
     setCommitted((v) => ({ origin: from, destination: to, revision: v.revision + 1, scope }));
-  const choices = flightSuggestions(result?.offers ?? []);
+  const [expandedBudgetScope, setExpandedBudgetScope] = useState<string | null>(null);
+  const budgetScope = JSON.stringify([queryIdentity, allowance]);
+  const showOverBudget = expandedBudgetScope === budgetScope;
+  const offers = result?.offers ?? [];
+  const within =
+    allowance === undefined ? offers : offers.filter((offer) => offer.price <= allowance);
+  const choices = flightSuggestions(showOverBudget ? offers : within);
   const matching =
     chosen &&
     result?.offers.some((o) => flightOfferId(o) === chosen.id && o.price === chosen.amount) &&
@@ -226,7 +234,24 @@ export function LiveFlightSearch({
       )}
       {result && (
         <div aria-live="polite" className="space-y-4">
-          {!choices.length && <p>No priced flights found. Try another airport above.</p>}
+          {!offers.length && <p>No priced flights found. Try another airport above.</p>}
+          {allowance !== undefined && offers.some((offer) => offer.price > allowance) && (
+            <div className="rounded-xl border bg-card p-4 text-sm">
+              <p>
+                {within.length
+                  ? `${within.length} priced options fit your flight allowance.`
+                  : "No returned flights fit your current flight allowance."}
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                className="mt-2"
+                onClick={() => setExpandedBudgetScope(showOverBudget ? null : budgetScope)}
+              >
+                {showOverBudget ? "Show only within flight budget" : "Show flights above allowance"}
+              </Button>
+            </div>
+          )}
           <div className="flight-ticket-list">
             {choices.map(({ label, detail, offer }) => {
               const selected =

@@ -24,11 +24,25 @@ export function flightSuggestions(offers: FlightOffer[]) {
       flightOfferId(o) !== flightOfferId(cheapest) && flightOfferId(o) !== flightOfferId(fastest),
   );
   const best = [...(remaining.length ? remaining : unique)].sort((a, b) => score(a) - score(b))[0]!;
-  return [
+  const ranked = [
     { label: "Cheapest", detail: "Lowest advertised fare", offer: cheapest },
     { label: "Fastest", detail: "Shortest outbound journey", offer: fastest },
     { label: "Best balance", detail: "Price, journey time and fewer stops", offer: best },
   ];
+  const seen = new Set<string>();
+  const choices = ranked.filter(({ offer }) => {
+    const id = flightOfferId(offer);
+    if (seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
+  for (const offer of unique) {
+    if (choices.length >= 3) break;
+    if (seen.has(flightOfferId(offer))) continue;
+    seen.add(flightOfferId(offer));
+    choices.push({ label: "Alternative", detail: "Another advertised option", offer });
+  }
+  return choices;
 }
 export function hotelSuggestions(offers: LiveHotelResult["offers"]) {
   const remaining = [...offers].sort((a, b) => a.amount - b.amount);

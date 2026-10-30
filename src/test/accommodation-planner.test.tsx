@@ -45,3 +45,9 @@ describe("choosing accommodation", () => {
     await screen.findByText("€1,100.00 left for food, tickets, local transport and buffer.");
   });
 });
+
+it("keeps the removed room-count selector out of saved accommodation quotes", () => {
+  render(<Preview />);
+  expect(screen.queryByLabelText(/Rooms \(default/)).not.toBeInTheDocument();
+  expect(screen.getByLabelText("Quoted price (EUR)")).toBeInTheDocument();
+});
