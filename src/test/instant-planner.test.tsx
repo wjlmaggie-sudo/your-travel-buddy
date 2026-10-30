@@ -152,6 +152,9 @@ describe("guest workspace", () => {
     expect(screen.queryByRole("region", { name: "Connected trip budget" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^Weather$/ })).not.toBeInTheDocument();
     go("Attractions & Activities");
+    expect(
+      screen.queryByRole("heading", { name: "Three ideas for your day." }),
+    ).not.toBeInTheDocument();
     expect(screen.getAllByText("Daily weather").some((item) => !item.closest("[hidden]"))).toBe(
       true,
     );

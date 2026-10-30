@@ -83,11 +83,12 @@ it("shows an honest unavailable state instead of fabricated alternatives", async
   await waitFor(() => expect(screen.getByText(/More places are unavailable/)).toBeVisible());
 });
 
-it("shows three backup places immediately and excludes only this day's planned visits", async () => {
+it("shows three distinct backups and excludes visits planned on every day", async () => {
   const alternatives = [
     other,
     { ...other, name: "Example Garden" },
     { ...other, name: "Example Square" },
+    { ...other, name: "Example Park" },
   ];
   load.mockResolvedValue({ days: [[current, ...alternatives]], restaurants: [], curated: false });
   setup({
@@ -97,7 +98,8 @@ it("shows three backup places immediately and excludes only this day's planned v
       { day: 2, location: other.name },
     ],
   });
-  expect(await screen.findByRole("button", { name: `Add ${other.name} to day 1` })).toBeVisible();
+  expect(await screen.findByRole("button", { name: "Add Example Garden to day 1" })).toBeVisible();
+  expect(screen.queryByRole("heading", { name: other.name })).not.toBeInTheDocument();
   expect(screen.getAllByRole("button", { name: /^Add .* to day 1$/ })).toHaveLength(3);
   expect(screen.queryByRole("heading", { name: current.name })).not.toBeInTheDocument();
 });

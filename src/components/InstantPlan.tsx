@@ -1,6 +1,5 @@
 import { TripCover } from "./TripCover";
 import { CarRental } from "./CarRental";
-import { AttractionRecommendations } from "./AttractionRecommendations";
 import { MorePlaces } from "./MorePlaces";
 import { extraActivity } from "@/lib/extra-places";
 import { personaSummary } from "@/lib/travel-personas";
@@ -489,26 +488,6 @@ export function InstantPlan({
             </Button>
           </section>
         ))}
-        <AttractionRecommendations
-          brief={brief}
-          day={activeDay}
-          active={section === "attractions"}
-          current={ideas.days.flatMap((day) =>
-            day.items.map((item) => ({ day: day.day, location: item.location })),
-          )}
-          onAdd={(place) => {
-            const target = ideas.days.find((day) => day.day === activeDay);
-            if (!target || target.items.length >= 8) return;
-            editIdeas((current) => ({
-              ...current,
-              days: current.days.map((day) =>
-                day.day === activeDay
-                  ? { ...day, items: [...day.items, extraActivity(place)] }
-                  : day,
-              ),
-            }));
-          }}
-        />
         <MorePlaces
           backups
           key={brief.destination}

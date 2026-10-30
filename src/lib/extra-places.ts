@@ -6,7 +6,13 @@ export type PlannedPlace = {
   title?: string | null | undefined;
   location?: string | null | undefined;
 };
-const normalize = (value: string) => value.trim().toLocaleLowerCase();
+const normalize = (value: string) =>
+  value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim();
 export function extraPlaces(
   guide: CityGuide,
   destination: string,

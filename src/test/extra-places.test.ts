@@ -26,3 +26,24 @@ it("offers sourced places outside the persona's current plan and maps a chosen a
     ),
   ).toBe(false);
 });
+
+it("deduplicates accented and punctuated venue names and excludes them across days", () => {
+  const place = {
+    name: "São Jorge Castle",
+    lat: 38.7,
+    lon: -9.1,
+    description: "Castle",
+    source: "https://example.test/castle",
+  };
+  const guide = {
+    days: [[place, { ...place, name: "Sao Jorge—Castle" }]],
+    restaurants: [],
+    curated: false,
+  };
+  expect(extraPlaces(guide, "Example City", [])).toHaveLength(1);
+  expect(
+    extraPlaces(guide, "Example City", [
+      { day: 2, title: "Visit: Sao Jorge Castle", location: "" },
+    ]),
+  ).toEqual([]);
+});

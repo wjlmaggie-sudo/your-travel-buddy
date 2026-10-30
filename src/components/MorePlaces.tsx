@@ -54,12 +54,7 @@ export function MorePlaces({
     retry: false,
   });
   const options = query.data
-    ? extraPlaces(
-        query.data,
-        destination,
-        backups ? current.filter((p) => p.day === targetDay) : current,
-        search,
-      ).filter((p) => !added.includes(p.name))
+    ? extraPlaces(query.data, destination, current, search).filter((p) => !added.includes(p.name))
     : [];
   useEffect(() => {
     const remaining = added.filter(
@@ -106,8 +101,8 @@ export function MorePlaces({
       {open && (
         <div className="mt-4 space-y-4">
           <p className="text-sm text-muted-foreground">
-            These are optional alternatives, not extra scheduled stops. Places planned on another
-            day may appear here; check your itinerary before adding.
+            These are optional alternatives, not extra scheduled stops. Places already in your trip
+            are excluded.
           </p>
           <div className="grid gap-3 sm:grid-cols-[1fr_150px]">
             <div>
