@@ -272,3 +272,11 @@ it("shows room setup advice without asking guests for a room count", () => {
     screen.getByRole("heading", { name: "Three stays. Your choice.", hidden: true }),
   ).toBeVisible();
 }, 15000);
+
+it("keeps weather available before a plan without an extra start-trip screen", () => {
+  setup();
+  go("Lisbon");
+  go("Weather");
+  expect(screen.getByRole("region", { name: "Destination weather" })).toBeVisible();
+  expect(screen.queryByRole("heading", { name: "Start with your trip." })).not.toBeInTheDocument();
+});

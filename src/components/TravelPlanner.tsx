@@ -499,7 +499,7 @@ export function TravelPlanner() {
             />
           </WorkspacePanel>
         )}
-        {!result && !["planner", "currency", "cars"].includes(section) && (
+        {!result && !["planner", "currency", "weather", "cars"].includes(section) && (
           <WorkspacePanel
             active
             label={SECTIONS.find((item) => item.id === section)?.label ?? "Travel options"}
