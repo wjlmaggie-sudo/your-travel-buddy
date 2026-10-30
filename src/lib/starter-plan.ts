@@ -1,6 +1,7 @@
+import { curatedPersonaDay, PERSONA_LISBON_PLACES } from "./persona-stops";
 import { applyPersona } from "./travel-personas";
 import { TEMPLATES, type TravelStyle } from "./travel-data";
-import { curatedDay, curatedRestaurants } from "./city-guides";
+import { curatedDay, curatedRestaurants, completeDayStops } from "./city-guides";
 import {
   tripIdeaInput,
   type TripIdeaInput,
@@ -69,7 +70,9 @@ export function createStarterIdeas(
       const notes =
         highlight?.[1] ??
         "Choose a suitable local place and verify opening hours, transport, access, and admission before you go.";
-      const reference = input.places?.[index];
+      const reference =
+        input.places?.find((p) => p.day === index + 1) ??
+        input.places?.filter((p) => !p.day)[index];
       const stops = curatedDay(input.destination, index + 1);
       const morning = stops?.[0];
       const afternoon = stops?.[1];
@@ -157,5 +160,75 @@ export function createStarterIdeas(
       };
     }),
   };
-  return applyPersona(plan, input);
+  const result = applyPersona(plan, input);
+  for (const day of result.days) {
+    const references =
+      input.places?.filter((p) => p.day === day.day || (!p.day && day.day === 1)) ?? [];
+    const guide = curatedDay(input.destination, day.day);
+    const primary = guide
+      ? completeDayStops(
+          guide,
+          Array.from({ length: 5 }, (_, i) => curatedDay(input.destination, i + 1) ?? []).flat(),
+        )
+      : [];
+    const personaStops = input.persona
+      ? curatedPersonaDay(input.destination, day.day, input)
+      : null;
+    const outdoors = PERSONA_LISBON_PLACES.filter((p) =>
+      /garden|square|promenade/i.test(p.description),
+    );
+    const stops = personaStops ? completeDayStops(personaStops, outdoors) : primary;
+    const names = (references.length ? references : stops).map((p) => p.name);
+    const visitIndices =
+      input.persona === "business" ? [4] : input.persona === "family" ? [1, 4] : [1, 3];
+    visitIndices.forEach((index, n) => {
+      const item = day.items[index];
+      if (item && names[n]) {
+        item.location = names[n]!;
+        // Keep persona/style context while making the actual destination visible.
+        if (!item.title.includes(names[n]!))
+          item.title =
+            `${input.persona === "family" ? "Short family visit" : luxury ? "An optional guided visit" : modest ? "A free public-area walk near" : "Visit"}: ${names[n]}`.slice(
+              0,
+              200,
+            );
+        const sourced = stops.find((p) => p.name === names[n]);
+        if (sourced)
+          item.notes = `${sourced.description} ${item.notes} Source: ${sourced.source}`.slice(
+            0,
+            1000,
+          );
+      }
+    });
+    const present = new Set(
+      visitIndices.map((i) => day.items[i]?.location).filter((p) => p && p !== input.destination),
+    );
+    for (
+      let n = names.length ? present.size : visitIndices.length;
+      n < 3 && day.items.length < 8;
+      n++
+    ) {
+      const name = names.find((p) => !present.has(p));
+      const sourced = stops.find((p) => p.name === name);
+      day.items.splice(day.items.length - 1, 0, {
+        time: input.persona === "business" ? (n === 1 ? "08:15" : "12:45") : "17:00",
+        title: name
+          ? `Explore ${name}`.slice(0, 200)
+          : `Local discovery ${n + 1} · choose a nearby place`,
+        location: name ?? input.destination,
+        notes:
+          `${sourced ? `${sourced.description} Source: ${sourced.source}. ` : ""}${input.persona === "business" ? "A short optional stop around your work commitments; move or skip if timing does not fit. " : input.persona === "family" ? "Keep this short, allow rest breaks and check suitability for your children's ages. " : "Stay near your other stops and within your activity allowance. "}${name ? "Check opening hours, admission and actual travel time. " : "No sourced matching venue is available yet; choose and verify a local place. "}Arrival and departure times take priority.`.slice(
+            0,
+            1000,
+          ),
+      });
+      if (name) present.add(name);
+    }
+    if (input.persona === "business") {
+      // Preparation is covered by the work block; leave room for a chosen backup.
+      day.items = day.items.filter((item) => item.title !== "Breakfast and preparation");
+    }
+    day.items.sort((a, b) => a.time.localeCompare(b.time));
+  }
+  return { ...result, activityRevision: 1 };
 }

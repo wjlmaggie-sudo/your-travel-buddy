@@ -81,10 +81,10 @@ describe("actual persona-specific venue selection", () => {
         expect(mapped.places.length).toBeGreaterThan(0);
         for (const place of mapped.places)
           expect(day.items.some((i) => i.location === place.name)).toBe(true);
-        expect(mapped.places.map((p) => p.name)).toEqual(
-          dayGuide(guide, brief.destination, day.day, brief.style, details).places.map(
-            (p) => p.name,
-          ),
+        expect(mapped.places.map((p) => p.name).sort()).toEqual(
+          dayGuide(guide, brief.destination, day.day, brief.style, details)
+            .places.map((p) => p.name)
+            .sort(),
         );
       }
     }

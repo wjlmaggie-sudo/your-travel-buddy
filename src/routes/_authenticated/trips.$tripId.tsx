@@ -519,6 +519,7 @@ function Itinerary({
         </select>
       </div>
       <MorePlaces
+        backups
         key={data.trip.id}
         destination={data.trip.destination}
         days={days}

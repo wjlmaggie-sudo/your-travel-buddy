@@ -1,7 +1,6 @@
 import { MorePlaces } from "./MorePlaces";
 import { extraActivity } from "@/lib/extra-places";
-import { personaReferences } from "@/lib/city-guides";
-import { curatedPersonaDay } from "@/lib/persona-stops";
+import { curatedDay, personaReferences } from "@/lib/city-guides";
 import { useEffect, useRef, useState } from "react";
 import { Loader2, Sparkles, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -152,10 +151,7 @@ export function TripSuggestions({
           );
         }
       }
-      if (
-        preferences.preference.persona &&
-        !curatedPersonaDay(trip.destination, 1, preferences.preference)
-      ) {
+      if (!curatedDay(trip.destination, 1)) {
         places = await personaReferences(
           trip.destination,
           days,
@@ -334,6 +330,7 @@ export function TripSuggestions({
             )}
           </section>
           <MorePlaces
+            backups
             key={`${trip.id}-draft`}
             destination={trip.destination}
             days={days}

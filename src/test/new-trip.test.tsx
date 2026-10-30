@@ -80,7 +80,7 @@ describe("creating an account trip from a template", () => {
     expect(api.upsertActivities.mock.calls[0]?.[0]).toEqual(
       api.upsertActivities.mock.calls[1]?.[0],
     );
-    expect(api.upsertActivities.mock.calls[1]?.[0]).toHaveLength(10);
+    expect(api.upsertActivities.mock.calls[1]?.[0]).toHaveLength(12);
     expect(api.upsertActivities.mock.calls[1]?.[0][0].title).toBe("My edited morning");
     expect(api.navigate).toHaveBeenCalledWith({
       to: "/trips/$tripId",

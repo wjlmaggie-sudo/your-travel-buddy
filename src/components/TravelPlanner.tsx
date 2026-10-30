@@ -4,8 +4,7 @@ import {
   convertBudgetSuggestion,
   type BudgetSuggestion,
 } from "@/lib/budget-suggestion";
-import { personaReferences } from "@/lib/city-guides";
-import { curatedPersonaDay } from "@/lib/persona-stops";
+import { curatedDay, personaReferences } from "@/lib/city-guides";
 import { childCount } from "../../supabase/functions/_shared/travel-persona";
 import { PersonaPreferences } from "./PersonaPreferences";
 import { useEffect, useRef, useState } from "react";
@@ -150,12 +149,7 @@ export function TravelPlanner() {
   }
   function applyPlan(next: PlannerDraft) {
     const request = ++planningRequest.current;
-    if (
-      !next.journey?.flightsRequired &&
-      !requestedSection.current &&
-      next.persona &&
-      !curatedPersonaDay(next.destination, 1, next)
-    ) {
+    if (!curatedDay(next.destination, 1)) {
       setFindingPlaces(true);
       setPendingPlan(null);
       void personaReferences(next.destination, next.days, next.style, next)

@@ -83,9 +83,7 @@ describe("guest workspace", () => {
     cleanup();
     saveGuestSimulation({ ...saved, ideas });
     setup();
-    expect(
-      screen.getByRole("button", { name: "Review & rebuild this persona plan" }),
-    ).toBeVisible();
+    expect(screen.getByRole("button", { name: "Review & rebuild this plan" })).toBeVisible();
     expect(readGuestSimulation()?.ideas?.days).toEqual(ideas.days);
   }, 15000);
   it("adds an outside recommendation to a chosen day without navigation or sign-in, and retains it on refresh", async () => {

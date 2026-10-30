@@ -141,5 +141,12 @@
       "license": "CC BY 2.0",
       "source": "https://commons.wikimedia.org/wiki/File:Drinks_at_Mercado_da_Ribeira_(Lissabon_2016)_(26003375942).jpg"
     }
+  },
+  {
+    "name": "Vila Sassetti gardens",
+    "lat": 38.79572222222222,
+    "lon": -9.390666666666666,
+    "description": "Gardens and a walking trail near Sintra historic centre. Choose a short garden visit rather than a full uphill hike; check current access, weather and suitability.",
+    "source": "https://www.parquesdesintra.pt/en/parks-monuments/villa-sassetti/"
   }
 ]

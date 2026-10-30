@@ -16,6 +16,7 @@ export function MorePlaces({
   maxPerDay,
   unavailableDays = [],
   openRequest = 0,
+  backups = false,
   onAdd,
 }: {
   destination: string;
@@ -27,16 +28,17 @@ export function MorePlaces({
   maxPerDay?: number;
   unavailableDays?: number[];
   openRequest?: number;
+  backups?: boolean;
   onAdd: (place: VisualPlace, day: number) => boolean | Promise<boolean>;
 }) {
   const id = useId();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(backups);
   useEffect(() => {
     if (openRequest > 0) setOpen(true);
   }, [openRequest]);
   const [search, setSearch] = useState("");
   const [targetDay, setTargetDay] = useState(day);
-  const [limit, setLimit] = useState(6);
+  const [limit, setLimit] = useState(backups ? 3 : 6);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [failure, setFailure] = useState("");
@@ -52,7 +54,12 @@ export function MorePlaces({
     retry: false,
   });
   const options = query.data
-    ? extraPlaces(query.data, destination, current, search).filter((p) => !added.includes(p.name))
+    ? extraPlaces(
+        query.data,
+        destination,
+        backups ? current.filter((p) => p.day === targetDay) : current,
+        search,
+      ).filter((p) => !added.includes(p.name))
     : [];
   useEffect(() => {
     const remaining = added.filter(
@@ -89,16 +96,18 @@ export function MorePlaces({
       onToggle={(e) => setOpen(e.currentTarget.open)}
     >
       <summary className="cursor-pointer text-base font-semibold">
-        <span>More places to explore</span>
+        <span>{backups ? `Backup places for day ${targetDay}` : "More places to explore"}</span>
         <span className="mt-1 block text-xs font-normal text-muted-foreground">
-          Browse extra recommendations, choose a day and add your favorites.
+          {backups
+            ? "Three alternatives to your daily activities · add a favorite if your plans change."
+            : "Browse extra recommendations, choose a day and add your favorites."}
         </span>
       </summary>
       {open && (
         <div className="mt-4 space-y-4">
           <p className="text-sm text-muted-foreground">
-            Explore places outside your current plan, including options beyond your persona
-            recommendations. Add only the ones you want.
+            These are optional alternatives, not extra scheduled stops. Places planned on another
+            day may appear here; check your itinerary before adding.
           </p>
           <div className="grid gap-3 sm:grid-cols-[1fr_150px]">
             <div>
@@ -112,7 +121,7 @@ export function MorePlaces({
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
-                  setLimit(6);
+                  setLimit(backups ? 3 : 6);
                 }}
               />
             </div>
@@ -175,11 +184,14 @@ export function MorePlaces({
             query.data && (
               <>
                 <p className="text-xs text-muted-foreground">
+                  {backups && options.length < 3 && !search
+                    ? "Fewer than three sourced alternatives are available for this destination. "
+                    : ""}
                   {options.length
                     ? `Showing ${Math.min(limit, options.length)} of ${options.length} additional places.`
                     : "No additional matches in the available local directory. Try another search or add your own activity."}
                 </p>
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="offer-grid grid gap-3">
                   {options.slice(0, limit).map((place) => {
                     const ticket = admissionFor(place.name);
                     return (

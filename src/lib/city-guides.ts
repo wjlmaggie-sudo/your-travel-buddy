@@ -28,7 +28,7 @@ const lisbonDays = [
   ["Alfama", "Lisbon Cathedral", "São Jorge Castle"],
   ["Praça do Comércio", "Santa Justa Lift", "Chiado"],
   ["Jerónimos Monastery", "Belém Tower"],
-  ["Sintra National Palace", "Pena Palace"],
+  ["Sintra National Palace", "Pena Palace", "Vila Sassetti gardens"],
   ["Carmo Convent", "Chiado", "Time Out Market Lisboa"],
 ];
 const market: Restaurant = {
@@ -150,6 +150,19 @@ export async function loadCityGuide(destination: string): Promise<CityGuide> {
     curated: false,
   };
 }
+/** Fill short days with nearby sourced choices; never invent missing directory venues. */
+export function completeDayStops(primary: VisualPlace[], pool: VisualPlace[]): VisualPlace[] {
+  const selected = [...new Map(primary.map((p) => [p.name, p])).values()];
+  const remaining = [...new Map(pool.map((p) => [p.name, p])).values()].filter(
+    (p) => !selected.some((item) => item.name === p.name),
+  );
+  while (selected.length < 3 && remaining.length) {
+    const anchor = selected.at(-1);
+    remaining.sort((a, b) => (anchor ? distanceKm(anchor, a) - distanceKm(anchor, b) : 0));
+    selected.push(remaining.shift()!);
+  }
+  return selected;
+}
 export function dayGuide(
   guide: CityGuide,
   destination: string,
@@ -158,14 +171,25 @@ export function dayGuide(
   details: PersonaDetails & { start?: string | undefined; startDate?: string | undefined } = {},
 ) {
   const curated = curatedPersonaDay(destination, day, details);
-  if (curated) return { places: curated, restaurants: [] };
+  if (curated) {
+    // Extra outdoor stops preserve child-friendly pacing and avoid adding closed paid venues.
+    const pool = PERSONA_LISBON_PLACES.filter((p) =>
+      /garden|square|promenade/i.test(p.description),
+    );
+    return { places: completeDayStops(curated, pool), restaurants: [] };
+  }
   if (details.persona) {
     const ranked = rankPersonaPlaces(guide.days.flat(), details);
-    const groups = groupNearbyStops(ranked, details.persona === "business" ? 1 : 2);
-    return { places: groups.length ? groups[(day - 1) % groups.length]! : [], restaurants: [] };
+    const groups = groupNearbyStops(ranked, 3);
+    return {
+      places: groups.length ? completeDayStops(groups[(day - 1) % groups.length]!, ranked) : [],
+      restaurants: [],
+    };
   }
   return {
-    places: guide.days.length ? guide.days[(day - 1) % guide.days.length]! : [],
+    places: guide.days.length
+      ? completeDayStops(guide.days[(day - 1) % guide.days.length]!, guide.days.flat())
+      : [],
     restaurants: guide.curated
       ? curatedRestaurants(destination, day, style)
       : (guide.restaurants[0] ?? []),
@@ -211,5 +235,5 @@ export async function personaReferences(
     })),
   )
     .flat()
-    .slice(0, 60);
+    .slice(0, 90);
 }

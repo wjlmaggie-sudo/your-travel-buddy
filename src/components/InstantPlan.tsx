@@ -131,18 +131,18 @@ export function InstantPlan({
   return (
     <div id="whole-trip-plan" className="contents">
       <WorkspacePanel active={section === "planner" && overviewActive} label="AI Travel Overview">
-        {brief.persona && ideas.personaRevision !== 2 && (
+        {(ideas.activityRevision !== 1 || (brief.persona && ideas.personaRevision !== 2)) && (
           <div className="rounded-2xl border border-secondary bg-secondary/10 p-4 text-sm">
             <p>
-              New persona recommendations now choose different places, including child-focused
-              stops. Your current activities are kept until you rebuild.
+              Updated plans include at least three daily activities and visible backup places. Your
+              current edits are kept until you review and rebuild.
             </p>
             <Button
               className="mt-3 h-auto whitespace-normal py-2"
               variant="outline"
               onClick={onEditBrief}
             >
-              Review & rebuild this persona plan
+              Review & rebuild this plan
             </Button>
           </div>
         )}
@@ -328,51 +328,6 @@ export function InstantPlan({
             ))}
           </select>
         </div>
-        <AttractionRecommendations
-          brief={brief}
-          day={activeDay}
-          active={section === "attractions"}
-          current={ideas.days.flatMap((day) =>
-            day.items.map((item) => ({ day: day.day, location: item.location })),
-          )}
-          onAdd={(place) => {
-            const target = ideas.days.find((day) => day.day === activeDay);
-            if (!target || target.items.length >= 8) return;
-            editIdeas((current) => ({
-              ...current,
-              days: current.days.map((day) =>
-                day.day === activeDay
-                  ? { ...day, items: [...day.items, extraActivity(place)] }
-                  : day,
-              ),
-            }));
-          }}
-        />
-        <MorePlaces
-          key={brief.destination}
-          destination={brief.destination}
-          days={brief.days}
-          day={activeDay}
-          active={section === "attractions"}
-          openRequest={placesRequest}
-          maxPerDay={8}
-          current={ideas.days.flatMap((day) =>
-            day.items.map((item) => ({ ...item, day: day.day })),
-          )}
-          onAdd={(place, targetDay) => {
-            const target = ideas.days.find((day) => day.day === targetDay);
-            if (!target || target.items.length >= 8) return false;
-            editIdeas((current) => ({
-              ...current,
-              days: current.days.map((day) =>
-                day.day === targetDay
-                  ? { ...day, items: [...day.items, extraActivity(place)] }
-                  : day,
-              ),
-            }));
-            return true;
-          }}
-        />
         {ideas.days.map((day, dayIndex) => (
           <section
             hidden={day.day !== activeDay}
@@ -534,6 +489,52 @@ export function InstantPlan({
             </Button>
           </section>
         ))}
+        <AttractionRecommendations
+          brief={brief}
+          day={activeDay}
+          active={section === "attractions"}
+          current={ideas.days.flatMap((day) =>
+            day.items.map((item) => ({ day: day.day, location: item.location })),
+          )}
+          onAdd={(place) => {
+            const target = ideas.days.find((day) => day.day === activeDay);
+            if (!target || target.items.length >= 8) return;
+            editIdeas((current) => ({
+              ...current,
+              days: current.days.map((day) =>
+                day.day === activeDay
+                  ? { ...day, items: [...day.items, extraActivity(place)] }
+                  : day,
+              ),
+            }));
+          }}
+        />
+        <MorePlaces
+          backups
+          key={brief.destination}
+          destination={brief.destination}
+          days={brief.days}
+          day={activeDay}
+          active={section === "attractions"}
+          openRequest={placesRequest}
+          maxPerDay={8}
+          current={ideas.days.flatMap((day) =>
+            day.items.map((item) => ({ ...item, day: day.day })),
+          )}
+          onAdd={(place, targetDay) => {
+            const target = ideas.days.find((day) => day.day === targetDay);
+            if (!target || target.items.length >= 8) return false;
+            editIdeas((current) => ({
+              ...current,
+              days: current.days.map((day) =>
+                day.day === targetDay
+                  ? { ...day, items: [...day.items, extraActivity(place)] }
+                  : day,
+              ),
+            }));
+            return true;
+          }}
+        />
       </WorkspacePanel>
       <WorkspacePanel active={section === "shopping"} label="Local Shopping">
         <LocalShopping destination={brief.destination} />

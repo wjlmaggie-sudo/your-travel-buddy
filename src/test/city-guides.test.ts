@@ -16,8 +16,8 @@ describe("visual day guides", () => {
         expect(stop.lat).toBeLessThan(40);
         expect(stop.lon).toBeGreaterThan(-10);
         expect(stop.lon).toBeLessThan(-8);
-        expect(stop.image?.source).toMatch(/^https:\/\/commons.wikimedia.org\//);
-        expect(stop.image?.license).toMatch(/CC|Public domain|PD/);
+        if (stop.image) expect(stop.image.source).toMatch(/^https:\/\/commons.wikimedia.org\//);
+        if (stop.image) expect(stop.image.license).toMatch(/CC|Public domain|PD/);
       }
     }
     expect(curatedDay("Lisbon, Portugal", 3)?.map((item) => item.name)).toContain("Belém Tower");

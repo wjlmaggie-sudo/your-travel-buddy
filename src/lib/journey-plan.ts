@@ -41,13 +41,15 @@ export function createJourneyIdeas(
     `Your total group spending cap is ${brief.budget.toFixed(2)} ${brief.currency}, including the flight and hotel allowances shown above.`,
   );
   if (journey.flightsRequired === false) return ideas;
-  ideas.days[0]!.items[0] = {
+  const outbound = {
     time: "",
     title: `Travel from ${journey.departure} to ${brief.destination}`.slice(0, 200),
     location: brief.destination,
     notes:
       "Outbound travel day. Flight schedules are not retrieved; check your actual arrival time and allow for baggage, airport transfers and rest before sightseeing.",
   };
+  if (brief.persona === "business") ideas.days[0]!.items.unshift(outbound);
+  else ideas.days[0]!.items[0] = outbound;
   const last = ideas.days.at(-1)!;
   last.items[last.items.length - 1] = {
     time: "",

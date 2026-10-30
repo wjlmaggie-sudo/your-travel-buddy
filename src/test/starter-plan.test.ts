@@ -20,7 +20,7 @@ describe("complete starter itinerary", () => {
     );
     expect(
       plan.days.every(
-        (day) => day.items.length === 5 && day.items.every((item) => item.title && item.location),
+        (day) => day.items.length >= 6 && day.items.every((item) => item.title && item.location),
       ),
     ).toBe(true);
   });
@@ -30,7 +30,7 @@ describe("complete starter itinerary", () => {
     expect(plans[1]?.days[0]?.items[2]?.title).toContain("café");
     expect(plans[2]?.days[0]?.items[2]?.title).toContain("regional lunch");
     expect(plans[0]?.days[0]?.items[3]?.title).toContain("free");
-    expect(plans[2]?.days[0]?.items[3]?.title).toContain("workshop");
+    expect(plans[2]?.days[0]?.items[3]?.title).toContain("guided visit");
     for (const budget of [420.01, 900.02, 1800.03]) {
       const style = budgetTravelStyle({ ...input, budget });
       const days = dailyBudgets(budget, input.days, input.travelers, "2026-10-20");
@@ -59,4 +59,25 @@ describe("complete starter itinerary", () => {
     expect(plan.summary).toContain("flexible planning outline");
     expect(plan.summary).toContain("not an AI-generated");
   });
+});
+
+it("plans three distinct named visits each day, beyond meals and rest, for every persona", () => {
+  for (const persona of [undefined, "family", "business", "budget-travel"] as const) {
+    const plan = createStarterIdeas({
+      ...input,
+      days: 5,
+      persona,
+      childrenAgeRanges: persona === "family" ? ["0-3"] : undefined,
+    });
+    for (const day of plan.days) {
+      const visits = new Set(
+        day.items
+          .filter((item) => !/lunch|dinner|breakfast/i.test(item.title))
+          .map((item) => item.location)
+          .filter((name) => name !== input.destination),
+      );
+      expect(visits.size, `${persona ?? "general"} day ${day.day}`).toBeGreaterThanOrEqual(3);
+      expect(day.items.length).toBeLessThanOrEqual(8);
+    }
+  }
 });
