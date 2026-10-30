@@ -1,3 +1,4 @@
+import { localPlacePhoto } from "./local-place-photos";
 import { roomRecommendation } from "./room-recommendation";
 import { childCount } from "../../supabase/functions/_shared/travel-persona";
 import { personaSummary } from "./travel-personas";
@@ -184,7 +185,9 @@ export async function buildTripPdf(
         const place = unique[cursor++]!;
         const [story, photo] = await Promise.all([
           curatedStory(place.name) ?? fetchPlaceStory(place).catch(() => null),
-          place.image ?? fetchPlacePhoto(place, AbortSignal.timeout(12000)).catch(() => null),
+          localPlacePhoto(place) ??
+            place.image ??
+            fetchPlacePhoto(place, AbortSignal.timeout(12000)).catch(() => null),
         ]);
         const data = photo ? await pdfImage(photo.url) : null;
         media.set(keyFor(place), { story, photo, data });

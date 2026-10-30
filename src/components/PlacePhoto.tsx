@@ -1,23 +1,25 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { VisualPlace } from "@/lib/city-guides";
+import { localPlacePhoto } from "@/lib/local-place-photos";
 import { fetchPlacePhoto } from "@/lib/place-photos";
 export function PlacePhoto({ place, active = true }: { place: VisualPlace; active?: boolean }) {
-  const [failed, setFailed] = useState(false);
-  useEffect(() => setFailed(false), [place.name, place.image?.url]);
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const preferred = localPlacePhoto(place) ?? place.image;
+  useEffect(() => setFailedUrl(null), [place.name, preferred?.url]);
   const query = useQuery({
     queryKey: ["place-photo", place.name, place.lat, place.lon],
     queryFn: ({ signal }) => fetchPlacePhoto(place, signal),
-    enabled: active && !place.image,
+    enabled: active && (!preferred || failedUrl === preferred.url),
     staleTime: 86400000,
     retry: false,
   });
-  const photo = place.image ?? query.data;
-  if (!photo || failed)
+  const photo = preferred && failedUrl !== preferred.url ? preferred : query.data;
+  if (!photo || failedUrl === photo.url)
     return (
       <figure aria-label={`Photo unavailable for ${place.name}`}>
         <div className="flex aspect-[16/10] items-center justify-center rounded-t-xl bg-muted text-xs text-muted-foreground">
-          {failed ? "Photo unavailable" : "Place photo"}
+          {query.isFetching ? "Finding photo…" : "Photo unavailable"}
         </div>
         <figcaption className="h-8 px-3 pt-2 text-[10px] text-muted-foreground">
           {place.name}
@@ -30,8 +32,9 @@ export function PlacePhoto({ place, active = true }: { place: VisualPlace; activ
         src={photo.url}
         alt={place.name}
         loading="lazy"
+        referrerPolicy="no-referrer"
         className="aspect-[16/10] w-full rounded-t-xl object-cover"
-        onError={() => setFailed(true)}
+        onError={() => setFailedUrl(photo.url)}
       />
       <figcaption className="h-8 truncate px-3 pt-2 text-[10px] text-muted-foreground">
         <a

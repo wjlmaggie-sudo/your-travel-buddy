@@ -1,0 +1,58 @@
+{
+  "Jardim da Estrela": {
+    "file": "images/lisbon/jardim-estrela.jpg",
+    "credit": "GualdimG",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Jardim_da_Estrela_01.jpg",
+    "lat": 38.7147,
+    "lon": -9.1605
+  },
+  "Oceanário de Lisboa": {
+    "file": "images/lisbon/oceanario.jpg",
+    "credit": "Eugenio Hansen, OFS",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Exterior_of_Ocean%C3%A1rio_de_Lisboa.jpg",
+    "lat": 38.7635,
+    "lon": -9.0939
+  },
+  "Pavilhão do Conhecimento": {
+    "file": "images/lisbon/science-pavilion.jpg",
+    "credit": "GualdimG",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Pavilh%C3%A3o_do_Conhecimento_01.jpg",
+    "lat": 38.7624,
+    "lon": -9.09555
+  },
+  "Jardim Parque das Nações": {
+    "file": "images/lisbon/water-gardens.jpg",
+    "credit": "Jules Verne Times Two",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Jardins_de_%C3%81gua,_Parque_das_Na%C3%A7%C3%B5es,_Lisbon,_Portugal_julesvernex2.jpg",
+    "lat": 38.764,
+    "lon": -9.0926
+  },
+  "Praça do Comércio": {
+    "file": "images/lisbon/comercio.jpg",
+    "credit": "Berthold Werner",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Lisbon_Pra%C3%A7a_do_Com%C3%A9rcio_BW_2018-10-03_13-33-44.jpg",
+    "lat": 38.7077,
+    "lon": -9.1365
+  },
+  "Alameda dos Oceanos": {
+    "file": "images/lisbon/alameda-oceanos.jpg",
+    "credit": "Jules Verne Times Two",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Water_volcano,_Alameda_dos_Oceanos,_Parque_das_Na%C3%A7%C3%B5es,_Lisbon,_Portugal_julesvernex2-2.jpg",
+    "lat": 38.7641,
+    "lon": -9.0959
+  },
+  "Vila Sassetti gardens": {
+    "file": "images/lisbon/vila-sassetti.jpg",
+    "credit": "GualdimG",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Villa_Sassetti_(Sintra)_15.jpg",
+    "lat": 38.79572222222222,
+    "lon": -9.390666666666666
+  }
+}

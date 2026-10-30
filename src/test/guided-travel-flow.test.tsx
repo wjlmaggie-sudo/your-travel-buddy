@@ -163,3 +163,16 @@ it("carries an edited flight destination into the hotel step after selection", a
     expect.any(AbortSignal),
   );
 }, 20000);
+
+it("keeps a direct hotel-search button on the completed overview and automatically reuses the trip details", async () => {
+  setup();
+  basics();
+  fireEvent.click(screen.getByRole("button", { name: /Continue to hotels/ }));
+  await screen.findAllByRole("button", { name: "Choose this hotel" });
+  const query = services.hotels.mock.calls[0]?.[0];
+  fireEvent.click(screen.getByRole("button", { name: "AI Travel Planner" }));
+  fireEvent.click(screen.getByRole("button", { name: "Search hotels →" }));
+  await screen.findAllByRole("button", { name: "Choose this hotel" });
+  expect(services.hotels.mock.calls.at(-1)?.[0]).toEqual(query);
+  expect(readGuestSimulation()?.destination).toBe("Lisbon, Portugal");
+}, 20000);

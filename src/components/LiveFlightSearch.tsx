@@ -450,6 +450,16 @@ export function LiveFlightSearch({
           </div>
         </div>
       )}
+      {onContinue && !matching && (
+        <div className="rounded-2xl border bg-card p-4 text-sm">
+          <p className="mb-3 text-muted-foreground">
+            Your flight allowance stays in the budget. You can choose a flight later.
+          </p>
+          <Button type="button" variant="outline" onClick={onContinue}>
+            Search hotels without selecting a flight →
+          </Button>
+        </div>
+      )}
     </section>
   );
 }

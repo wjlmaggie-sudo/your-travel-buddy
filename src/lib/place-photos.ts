@@ -1,3 +1,4 @@
+import { localPlacePhoto } from "./local-place-photos";
 import { z } from "zod";
 import type { VisualPlace } from "./city-guides";
 const metadata = z.object({
@@ -35,6 +36,8 @@ export async function fetchPlacePhoto(
   place: VisualPlace,
   signal: AbortSignal,
 ): Promise<VisualPlace["image"] | null> {
+  const local = localPlacePhoto(place);
+  if (local) return local;
   const result = await get(
     "https://en.wikipedia.org/w/api.php",
     {

@@ -92,7 +92,11 @@ export function LiveHotelSearch({
   const [overBudgetScope, setOverBudgetScope] = useState<string | null>(null);
   const budgetScope = JSON.stringify([identity, allowance]);
   const showOverBudget = overBudgetScope === budgetScope;
-  const suggestions = hotelSuggestions(showOverBudget ? available : within);
+  const noBudgetMatches = available.length > 0 && within.length === 0;
+  const fallback = [...available].sort((a, b) => a.amount - b.amount).slice(0, 3);
+  const suggestions = hotelSuggestions(
+    showOverBudget ? available : noBudgetMatches ? fallback : within,
+  );
   const matched =
     chosen &&
     chosen.scope === stayScope(brief) &&
@@ -155,16 +159,18 @@ export function LiveHotelSearch({
               <p>
                 {within.length
                   ? `${within.length} priced stays fit your hotel allowance.`
-                  : "No returned stays fit your current hotel allowance."}
+                  : "No returned stays fit your current hotel allowance. The lowest-priced alternatives are shown below, clearly above budget; none is selected automatically."}
               </p>
-              <Button
-                type="button"
-                variant="outline"
-                className="mt-2"
-                onClick={() => setOverBudgetScope(showOverBudget ? null : budgetScope)}
-              >
-                {showOverBudget ? "Show only within budget" : "Show options above allowance"}
-              </Button>
+              {!noBudgetMatches && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="mt-2"
+                  onClick={() => setOverBudgetScope(showOverBudget ? null : budgetScope)}
+                >
+                  {showOverBudget ? "Show only within budget" : "Show options above allowance"}
+                </Button>
+              )}
             </div>
           )}
           {!available.length && (
@@ -173,7 +179,7 @@ export function LiveHotelSearch({
               trip details.
             </p>
           )}
-          {suggestions.length > 0 && suggestions.length < 3 && (
+          {!noBudgetMatches && suggestions.length > 0 && suggestions.length < 3 && (
             <p className="text-sm text-muted-foreground">
               Only {suggestions.length} priced{" "}
               {suggestions.length === 1 ? "hotel was" : "hotels were"}{" "}
@@ -283,6 +289,16 @@ export function LiveHotelSearch({
             </Button>
           </div>
         </>
+      )}
+      {onContinue && !matched && (
+        <div className="rounded-2xl border bg-card p-4 text-sm">
+          <p className="mb-3 text-muted-foreground">
+            Your hotel allowance stays reserved until you choose a stay.
+          </p>
+          <Button type="button" variant="outline" onClick={onContinue}>
+            Explore activities without choosing a hotel →
+          </Button>
+        </div>
       )}
     </section>
   );

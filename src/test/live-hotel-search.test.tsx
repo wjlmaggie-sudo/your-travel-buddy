@@ -135,3 +135,13 @@ it("keeps initial hotels within allowance, explains rooms, and makes expensive a
   expect(screen.getByText("Comfortable hotel")).toBeVisible();
   expect(mocks.search).toHaveBeenCalledTimes(1);
 });
+
+it("shows clearly labeled cheapest alternatives directly when none fits, without selecting or charging one", async () => {
+  const chosen = vi.fn();
+  render(<LiveHotelSearch brief={brief} allowance={50} active onChoose={chosen} />);
+  await screen.findByText("Low cost hotel");
+  expect(screen.getAllByRole("button", { name: "Choose this hotel" })).toHaveLength(3);
+  expect(screen.getByText(/No returned stays fit/)).toBeVisible();
+  expect(screen.getAllByText(/above hotel allowance/)).toHaveLength(3);
+  expect(chosen).not.toHaveBeenCalled();
+});

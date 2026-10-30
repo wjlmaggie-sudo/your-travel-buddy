@@ -169,6 +169,18 @@ export function InstantPlan({
               Choose your favorites. Make the plan yours.
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
+              <Button type="button" onClick={() => onSectionChange?.("hotels")}>
+                Search hotels →
+              </Button>
+              {journey.flightsRequired !== false && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => onSectionChange?.("flights")}
+                >
+                  Compare flights
+                </Button>
+              )}
               <Button type="button" variant="outline" onClick={onEditBrief}>
                 Edit trip details
               </Button>
