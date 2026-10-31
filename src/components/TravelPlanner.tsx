@@ -1,3 +1,4 @@
+import { DestinationDiscovery } from "./DestinationDiscovery";
 import { CarRental } from "./CarRental";
 import {
   suggestBudget,
@@ -40,6 +41,7 @@ export function TravelPlanner() {
   const planningRequest = useRef(0);
   const formRef = useRef<HTMLFormElement>(null);
   const requestedSection = useRef<TravelSection | null>(null);
+  const [discovering, setDiscovering] = useState(false);
   const [budgetInput, setBudgetInput] = useState("");
   const [estimatingBudget, setEstimatingBudget] = useState(false);
   const [findingPlaces, setFindingPlaces] = useState(false);
@@ -254,7 +256,28 @@ export function TravelPlanner() {
             <p className="mt-3 text-sm text-muted-foreground">
               A few details. A whole trip to explore.
             </p>
-            <form ref={formRef} className="mt-6" onSubmit={generate}>
+            <Button
+              type="button"
+              variant="outline"
+              className="mt-4"
+              onClick={() => setDiscovering(!discovering)}
+            >
+              {discovering ? "Back to trip details" : "Not sure where? Chat with Travel Buddy"}
+            </Button>
+            {discovering && (
+              <DestinationDiscovery
+                start={draft.start}
+                onStartChange={(start) => setDraft((current) => ({ ...current, start }))}
+                onChoose={(choice) => {
+                  setDraft((current) => ({ ...current, ...choice }));
+                  setDiscovering(false);
+                  toast.success(
+                    `${choice.destination} added. Check your dates and group, then continue.`,
+                  );
+                }}
+              />
+            )}
+            <form hidden={discovering} ref={formRef} className="mt-6" onSubmit={generate}>
               <fieldset disabled={estimatingBudget} className="space-y-4">
                 <PersonaPreferences
                   value={draft}

@@ -176,3 +176,22 @@ it("keeps a direct hotel-search button on the completed overview and automatical
   expect(services.hotels.mock.calls.at(-1)?.[0]).toEqual(query);
   expect(readGuestSimulation()?.destination).toBe("Lisbon, Portugal");
 }, 20000);
+
+it("lets guests discover a destination and keeps their existing group and budget", async () => {
+  setup();
+  fireEvent.change(screen.getByLabelText("Total group budget (EUR)"), {
+    target: { value: "1800" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Not sure where? Chat with Travel Buddy" }));
+  fireEvent.change(screen.getByLabelText("Tell Travel Buddy what you have in mind"), {
+    target: { value: "5 days culture" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Send" }));
+  fireEvent.click(screen.getByRole("button", { name: "Plan Lisbon" }));
+  expect(screen.getByLabelText("Where would you love to go?")).toHaveValue("Lisbon, Portugal");
+  expect(screen.getByLabelText("How many days?")).toHaveValue(5);
+  expect(screen.getByLabelText("How many people?")).toHaveValue(2);
+  expect(screen.getByLabelText("Total group budget (EUR)")).toHaveValue(1800);
+  fireEvent.click(screen.getByRole("button", { name: "Continue to hotels →" }));
+  await waitFor(() => expect(services.hotels).toHaveBeenCalled());
+});
