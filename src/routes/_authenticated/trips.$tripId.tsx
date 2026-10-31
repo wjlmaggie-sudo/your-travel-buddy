@@ -223,6 +223,7 @@ function TripPage() {
                   Explore a new trip. Your saved trip stays unchanged.
                 </p>
                 <DestinationDiscovery
+                  active={tab === "chat"}
                   start={chatDate}
                   onStartChange={setChatDate}
                   onChoose={(choice) => {

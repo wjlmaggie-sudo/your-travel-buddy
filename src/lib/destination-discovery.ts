@@ -1,6 +1,4 @@
-import catalog from "./discovery-destinations.json";
-import { suggestBudget } from "./budget-suggestion";
-export const DISCOVERY_CATALOG = catalog;
+import countries from "./discovery-countries.json";
 export type DiscoveryNeeds = {
   days?: number | undefined;
   warm?: boolean;
@@ -27,6 +25,10 @@ export const ACTIVITY_PATTERNS = [
   ["culture", /\b(culture|history|museums?|food|cooking|temples?|art)\b/i],
   ["family", /\b(children|child|kids?|family|aquarium|playground)\b/i],
   ["surfing", /\bsurf(ing)?\b/i],
+  ["skiing", /\b(ski|skiing|snowboarding)\b/i],
+  ["diving", /\b(diving|scuba|snorkeling|snorkelling)\b/i],
+  ["golf", /\bgolf\b/i],
+  ["tennis", /\btennis\b/i],
 ] as const;
 const numberWords: Record<string, number> = {
   one: 1,
@@ -98,9 +100,7 @@ export function understandDiscovery(message: string, previous: DiscoveryNeeds): 
   next.activity = next.activities[0];
   if (matched.includes("family")) next.family = true;
   if (next.family && !next.activity) next.activity = "family";
-  const unsupported = /\b(ski(ing)?|snow(boarding)?|scuba|diving|safari|golf|tennis)\b/.test(
-    positive,
-  );
+  const unsupported = /\bsafari\b/.test(positive);
   if (unsupported) next.unsupported = true;
   else if (matched.length || next.warm !== previous.warm) next.unsupported = false;
   const adults = text.match(/\b(\d{1,2})\s*adults?\b/);
@@ -152,7 +152,7 @@ export function understandDiscovery(message: string, previous: DiscoveryNeeds): 
     const amount = Number(normalized);
     if (amount > 0 && amount <= 1000000) {
       next.budget = amount;
-      const unit = symbol ? budget[1]! : (budget[2] ?? "");
+      const unit = symbol ? budget[1]! : (budget[2] ?? budget[0]);
       if (/€|eur/.test(unit)) next.currency = "EUR";
       if (/\$|usd|dollar/.test(unit)) next.currency = "USD";
       if (/£|gbp|pound/.test(unit)) next.currency = "GBP";
@@ -192,7 +192,7 @@ export function understandDiscovery(message: string, previous: DiscoveryNeeds): 
     const value = `${named[3]}-${String(months.indexOf(named[2]!) + 1).padStart(2, "0")}-${named[1]!.padStart(2, "0")}`;
     if (validDate(value)) next.start = value;
   }
-  const regions = ["Europe", "Asia", "Africa", "Americas"];
+  const regions = ["Europe", "Asia", "Africa", "Americas", "Oceania", "Antarctica"];
   if (/\b(anywhere|worldwide|any country|any region)\b/.test(text)) {
     delete next.region;
     delete next.country;
@@ -208,11 +208,16 @@ export function understandDiscovery(message: string, previous: DiscoveryNeeds): 
       delete next.country;
     }
   }
-  for (const country of [...new Set(catalog.map((d) => d.country))]) {
+  for (const country of [...new Set(Object.values(countries).map((d) => d.name))]) {
+    const escaped = country.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const alias =
       country === "United Arab Emirates"
         ? "(?:united arab emirates|uae|dubai)"
-        : country.toLowerCase();
+        : country === "United States"
+          ? "(?:united states|usa|u\\.s\\.)"
+          : country === "United Kingdom"
+            ? "(?:united kingdom|uk|britain)"
+            : escaped;
     if (
       new RegExp(`\\b(?:not(?: in)?|no|avoid|except|outside|exclude)\\s+${alias}\\b`, "i").test(
         text,
@@ -247,78 +252,10 @@ export function discoveryMissing(needs: DiscoveryNeeds) {
     return "What sounds good: warm weather, hiking, beaches, surfing, culture, or activities with children?";
   return null;
 }
-export function discoverDestinations(needs: DiscoveryNeeds, start: string) {
-  if (needs.unsupported || (needs.warm === false && !needs.activity)) return [];
-  const month = Number(start.slice(5, 7));
-  const tags = [
-    ...(needs.activities?.length ? needs.activities : needs.activity ? [needs.activity] : []),
-    ...(needs.family ? ["family"] : []),
-  ];
-  const groupBudget =
-    needs.budget && (!needs.budgetPerPerson || needs.travelers)
-      ? needs.budget * (needs.budgetPerPerson ? needs.travelers! : 1)
-      : undefined;
-  const ranked = catalog
-    .filter(
-      (d) =>
-        tags.every((tag) => d.tags.includes(tag)) &&
-        (!needs.warm || d.warmMonths.includes(month)) &&
-        (!needs.region || d.region === needs.region) &&
-        (!needs.country || d.country === needs.country) &&
-        !needs.excludedCountries?.includes(d.country),
-    )
-    .map((d) => {
-      const reference =
-        needs.days && needs.travelers
-          ? suggestBudget({
-              destination: d.destination,
-              days: needs.days,
-              travelers: needs.travelers,
-              style: "Balanced",
-              departure: needs.departure,
-            })
-          : null;
-      const comparable = !!reference && !!groupBudget && needs.currency === "EUR";
-      const shortfall = comparable ? Math.max(0, reference!.low - groupBudget!) : null;
-      return {
-        ...d,
-        reference,
-        shortfall,
-        score:
-          (needs.days && needs.days >= d.minDays ? 6 : -(d.minDays - (needs.days ?? 1)) * 2) +
-          (comparable ? (shortfall === 0 ? 4 : -3) : 0),
-        reasons: [
-          tags.length ? `Matches ${[...new Set(tags)].join(", ")}` : "A starting idea to refine",
-          ...(needs.warm ? ["Seasonal warmth match, not a forecast"] : []),
-          needs.days && needs.days >= d.minDays
-            ? `Works as a ${needs.days}-day base; check journey time`
-            : `Usually allow at least ${d.minDays} days`,
-          ...(shortfall !== null
-            ? [
-                shortfall > 0
-                  ? `Below the planner's broad reference allowance by €${Math.round(shortfall).toLocaleString()}`
-                  : "At or above the low planner allowance; live prices still needed",
-              ]
-            : []),
-        ],
-      };
-    })
-    .sort((a, b) => b.score - a.score);
-  // Lead with different countries rather than letting multiple towns in one country dominate.
-  const seen = new Set<string>();
-  const primary = ranked.filter((d) => {
-    if (seen.has(d.country)) return false;
-    seen.add(d.country);
-    return true;
-  });
-  const leading = primary.slice(0, 3);
-  const names = new Set(leading.map((d) => d.destination));
-  return [...leading, ...ranked.filter((d) => !names.has(d.destination))];
-}
 export function discoveryInterest(activity?: string) {
   return activity === "beach" || activity === "surfing"
     ? "Beach escapes"
-    : activity === "hiking"
+    : ["hiking", "skiing", "diving", "golf", "tennis"].includes(activity ?? "")
       ? "Nature & adventure"
       : "Food & culture";
 }

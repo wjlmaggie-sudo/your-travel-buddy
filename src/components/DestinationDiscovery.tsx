@@ -1,47 +1,45 @@
+import { useQuery } from "@tanstack/react-query";
+import { searchGlobalDestinations, GLOBAL_DIRECTORY } from "@/lib/global-discovery";
 import { useState } from "react";
 import { MessageCircle, ArrowRight } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import {
   understandDiscovery,
-  discoverDestinations,
   discoveryChoice,
-  DISCOVERY_CATALOG,
   discoveryMissing,
   type DiscoveryChoice,
   type DiscoveryNeeds,
 } from "@/lib/destination-discovery";
 
 type Props = {
+  active?: boolean;
   start: string;
   onStartChange?: (start: string) => void;
   onChoose: (choice: DiscoveryChoice) => void;
 };
-export function DestinationDiscovery({ start, onChoose, onStartChange }: Props) {
+export function DestinationDiscovery({ start, onChoose, onStartChange, active = true }: Props) {
   const [input, setInput] = useState("");
   const [needs, setNeeds] = useState<DiscoveryNeeds>({});
   const [messages, setMessages] = useState<{ role: string; text: string }[]>([]);
   const [visible, setVisible] = useState(3);
+  const [offset, setOffset] = useState(0);
   const [ready, setReady] = useState(false);
   function send(text: string) {
     if (!text.trim()) return;
     const next = understandDiscovery(text, needs);
     setNeeds(next);
     setVisible(3);
+    setOffset(0);
     if (next.start && next.start !== start) onStartChange?.(next.start);
     const missing = discoveryMissing(next);
-    const complete = !missing;
+    const complete = !missing && !next.unsupported;
     setReady(complete);
-    const matches = discoverDestinations(next, next.start ?? start);
     const reply = missing
       ? missing
-      : next.unsupported || (next.warm === false && !next.activity)
-        ? "What would you like to do? The supported activity themes are hiking, beaches, surfing, culture and family outings. That specific activity is not covered yet; I won't suggest an unrelated destination."
-        : !complete
-          ? "What sounds good: warm weather, hiking, beaches, surfing, culture, or activities with children?"
-          : !matches.length
-            ? "I couldn't match all those preferences in my small destination collection for this month. Try another activity or change your departure date in the planner."
-            : `${matches.length === 1 ? "Here is 1 idea" : `Here are ${matches.length} ideas`} for ${next.days} days, using the travel month shown below. The first matches are shown below, with different countries where possible. Refine your preferences or show more options.`;
+      : next.unsupported
+        ? "Safari availability cannot be verified by this search. Try hiking, beaches, culture, family outings, surfing, skiing, diving, golf or tennis."
+        : "I'll search the global city directory and check public geographic and weather data. The matching locations will appear below; they are not confirmed travel offers.";
     setMessages((current) => [
       ...current.slice(-8),
       { role: "You", text: text.trim().slice(0, 500) },
@@ -49,7 +47,15 @@ export function DestinationDiscovery({ start, onChoose, onStartChange }: Props) 
     ]);
     setInput("");
   }
-  const matches = ready ? discoverDestinations(needs, start) : [];
+  const effectiveStart = onStartChange ? start : (needs.start ?? start);
+  const discovery = useQuery({
+    queryKey: ["global-discovery", needs, effectiveStart, offset],
+    queryFn: ({ signal }) => searchGlobalDestinations(needs, effectiveStart, offset, signal),
+    enabled: ready && active,
+    staleTime: 600000,
+    retry: false,
+  });
+  const matches = ready ? (discovery.data?.results ?? []) : [];
   return (
     <section aria-label="Destination discovery chat" className="mt-5 space-y-5">
       <div className="rounded-2xl border bg-muted/40 p-5">
@@ -60,8 +66,8 @@ export function DestinationDiscovery({ start, onChoose, onStartChange }: Props) 
           hiking”.
         </p>
         <p className="mt-3 text-xs text-muted-foreground">
-          Free guided chat · curated matching, not live AI. No account or API key needed. Seasonal
-          guidance is not a forecast or a price quote.
+          Worldwide discovery · free public data, not generative AI. No account or paid key needed.
+          Article coverage varies. Temperature references are labelled on each result.
         </p>
       </div>
       {onStartChange && (
@@ -82,7 +88,7 @@ export function DestinationDiscovery({ start, onChoose, onStartChange }: Props) 
             }}
           />
           <p className="mt-1 text-xs text-muted-foreground">
-            Used for seasonal matching; you can adjust it later.
+            Used for forecast or historical temperature matching; you can adjust it later.
           </p>
         </div>
       )}
@@ -127,7 +133,7 @@ export function DestinationDiscovery({ start, onChoose, onStartChange }: Props) 
               [
                 "Travelers",
                 needs.travelers
-                  ? `${needs.travelers} people, including children`
+                  ? `${needs.travelers} people${needs.childrenCount ? ", including children" : ""}`
                   : "Use group size in the planner",
               ],
               [
@@ -165,10 +171,15 @@ export function DestinationDiscovery({ start, onChoose, onStartChange }: Props) 
         <p className="mt-3 text-muted-foreground">
           This chat works on the live website with no subscription or API charge. It recognizes
           supported travel phrases and remembers your details during this session. It is not a
-          general-purpose AI model. Its curated collection has {DISCOVERY_CATALOG.length}{" "}
-          destination bases across {new Set(DISCOVERY_CATALOG.map((place) => place.country)).size}{" "}
-          countries in Europe, Asia, Africa and the Americas. This is a starting collection, not
-          worldwide live inventory.
+          general-purpose AI model. Search draws from {GLOBAL_DIRECTORY.cities.toLocaleString()}{" "}
+          city and town bases in {GLOBAL_DIRECTORY.countries} countries and territories in the
+          GeoNames directory. Public geographic and weather checks run on up to 12 candidates per
+          batch; this is not a claim to check the entire world at once. Choose a country or region,
+          or search another batch to explore further. Nearby activities can be up to 30 km from the
+          city. Article topic matches are not proof of opening, booking availability or child
+          suitability. Warm means an average daily high of at least 20°C in the stated reference
+          period. Outside the short forecast window, one completed year's historical month is a
+          reference only, not a climate normal or a forecast.
         </p>
         <p className="mt-2 text-muted-foreground">
           A hosted AI model would require a separate provider and available usage allowance; a
@@ -216,6 +227,7 @@ export function DestinationDiscovery({ start, onChoose, onStartChange }: Props) 
             setNeeds({});
             setMessages([]);
             setReady(false);
+            setOffset(0);
             setVisible(3);
             setInput("");
           }}
@@ -230,9 +242,46 @@ export function DestinationDiscovery({ start, onChoose, onStartChange }: Props) 
           year: "numeric",
           timeZone: "UTC",
         })}{" "}
-        · seasonal guidance only. Short trips may be impractical with long flights; add your
-        departure city before comparing travel options.
+        · forecast or historical reference is labelled on each result. Short trips may be
+        impractical with long flights; add your departure city before comparing travel options.
       </p>
+      {ready && (
+        <div aria-live="polite" className="rounded-2xl border p-4 text-sm">
+          {discovery.isFetching ? (
+            <p role="status">
+              Checking a batch of global locations, nearby activity references and temperature
+              references… This can take around 30 seconds.
+            </p>
+          ) : discovery.isError ? (
+            <>
+              <p role="alert">{discovery.error.message}</p>
+              <Button
+                type="button"
+                variant="outline"
+                className="mt-3"
+                onClick={() => void discovery.refetch()}
+              >
+                Retry public-data search
+              </Button>
+            </>
+          ) : discovery.data ? (
+            <>
+              <p>
+                Checked {discovery.data.scanned} city bases in this batch from{" "}
+                {discovery.data.total.toLocaleString()} matching directory locations. This is a
+                bounded search, not every destination worldwide.
+              </p>
+              {!matches.length && (
+                <p className="mt-2">
+                  No match was verified in this batch. Try another batch or refine your region,
+                  country, activity or temperature preference. No demonstration destinations have
+                  been substituted.
+                </p>
+              )}
+            </>
+          ) : null}
+        </div>
+      )}
       {matches.length > 0 && (
         <div className="space-y-3" aria-label="Suggested destinations">
           <p className="text-sm text-muted-foreground">
@@ -243,7 +292,7 @@ export function DestinationDiscovery({ start, onChoose, onStartChange }: Props) 
             <article key={place.destination} className="rounded-2xl border bg-card p-5">
               <h4 className="text-lg font-semibold">{place.destination}</h4>
               <p className="mt-1 text-xs font-medium text-primary">
-                {needs.days} days{needs.warm ? " · seasonal warmth shortlist" : ""}
+                {needs.days} days · public-data match
                 {needs.activity ? ` · ${needs.activity}` : ""}
               </p>
               <p className="mt-2 text-sm">{place.idea}</p>
@@ -255,6 +304,38 @@ export function DestinationDiscovery({ start, onChoose, onStartChange }: Props) 
                   <li key={reason}>{reason}</li>
                 ))}
               </ul>
+              {place.temperature && (
+                <p className="mt-3 rounded-xl bg-secondary/5 p-3 text-xs">
+                  {place.temperature.label}. Average daily high {place.temperature.high}°C / low{" "}
+                  {place.temperature.low}°C across {place.temperature.days} returned days.{" "}
+                  <a
+                    className="underline"
+                    href={place.temperature.source}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Open-Meteo data
+                  </a>
+                  . Historical model data does not predict your trip.
+                </p>
+              )}
+              {place.evidence.length > 0 && (
+                <details className="mt-3 text-xs">
+                  <summary className="cursor-pointer font-medium">
+                    Nearby article references used for this match
+                  </summary>
+                  <ul className="mt-2 space-y-2">
+                    {place.evidence.map((e) => (
+                      <li key={e.source + e.tag}>
+                        <a className="underline" href={e.source} target="_blank" rel="noreferrer">
+                          {e.name}
+                        </a>{" "}
+                        · {e.tag}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
               {place.reference && (
                 <p className="mt-3 rounded-xl bg-muted/40 p-3 text-xs text-muted-foreground">
                   Planner reference: €{place.reference.low.toLocaleString()}–€
@@ -278,12 +359,19 @@ export function DestinationDiscovery({ start, onChoose, onStartChange }: Props) 
                 target="_blank"
                 rel="noreferrer"
               >
-                Official visitor information ↗
+                GeoNames location reference ↗
               </a>
               <Button
                 type="button"
                 className="mt-4 flex"
-                onClick={() => onChoose(discoveryChoice(needs, place.destination))}
+                onClick={() =>
+                  onChoose(
+                    discoveryChoice(
+                      { ...needs, ...(needs.start ? { start: effectiveStart } : {}) },
+                      place.destination,
+                    ),
+                  )
+                }
               >
                 Plan {place.destination.split(",")[0]} <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
@@ -300,6 +388,38 @@ export function DestinationDiscovery({ start, onChoose, onStartChange }: Props) 
           )}
         </div>
       )}
+      {ready && discovery.data?.nextOffset != null && !discovery.isFetching && (
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => {
+            setOffset(discovery.data!.nextOffset!);
+            setVisible(3);
+          }}
+        >
+          Search another global batch
+        </Button>
+      )}
+      <p className="text-xs text-muted-foreground">
+        Location data:{" "}
+        <a className="underline" href="https://www.geonames.org/" target="_blank" rel="noreferrer">
+          GeoNames · CC BY 4.0
+        </a>
+        . Activity references:{" "}
+        <a
+          className="underline"
+          href="https://en.wikipedia.org/wiki/Wikipedia:Copyrights"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Wikipedia contributors · CC BY-SA
+        </a>
+        . Temperature data:{" "}
+        <a className="underline" href="https://open-meteo.com/" target="_blank" rel="noreferrer">
+          Open-Meteo
+        </a>
+        , free hosted API for non-commercial use within its limits.
+      </p>
     </section>
   );
 }

@@ -1,0 +1,16 @@
+{
+  "updatedAt": "2026-10-31T18:23:04.961432+00:00",
+  "cities": 31808,
+  "countries": 244,
+  "source": "https://download.geonames.org/export/dump/cities15000.zip",
+  "license": "CC BY 4.0",
+  "attribution": "GeoNames.org",
+  "fields": [
+    "id",
+    "name",
+    "countryCode",
+    "latitude",
+    "longitude",
+    "population"
+  ]
+}

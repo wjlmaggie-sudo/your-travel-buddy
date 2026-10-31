@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, cleanup, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-const services = vi.hoisted(() => ({ flights: vi.fn(), hotels: vi.fn() }));
+const services = vi.hoisted(() => ({ flights: vi.fn(), hotels: vi.fn(), discovery: vi.fn() }));
 vi.mock("@/lib/flight-search", () => ({
   flightEndpoint: () => "https://example.com/search-flights",
   searchFlights: services.flights,
@@ -10,6 +10,10 @@ vi.mock("@/lib/live-hotel-search", () => ({ searchLiveHotels: services.hotels })
 vi.mock("@/components/DayVisuals", () => ({ DayVisuals: () => null }));
 vi.mock("@/components/DayWeather", () => ({ DayWeather: () => null }));
 vi.mock("@tanstack/react-router", () => ({ useNavigate: () => vi.fn() }));
+vi.mock("@/lib/global-discovery", async (original) => ({
+  ...(await original<typeof import("@/lib/global-discovery")>()),
+  searchGlobalDestinations: services.discovery,
+}));
 import { TravelPlanner } from "@/components/TravelPlanner";
 import { readGuestSimulation } from "@/lib/planner-draft";
 const offers = [100, 200, 300].map((price, i) => ({
@@ -27,6 +31,30 @@ const offers = [100, 200, 300].map((price, i) => ({
   ],
 }));
 beforeEach(() => {
+  services.discovery.mockResolvedValue({
+    results: [
+      {
+        destination: "Lisbon, Portugal",
+        country: "Portugal",
+        region: "Europe",
+        minDays: 1,
+        idea: "Mapped activity references.",
+        caution: "Check access.",
+        source: "https://www.geonames.org/2267057",
+        reasons: [],
+        evidence: [],
+        temperature: null,
+        reference: null,
+        shortfall: null,
+        score: 1,
+      },
+    ],
+    scanned: 12,
+    total: 31808,
+    offset: 0,
+    nextOffset: null,
+    checkedAt: "2030-01-01",
+  });
   sessionStorage.clear();
   services.flights.mockImplementation(async (query) => ({
     query,
@@ -188,7 +216,7 @@ it("lets guests discover a destination and keeps their existing group and budget
     target: { value: "5 days culture" },
   });
   fireEvent.click(screen.getByRole("button", { name: "Send" }));
-  fireEvent.click(screen.getByRole("button", { name: "Plan Lisbon" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Plan Lisbon" }));
   expect(screen.getByLabelText("Where would you love to go?")).toHaveValue("Lisbon, Portugal");
   expect(screen.getByLabelText("How many days?")).toHaveValue(5);
   expect(screen.getByLabelText("How many people?")).toHaveValue(2);
@@ -197,7 +225,7 @@ it("lets guests discover a destination and keeps their existing group and budget
   await waitFor(() => expect(services.hotels).toHaveBeenCalled());
 });
 
-it("offers a dedicated chatbot section and transfers the understood group budget and origin", () => {
+it("offers a dedicated chatbot section and transfers the understood group budget and origin", async () => {
   setup();
   fireEvent.click(screen.getByRole("button", { name: "Travel Chatbot" }));
   fireEvent.change(screen.getByLabelText("Tell Travel Buddy what you have in mind"), {
@@ -209,7 +237,7 @@ it("offers a dedicated chatbot section and transfers the understood group budget
   expect(screen.getByRole("complementary", { name: "What I understood" })).toHaveTextContent(
     "Berlin",
   );
-  fireEvent.click(screen.getByRole("button", { name: "Plan Lisbon" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Plan Lisbon" }));
   expect(screen.getByLabelText("Departure city / airport")).toHaveValue("Berlin");
   expect(screen.getByLabelText("How many people?")).toHaveValue(3);
   expect(screen.getByLabelText("Total group budget (EUR)")).toHaveValue(1200);

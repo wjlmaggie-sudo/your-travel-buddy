@@ -246,6 +246,7 @@ export function TravelPlanner() {
         <WorkspacePanel active={section === "chat"} label="Travel Chatbot">
           <div className="mx-auto max-w-2xl">
             <DestinationDiscovery
+              active={section === "chat"}
               start={chatStart}
               onStartChange={setChatStart}
               onChoose={(choice) => {
