@@ -6,6 +6,7 @@ import {
   discoverDestinations,
   discoveryMissing,
   discoveryChoice,
+  DISCOVERY_CATALOG,
 } from "@/lib/destination-discovery";
 afterEach(cleanup);
 it("remembers weather and duration across replies and refines activities", () => {
@@ -13,9 +14,12 @@ it("remembers weather and duration across replies and refines activities", () =>
   expect(first).toMatchObject({ days: 5, warm: true });
   const next = understandDiscovery("hiking", first);
   expect(next).toMatchObject({ days: 5, warm: true, activity: "hiking" });
-  expect(discoverDestinations(next, "2026-12-01").map((d) => d.destination)).toEqual([
-    "Tenerife, Spain",
-  ]);
+  const matches = discoverDestinations(next, "2026-12-01");
+  expect(matches.length).toBeGreaterThanOrEqual(3);
+  expect(new Set(matches.slice(0, 3).map((place) => place.country)).size).toBe(3);
+  expect(
+    matches.every((place) => place.tags.includes("hiking") && place.warmMonths.includes(12)),
+  ).toBe(true);
   expect(understandDiscovery("two weeks", next).days).toBe(14);
 });
 it("does not promise unrelated places for unsupported activities or invent a length", () => {
@@ -117,4 +121,56 @@ it("converts per-person budget only with a known party and recognizes named date
     start: "2027-06-15",
     departure: "Paris",
   });
+});
+
+it("covers multiple regions and respects country exclusions without dropping other preferences", () => {
+  expect(new Set(DISCOVERY_CATALOG.map((d) => d.country)).size).toBe(12);
+  const first = understandDiscovery("5 days warm with family, hiking, not Spain, Europe only", {});
+  expect(first).toMatchObject({
+    region: "Europe",
+    excludedCountries: ["Spain"],
+    family: true,
+    days: 5,
+  });
+  const options = discoverDestinations(first, "2027-06-15");
+  expect(options.length).toBeGreaterThan(2);
+  expect(
+    options.every(
+      (d) =>
+        d.region === "Europe" &&
+        d.country !== "Spain" &&
+        d.tags.includes("hiking") &&
+        d.tags.includes("family"),
+    ),
+  ).toBe(true);
+  const asia = understandDiscovery("Asia only", first);
+  expect(discoverDestinations(asia, "2026-12-01").every((d) => d.region === "Asia")).toBe(true);
+  const portugal = understandDiscovery("prefer Portugal", asia);
+  expect(discoverDestinations(portugal, "2027-06-15").map((d) => d.country)).toEqual(["Portugal"]);
+});
+it("explains low budgets honestly and does not silently compare different currencies", () => {
+  const needs = understandDiscovery("7 days, warm hiking, 2 people, budget €100, from Berlin", {});
+  const matches = discoverDestinations(needs, "2026-12-01");
+  expect(matches.length).toBeGreaterThan(2);
+  expect(matches.every((d) => d.shortfall !== null && d.shortfall > 0)).toBe(true);
+  expect(matches.every((d) => d.reasons.some((reason) => reason.includes("Below")))).toBe(true);
+  expect(
+    discoverDestinations({ ...needs, currency: "USD" }, "2026-12-01").every(
+      (d) => d.shortfall === null,
+    ),
+  ).toBe(true);
+});
+it("reveals additional countries and accepts not-in-Spain as a follow-up", () => {
+  render(<DestinationDiscovery start="2026-12-01" onChoose={vi.fn()} />);
+  fireEvent.click(screen.getByRole("button", { name: "5 days somewhere warm" }));
+  expect(screen.getAllByRole("article")).toHaveLength(3);
+  fireEvent.click(screen.getByRole("button", { name: "Show more destinations" }));
+  expect(screen.getAllByRole("article")).toHaveLength(6);
+  fireEvent.change(screen.getByLabelText("Tell Travel Buddy what you have in mind"), {
+    target: { value: "not in Spain, Asia only" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Send" }));
+  expect(screen.queryByRole("button", { name: "Plan Tenerife" })).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Plan Dubai" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Plan Bali" })).toBeInTheDocument();
 });

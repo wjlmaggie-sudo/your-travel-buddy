@@ -1,3 +1,6 @@
+import catalog from "./discovery-destinations.json";
+import { suggestBudget } from "./budget-suggestion";
+export const DISCOVERY_CATALOG = catalog;
 export type DiscoveryNeeds = {
   days?: number | undefined;
   warm?: boolean;
@@ -14,6 +17,9 @@ export type DiscoveryNeeds = {
   currency?: string;
   budgetPerPerson?: boolean;
   family?: boolean;
+  region?: string | undefined;
+  country?: string | undefined;
+  excludedCountries?: string[];
 };
 export const ACTIVITY_PATTERNS = [
   ["hiking", /\b(hikes?|hiking|trekking|walks?|walking|mountains?|nature|trails?)\b/i],
@@ -186,6 +192,44 @@ export function understandDiscovery(message: string, previous: DiscoveryNeeds): 
     const value = `${named[3]}-${String(months.indexOf(named[2]!) + 1).padStart(2, "0")}-${named[1]!.padStart(2, "0")}`;
     if (validDate(value)) next.start = value;
   }
+  const regions = ["Europe", "Asia", "Africa", "Americas"];
+  if (/\b(anywhere|worldwide|any country|any region)\b/.test(text)) {
+    delete next.region;
+    delete next.country;
+  }
+  for (const region of regions) {
+    if (
+      new RegExp(
+        `\\b(?:in|to|prefer|only|within)\\s+${region}\\b|\\b${region}\\s+only\\b`,
+        "i",
+      ).test(text)
+    ) {
+      next.region = region;
+      delete next.country;
+    }
+  }
+  for (const country of [...new Set(catalog.map((d) => d.country))]) {
+    const alias =
+      country === "United Arab Emirates"
+        ? "(?:united arab emirates|uae|dubai)"
+        : country.toLowerCase();
+    if (
+      new RegExp(`\\b(?:not(?: in)?|no|avoid|except|outside|exclude)\\s+${alias}\\b`, "i").test(
+        text,
+      )
+    ) {
+      next.excludedCountries = [...new Set([...(next.excludedCountries ?? []), country])];
+      if (next.country === country) delete next.country;
+    } else if (
+      new RegExp(`\\b(?:in|to|prefer|only|visit)\\s+${alias}\\b|\\b${alias}\\s+only\\b`, "i").test(
+        text,
+      )
+    ) {
+      next.country = country;
+      delete next.region;
+      next.excludedCountries = (next.excludedCountries ?? []).filter((c) => c !== country);
+    }
+  }
   return next;
 }
 export function discoveryMissing(needs: DiscoveryNeeds) {
@@ -203,36 +247,6 @@ export function discoveryMissing(needs: DiscoveryNeeds) {
     return "What sounds good: warm weather, hiking, beaches, surfing, culture, or activities with children?";
   return null;
 }
-const destinations = [
-  {
-    destination: "Tenerife, Spain",
-    tags: ["beach", "hiking", "family", "surfing"],
-    warmMonths: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-    minDays: 4,
-    idea: "Coastal time, volcanic landscapes and marked walking trails.",
-    caution: "Mild coastal climate is not guaranteed swimming weather; mountain conditions differ.",
-    source: "https://www.hellocanaryislands.com/tenerife/",
-  },
-  {
-    destination: "Funchal, Madeira, Portugal",
-    tags: ["hiking", "nature", "culture"],
-    warmMonths: [5, 6, 7, 8, 9, 10],
-    minDays: 4,
-    idea: "A Funchal base with gardens and optional levada walks.",
-    caution: "Check trail opening, reservations, weather and ability before choosing a walk.",
-    source: "https://visitmadeira.com/en/",
-  },
-  {
-    destination: "Lisbon, Portugal",
-    tags: ["culture", "family", "surfing"],
-    warmMonths: [5, 6, 7, 8, 9],
-    minDays: 2,
-    idea: "Historic neighborhoods, local food and an optional Oceanário visit.",
-    caution:
-      "Winter is a city-break option, not a reliably hot beach escape. Surf trips need a coastal transfer.",
-    source: "https://oceanario.pt/en/",
-  },
-];
 export function discoverDestinations(needs: DiscoveryNeeds, start: string) {
   if (needs.unsupported || (needs.warm === false && !needs.activity)) return [];
   const month = Number(start.slice(5, 7));
@@ -240,18 +254,66 @@ export function discoverDestinations(needs: DiscoveryNeeds, start: string) {
     ...(needs.activities?.length ? needs.activities : needs.activity ? [needs.activity] : []),
     ...(needs.family ? ["family"] : []),
   ];
-  return destinations
+  const groupBudget =
+    needs.budget && (!needs.budgetPerPerson || needs.travelers)
+      ? needs.budget * (needs.budgetPerPerson ? needs.travelers! : 1)
+      : undefined;
+  const ranked = catalog
     .filter(
       (d) =>
-        tags.every((tag) => d.tags.includes(tag)) && (!needs.warm || d.warmMonths.includes(month)),
+        tags.every((tag) => d.tags.includes(tag)) &&
+        (!needs.warm || d.warmMonths.includes(month)) &&
+        (!needs.region || d.region === needs.region) &&
+        (!needs.country || d.country === needs.country) &&
+        !needs.excludedCountries?.includes(d.country),
     )
-    .map((d) => ({
-      ...d,
-      score:
-        (needs.days && needs.days >= d.minDays ? 2 : 0) +
-        (needs.warm && d.warmMonths.includes(month) ? 2 : 0),
-    }))
+    .map((d) => {
+      const reference =
+        needs.days && needs.travelers
+          ? suggestBudget({
+              destination: d.destination,
+              days: needs.days,
+              travelers: needs.travelers,
+              style: "Balanced",
+              departure: needs.departure,
+            })
+          : null;
+      const comparable = !!reference && !!groupBudget && needs.currency === "EUR";
+      const shortfall = comparable ? Math.max(0, reference!.low - groupBudget!) : null;
+      return {
+        ...d,
+        reference,
+        shortfall,
+        score:
+          (needs.days && needs.days >= d.minDays ? 6 : -(d.minDays - (needs.days ?? 1)) * 2) +
+          (comparable ? (shortfall === 0 ? 4 : -3) : 0),
+        reasons: [
+          tags.length ? `Matches ${[...new Set(tags)].join(", ")}` : "A starting idea to refine",
+          ...(needs.warm ? ["Seasonal warmth match, not a forecast"] : []),
+          needs.days && needs.days >= d.minDays
+            ? `Works as a ${needs.days}-day base; check journey time`
+            : `Usually allow at least ${d.minDays} days`,
+          ...(shortfall !== null
+            ? [
+                shortfall > 0
+                  ? `Below the planner's broad reference allowance by €${Math.round(shortfall).toLocaleString()}`
+                  : "At or above the low planner allowance; live prices still needed",
+              ]
+            : []),
+        ],
+      };
+    })
     .sort((a, b) => b.score - a.score);
+  // Lead with different countries rather than letting multiple towns in one country dominate.
+  const seen = new Set<string>();
+  const primary = ranked.filter((d) => {
+    if (seen.has(d.country)) return false;
+    seen.add(d.country);
+    return true;
+  });
+  const leading = primary.slice(0, 3);
+  const names = new Set(leading.map((d) => d.destination));
+  return [...leading, ...ranked.filter((d) => !names.has(d.destination))];
 }
 export function discoveryInterest(activity?: string) {
   return activity === "beach" || activity === "surfing"

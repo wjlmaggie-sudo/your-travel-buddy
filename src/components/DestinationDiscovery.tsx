@@ -6,6 +6,7 @@ import {
   understandDiscovery,
   discoverDestinations,
   discoveryChoice,
+  DISCOVERY_CATALOG,
   discoveryMissing,
   type DiscoveryChoice,
   type DiscoveryNeeds,
@@ -20,11 +21,13 @@ export function DestinationDiscovery({ start, onChoose, onStartChange }: Props) 
   const [input, setInput] = useState("");
   const [needs, setNeeds] = useState<DiscoveryNeeds>({});
   const [messages, setMessages] = useState<{ role: string; text: string }[]>([]);
+  const [visible, setVisible] = useState(3);
   const [ready, setReady] = useState(false);
   function send(text: string) {
     if (!text.trim()) return;
     const next = understandDiscovery(text, needs);
     setNeeds(next);
+    setVisible(3);
     if (next.start && next.start !== start) onStartChange?.(next.start);
     const missing = discoveryMissing(next);
     const complete = !missing;
@@ -33,12 +36,12 @@ export function DestinationDiscovery({ start, onChoose, onStartChange }: Props) 
     const reply = missing
       ? missing
       : next.unsupported || (next.warm === false && !next.activity)
-        ? "What would you like to do? My current collection covers hiking, beaches, surfing, culture and family outings. That specific activity is not covered yet; I won't suggest an unrelated destination."
+        ? "What would you like to do? The supported activity themes are hiking, beaches, surfing, culture and family outings. That specific activity is not covered yet; I won't suggest an unrelated destination."
         : !complete
           ? "What sounds good: warm weather, hiking, beaches, surfing, culture, or activities with children?"
           : !matches.length
             ? "I couldn't match all those preferences in my small destination collection for this month. Try another activity or change your departure date in the planner."
-            : `${matches.length === 1 ? "Here is 1 idea" : `Here are ${matches.length} ideas`} for ${next.days} days, using the travel month shown below. Tell me another preference to refine them, or choose a destination.`;
+            : `${matches.length === 1 ? "Here is 1 idea" : `Here are ${matches.length} ideas`} for ${next.days} days, using the travel month shown below. The first matches are shown below, with different countries where possible. Refine your preferences or show more options.`;
     setMessages((current) => [
       ...current.slice(-8),
       { role: "You", text: text.trim().slice(0, 500) },
@@ -142,6 +145,8 @@ export function DestinationDiscovery({ start, onChoose, onStartChange }: Props) 
                   : "Optional · suggest in planner",
               ],
               ["Departure date", needs.start ?? start],
+              ["Destination area", needs.country ?? needs.region ?? "Any region"],
+              ["Avoid countries", needs.excludedCountries?.join(", ") || "None specified"],
             ].map(([label, value]) => (
               <div key={label}>
                 <dt className="text-xs text-muted-foreground">{label}</dt>
@@ -150,8 +155,8 @@ export function DestinationDiscovery({ start, onChoose, onStartChange }: Props) 
             ))}
           </dl>
           <p className="mt-3 text-xs text-muted-foreground">
-            Tell me a correction, such as “4 days instead”, “from Berlin”, or “budget €1,200”. These
-            details only enter your trip when you choose a destination.
+            Tell me a correction, such as “4 days instead”, “not Spain”, “Europe only”, or “budget
+            €1,200”. These details only enter your trip when you choose a destination.
           </p>
         </aside>
       )}
@@ -160,8 +165,10 @@ export function DestinationDiscovery({ start, onChoose, onStartChange }: Props) 
         <p className="mt-3 text-muted-foreground">
           This chat works on the live website with no subscription or API charge. It recognizes
           supported travel phrases and remembers your details during this session. It is not a
-          general-purpose AI model. Its current destination collection is Lisbon, Madeira and
-          Tenerife.
+          general-purpose AI model. Its curated collection has {DISCOVERY_CATALOG.length}{" "}
+          destination bases across {new Set(DISCOVERY_CATALOG.map((place) => place.country)).size}{" "}
+          countries in Europe, Asia, Africa and the Americas. This is a starting collection, not
+          worldwide live inventory.
         </p>
         <p className="mt-2 text-muted-foreground">
           A hosted AI model would require a separate provider and available usage allowance; a
@@ -209,6 +216,7 @@ export function DestinationDiscovery({ start, onChoose, onStartChange }: Props) 
             setNeeds({});
             setMessages([]);
             setReady(false);
+            setVisible(3);
             setInput("");
           }}
         >
@@ -227,7 +235,11 @@ export function DestinationDiscovery({ start, onChoose, onStartChange }: Props) 
       </p>
       {matches.length > 0 && (
         <div className="space-y-3" aria-label="Suggested destinations">
-          {matches.map((place) => (
+          <p className="text-sm text-muted-foreground">
+            Showing {Math.min(visible, matches.length)} of {matches.length} matching destination
+            ideas. Flight routes, prices and entry requirements still need checking.
+          </p>
+          {matches.slice(0, visible).map((place) => (
             <article key={place.destination} className="rounded-2xl border bg-card p-5">
               <h4 className="text-lg font-semibold">{place.destination}</h4>
               <p className="mt-1 text-xs font-medium text-primary">
@@ -235,6 +247,25 @@ export function DestinationDiscovery({ start, onChoose, onStartChange }: Props) 
                 {needs.activity ? ` · ${needs.activity}` : ""}
               </p>
               <p className="mt-2 text-sm">{place.idea}</p>
+              <ul
+                className="mt-3 list-inside list-disc space-y-1 text-xs text-muted-foreground"
+                aria-label={`Why ${place.destination} matches`}
+              >
+                {place.reasons.map((reason) => (
+                  <li key={reason}>{reason}</li>
+                ))}
+              </ul>
+              {place.reference && (
+                <p className="mt-3 rounded-xl bg-muted/40 p-3 text-xs text-muted-foreground">
+                  Planner reference: €{place.reference.low.toLocaleString()}–€
+                  {place.reference.high.toLocaleString()} for your group, including a broad €
+                  {place.reference.flights.toLocaleString()} flight reserve. These are reusable
+                  planning allowances, not researched local averages or verified offers.
+                  {needs.currency && needs.currency !== "EUR"
+                    ? " Your budget uses a different currency and has not been compared."
+                    : ""}
+                </p>
+              )}
               <p className="mt-2 text-xs text-muted-foreground">
                 {place.caution}
                 {needs.days! < place.minDays
@@ -258,6 +289,15 @@ export function DestinationDiscovery({ start, onChoose, onStartChange }: Props) 
               </Button>
             </article>
           ))}
+          {visible < matches.length && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setVisible((count) => count + 3)}
+            >
+              Show more destinations
+            </Button>
+          )}
         </div>
       )}
     </section>
