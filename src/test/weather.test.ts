@@ -1,5 +1,11 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
-import { findWeatherPlaces, tripForecast, type Forecast } from "@/lib/weather";
+import {
+  findWeatherPlaces,
+  tripForecast,
+  outlookForecast,
+  fetchForecast,
+  type Forecast,
+} from "@/lib/weather";
 
 const forecast: Forecast = {
   timezone: "Asia/Tokyo",
@@ -31,4 +37,19 @@ describe("weather for travel dates", () => {
     await findWeatherPlaces("Paris, France", new AbortController().signal);
     expect(new URL(fetcher.mock.calls[0]?.[0]).searchParams.get("name")).toBe("Paris, France");
   });
+});
+
+it("keeps a partial outlook and missing values truthful and requests the real API's extended range", async () => {
+  expect(outlookForecast(forecast)).toHaveLength(3);
+  expect(outlookForecast(forecast)[1]?.high).toBeNull();
+  const fetcher = vi.fn().mockResolvedValue({ ok: true, json: async () => forecast });
+  vi.stubGlobal("fetch", fetcher);
+  await fetchForecast(
+    { id: 1, name: "Tokyo", latitude: 35.6, longitude: 139.6 },
+    new AbortController().signal,
+  );
+  const url = new URL(fetcher.mock.calls[0]?.[0]);
+  expect(url.origin).toBe("https://api.open-meteo.com");
+  expect(url.searchParams.get("forecast_days")).toBe("16");
+  expect(url.searchParams.get("timezone")).toBe("auto");
 });

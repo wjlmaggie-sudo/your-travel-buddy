@@ -11,7 +11,13 @@ import {
   Loader2,
 } from "lucide-react";
 import { Button } from "./ui/button";
-import { findWeatherPlaces, fetchForecast, tripForecast, weatherDescription } from "@/lib/weather";
+import {
+  findWeatherPlaces,
+  fetchForecast,
+  tripForecast,
+  outlookForecast,
+  weatherDescription,
+} from "@/lib/weather";
 
 export function TripWeather({
   destination,
@@ -24,6 +30,7 @@ export function TripWeather({
   startDate: string;
   days: number;
 }) {
+  const [view, setView] = useState<"outlook" | "trip">("outlook");
   const [requested, setRequested] = useState(false);
   const [placeId, setPlaceId] = useState<number>();
   const [unit, setUnit] = useState<"C" | "F">("C");
@@ -42,7 +49,11 @@ export function TripWeather({
     staleTime: 600000,
     retry: false,
   });
-  const rows = weather.data ? tripForecast(weather.data, startDate, days) : [];
+  const rows = weather.data
+    ? view === "outlook"
+      ? outlookForecast(weather.data)
+      : tripForecast(weather.data, startDate, days)
+    : [];
   const temperature = (value: number | null | undefined) =>
     value == null ? "—" : `${Math.round(unit === "F" ? (value * 9) / 5 + 32 : value)}°${unit}`;
   const loading = requested && (places.isFetching || weather.isFetching);
@@ -77,7 +88,8 @@ export function TripWeather({
         {!requested ? (
           <>
             <p className="mt-2 text-sm text-muted-foreground">
-              Check the temperature before you pack. Forecasts cover up to 16 days ahead.
+              See a 15-day outlook with daily highs, lows and rain chances, or check your travel
+              dates. Real forecast data from Open-Meteo; later days are less certain.
             </p>
             <Button
               type="button"
@@ -159,15 +171,69 @@ export function TripWeather({
                     </p>
                   </div>
                 </div>
+                <div
+                  className="mt-5 flex flex-wrap gap-2"
+                  role="group"
+                  aria-label="Forecast period"
+                >
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={view === "outlook" ? "default" : "outline"}
+                    aria-pressed={view === "outlook"}
+                    onClick={() => setView("outlook")}
+                  >
+                    15-day outlook
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={view === "trip" ? "default" : "outline"}
+                    aria-pressed={view === "trip"}
+                    onClick={() => setView("trip")}
+                  >
+                    My travel dates
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    disabled={loading}
+                    onClick={() => void weather.refetch()}
+                  >
+                    Refresh forecast
+                  </Button>
+                </div>
+                <p className="mt-3 text-xs text-muted-foreground">
+                  {view === "outlook"
+                    ? "Today and the next 14 days at your destination. This is separate from your planned trip dates."
+                    : `Your trip: ${startDate} · ${days} days. Only dates covered by the provider are shown.`}{" "}
+                  Days 8–15 are longer-range estimates and can change considerably.
+                </p>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Retrieved {new Date(weather.dataUpdatedAt).toLocaleString()} · shown in your
+                  browser’s local time.
+                </p>
                 {rows.length > 0 ? (
                   <>
                     <p className="mt-4 text-xs font-semibold uppercase tracking-wider text-secondary">
-                      Forecast for your travel dates
+                      {view === "outlook"
+                        ? "15-day destination outlook"
+                        : "Forecast for your travel dates"}
                     </p>
                     <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
                       {rows.map((row) => (
-                        <div key={row.date} className="rounded-xl border bg-card p-3">
+                        <div
+                          key={row.date}
+                          data-testid="forecast-day"
+                          className="rounded-xl border bg-card p-3"
+                        >
                           <ForecastIcon description={weatherDescription(row.code)} />
+                          {weather.data!.daily.time.indexOf(row.date) >= 7 && (
+                            <p className="mb-2 text-[10px] font-medium text-secondary">
+                              Longer-range estimate
+                            </p>
+                          )}
                           <p className="text-xs font-medium">
                             {new Date(`${row.date}T12:00:00`).toLocaleDateString(undefined, {
                               weekday: "short",
@@ -193,17 +259,30 @@ export function TripWeather({
                         </div>
                       ))}
                     </div>
-                    {rows.length < days && (
+                    {view === "trip" && rows.length < days && (
                       <p className="mt-3 text-xs text-muted-foreground">
                         Only {rows.length} of {days} travel days have a forecast. Check again closer
                         to departure for the remaining days.
                       </p>
                     )}
+                    {view === "outlook" && rows.length < 15 && (
+                      <p className="mt-3 text-xs text-muted-foreground">
+                        Only {rows.length} of 15 outlook days were returned. Missing readings are
+                        shown as —; no temperatures are invented.
+                      </p>
+                    )}
                   </>
                 ) : (
                   <p className="mt-3 text-sm text-muted-foreground">
-                    No forecast is available for these travel dates yet, or the dates have passed.
-                    The temperature above is current weather, not a prediction for your trip.
+                    {view === "outlook" ? (
+                      "The provider did not return daily forecasts. Try refreshing later."
+                    ) : (
+                      <>
+                        No forecast is available for these travel dates yet, or the dates have
+                        passed. The temperature above is current weather, not a prediction for your
+                        trip.
+                      </>
+                    )}
                   </p>
                 )}
               </>

@@ -87,6 +87,10 @@ export function tripForecast(forecast: Forecast, start: string, days: number) {
       : [],
   );
 }
+/** The provider's first day is today in the destination timezone. Keep trip dates separate. */
+export function outlookForecast(forecast: Forecast) {
+  return tripForecast(forecast, forecast.daily.time[0] ?? "", 15);
+}
 export function weatherDescription(code: number | null) {
   if (code === null) return "Forecast";
   if (code === 0) return "Clear sky";
