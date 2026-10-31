@@ -13,6 +13,7 @@ import {
 
 export const SECTIONS = [
   { id: "planner", label: "AI Travel Planner" },
+  { id: "chat", label: "Travel Chatbot" },
   { id: "flights", label: "Flights" },
   { id: "hotels", label: "Hotels" },
   { id: "cars", label: "Car Rental" },

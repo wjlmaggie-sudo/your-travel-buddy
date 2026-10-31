@@ -1,6 +1,7 @@
 import { SECTIONS, type TravelSection } from "@/lib/travel-workspace";
 import {
   Sparkles,
+  MessageCircle,
   Plane,
   BedDouble,
   MapPinned,
@@ -9,7 +10,17 @@ import {
   CloudSun,
   CarFront,
 } from "lucide-react";
-const icons = [Sparkles, Plane, BedDouble, CarFront, MapPinned, ShoppingBag, Coins, CloudSun];
+const icons = [
+  Sparkles,
+  MessageCircle,
+  Plane,
+  BedDouble,
+  CarFront,
+  MapPinned,
+  ShoppingBag,
+  Coins,
+  CloudSun,
+];
 export function TravelNavigation({
   section,
   onChange,

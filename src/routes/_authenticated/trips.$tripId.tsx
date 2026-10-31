@@ -1,3 +1,5 @@
+import { DestinationDiscovery } from "@/components/DestinationDiscovery";
+import { saveGuestSimulation } from "@/lib/planner-draft";
 import { CarRental } from "@/components/CarRental";
 import { MorePlaces } from "@/components/MorePlaces";
 import { extraActivity } from "@/lib/extra-places";
@@ -92,6 +94,7 @@ function TripPage() {
     childrenAges: preferences.preference.childrenAges,
     childrenAgeRanges: preferences.preference.childrenAgeRanges,
   };
+  const [chatDate, setChatDate] = useState(trip.start_date);
   async function updateJourney(next: Journey) {
     setSelectionBusy(true);
     try {
@@ -116,6 +119,7 @@ function TripPage() {
   }
   const sectionMap: Record<string, TravelSection> = {
     ideas: "planner",
+    chat: "chat",
     flights: "flights",
     hotels: "hotels",
     cars: "cars",
@@ -128,6 +132,7 @@ function TripPage() {
   };
   const tabMap: Record<TravelSection, string> = {
     planner: "ideas",
+    chat: "chat",
     flights: "flights",
     hotels: "hotels",
     cars: "cars",
@@ -212,6 +217,33 @@ function TripPage() {
               )
             }
           >
+            <WorkspacePanel active={tab === "chat"} label="Travel Chatbot">
+              <div className="mx-auto max-w-2xl">
+                <p className="text-sm text-muted-foreground">
+                  Explore a new trip. Your saved trip stays unchanged.
+                </p>
+                <DestinationDiscovery
+                  start={chatDate}
+                  onStartChange={setChatDate}
+                  onChoose={(choice) => {
+                    const departure = choice.departure ?? journey.data?.departure ?? "";
+                    saveGuestSimulation({
+                      ...brief,
+                      ...choice,
+                      start: choice.start ?? chatDate,
+                      ...(choice.childrenAges ? { childrenAgeRanges: undefined } : {}),
+                      journey: {
+                        departure,
+                        flightsRequired: !!departure,
+                        flightBudget: 0,
+                        hotelComfort: "Comfortable",
+                      },
+                    });
+                    navigate({ to: "/" });
+                  }}
+                />
+              </div>
+            </WorkspacePanel>
             <WorkspacePanel active={tab === "flights"} label="Flights">
               {journey.data && (
                 <fieldset

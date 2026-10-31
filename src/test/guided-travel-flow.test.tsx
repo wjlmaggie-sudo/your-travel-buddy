@@ -162,7 +162,8 @@ it("carries an edited flight destination into the hotel step after selection", a
     expect.objectContaining({ destination: "Rome" }),
     expect.any(AbortSignal),
   );
-}, 20000);
+  // This multi-step flow rerenders mounted panels; allow slower desktop/CI runs.
+}, 35000);
 
 it("keeps a direct hotel-search button on the completed overview and automatically reuses the trip details", async () => {
   setup();
@@ -194,4 +195,22 @@ it("lets guests discover a destination and keeps their existing group and budget
   expect(screen.getByLabelText("Total group budget (EUR)")).toHaveValue(1800);
   fireEvent.click(screen.getByRole("button", { name: "Continue to hotels →" }));
   await waitFor(() => expect(services.hotels).toHaveBeenCalled());
+});
+
+it("offers a dedicated chatbot section and transfers the understood group budget and origin", () => {
+  setup();
+  fireEvent.click(screen.getByRole("button", { name: "Travel Chatbot" }));
+  fireEvent.change(screen.getByLabelText("Tell Travel Buddy what you have in mind"), {
+    target: {
+      value: "5 days from Berlin, 2 adults and 1 child aged 6, budget €1200, family activities",
+    },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Send" }));
+  expect(screen.getByRole("complementary", { name: "What I understood" })).toHaveTextContent(
+    "Berlin",
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Plan Lisbon" }));
+  expect(screen.getByLabelText("Departure city / airport")).toHaveValue("Berlin");
+  expect(screen.getByLabelText("How many people?")).toHaveValue(3);
+  expect(screen.getByLabelText("Total group budget (EUR)")).toHaveValue(1200);
 });

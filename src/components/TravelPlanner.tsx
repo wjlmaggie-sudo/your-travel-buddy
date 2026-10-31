@@ -41,7 +41,6 @@ export function TravelPlanner() {
   const planningRequest = useRef(0);
   const formRef = useRef<HTMLFormElement>(null);
   const requestedSection = useRef<TravelSection | null>(null);
-  const [discovering, setDiscovering] = useState(false);
   const [budgetInput, setBudgetInput] = useState("");
   const [estimatingBudget, setEstimatingBudget] = useState(false);
   const [findingPlaces, setFindingPlaces] = useState(false);
@@ -67,6 +66,8 @@ export function TravelPlanner() {
       flightsRequired: false,
     },
   }));
+  const [chatStart, setChatStart] = useState(draft.start);
+  useEffect(() => setChatStart(draft.start), [draft.start]);
   const [pendingPlan, setPendingPlan] = useState<PlannerDraft | null>(null);
   const [budget, setBudget] = useState<BudgetSnapshot | null>(null);
   const [section, setSection] = useState<TravelSection>("planner"),
@@ -242,6 +243,31 @@ export function TravelPlanner() {
           )
         }
       >
+        <WorkspacePanel active={section === "chat"} label="Travel Chatbot">
+          <div className="mx-auto max-w-2xl">
+            <DestinationDiscovery
+              start={chatStart}
+              onStartChange={setChatStart}
+              onChoose={(choice) => {
+                setDraft((current) => ({
+                  ...current,
+                  ...choice,
+                  ...(choice.childrenAges ? { childrenAgeRanges: undefined } : {}),
+                  journey: {
+                    ...current.journey!,
+                    ...(choice.departure
+                      ? { departure: choice.departure, flightsRequired: true }
+                      : {}),
+                  },
+                }));
+                if (choice.budget !== undefined) setBudgetInput(String(choice.budget));
+                setEditing(true);
+                setSection("planner");
+                toast.success(`${choice.destination} added. Review the details, then continue.`);
+              }}
+            />
+          </div>
+        </WorkspacePanel>
         <WorkspacePanel
           active={section === "planner" && (!result || editing)}
           label="Plan your trip"
@@ -260,24 +286,11 @@ export function TravelPlanner() {
               type="button"
               variant="outline"
               className="mt-4"
-              onClick={() => setDiscovering(!discovering)}
+              onClick={() => setSection("chat")}
             >
-              {discovering ? "Back to trip details" : "Not sure where? Chat with Travel Buddy"}
+              Not sure where? Chat with Travel Buddy
             </Button>
-            {discovering && (
-              <DestinationDiscovery
-                start={draft.start}
-                onStartChange={(start) => setDraft((current) => ({ ...current, start }))}
-                onChoose={(choice) => {
-                  setDraft((current) => ({ ...current, ...choice }));
-                  setDiscovering(false);
-                  toast.success(
-                    `${choice.destination} added. Check your dates and group, then continue.`,
-                  );
-                }}
-              />
-            )}
-            <form hidden={discovering} ref={formRef} className="mt-6" onSubmit={generate}>
+            <form ref={formRef} className="mt-6" onSubmit={generate}>
               <fieldset disabled={estimatingBudget} className="space-y-4">
                 <PersonaPreferences
                   value={draft}
@@ -522,7 +535,7 @@ export function TravelPlanner() {
             />
           </WorkspacePanel>
         )}
-        {!result && !["planner", "currency", "weather", "cars"].includes(section) && (
+        {!result && !["planner", "chat", "currency", "weather", "cars"].includes(section) && (
           <WorkspacePanel
             active
             label={SECTIONS.find((item) => item.id === section)?.label ?? "Travel options"}

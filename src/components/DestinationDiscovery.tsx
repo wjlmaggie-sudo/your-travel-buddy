@@ -5,19 +5,16 @@ import { Input } from "./ui/input";
 import {
   understandDiscovery,
   discoverDestinations,
-  discoveryInterest,
+  discoveryChoice,
+  discoveryMissing,
+  type DiscoveryChoice,
   type DiscoveryNeeds,
 } from "@/lib/destination-discovery";
 
 type Props = {
   start: string;
   onStartChange?: (start: string) => void;
-  onChoose: (choice: {
-    destination: string;
-    days: number;
-    interest: string;
-    persona?: "family";
-  }) => void;
+  onChoose: (choice: DiscoveryChoice) => void;
 };
 export function DestinationDiscovery({ start, onChoose, onStartChange }: Props) {
   const [input, setInput] = useState("");
@@ -28,11 +25,13 @@ export function DestinationDiscovery({ start, onChoose, onStartChange }: Props) 
     if (!text.trim()) return;
     const next = understandDiscovery(text, needs);
     setNeeds(next);
-    const complete = !!next.days && (next.warm !== undefined || !!next.activity);
+    if (next.start && next.start !== start) onStartChange?.(next.start);
+    const missing = discoveryMissing(next);
+    const complete = !missing;
     setReady(complete);
-    const matches = discoverDestinations(next, start);
-    const reply = !next.days
-      ? "Roughly how many days do you have? Try ‘5 days’ or ‘one week’. I can plan up to 30 days."
+    const matches = discoverDestinations(next, next.start ?? start);
+    const reply = missing
+      ? missing
       : next.unsupported || (next.warm === false && !next.activity)
         ? "What would you like to do? My current collection covers hiking, beaches, surfing, culture and family outings. That specific activity is not covered yet; I won't suggest an unrelated destination."
         : !complete
@@ -73,7 +72,10 @@ export function DestinationDiscovery({ start, onChoose, onStartChange }: Props) 
             className="mt-2"
             value={start}
             onChange={(event) => {
-              if (/^\d{4}-\d{2}-\d{2}$/.test(event.target.value)) onStartChange(event.target.value);
+              if (/^\d{4}-\d{2}-\d{2}$/.test(event.target.value)) {
+                onStartChange(event.target.value);
+                setNeeds((current) => ({ ...current, start: event.target.value }));
+              }
             }}
           />
           <p className="mt-1 text-xs text-muted-foreground">
@@ -96,6 +98,79 @@ export function DestinationDiscovery({ start, onChoose, onStartChange }: Props) 
           </div>
         ))}
       </div>
+      {messages.length > 0 && (
+        <aside aria-label="What I understood" className="rounded-2xl border bg-card p-4">
+          <h4 className="font-semibold">What I understood</h4>
+          <dl className="mt-3 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
+            {[
+              ["Duration", needs.days ? `${needs.days} days` : "Not provided"],
+              [
+                "Weather",
+                needs.warm === true
+                  ? "Warm / sunny preferred"
+                  : needs.warm === false
+                    ? "Less heat preferred"
+                    : "No preference given",
+              ],
+              [
+                "Activities",
+                needs.activities?.length
+                  ? needs.activities.join(", ")
+                  : needs.family
+                    ? "Family outings"
+                    : "Not provided",
+              ],
+              ["Departure", needs.departure ?? "Not provided"],
+              [
+                "Travelers",
+                needs.travelers
+                  ? `${needs.travelers} people, including children`
+                  : "Use group size in the planner",
+              ],
+              [
+                "Children",
+                needs.childrenAges
+                  ? needs.childrenAges.join(", ") + " years"
+                  : needs.childrenCount
+                    ? `${needs.childrenCount} · ages needed`
+                    : "Not specified",
+              ],
+              [
+                "Budget",
+                needs.budget
+                  ? `${needs.currency ?? "Planner currency"} ${needs.budget.toLocaleString()} ${needs.budgetPerPerson ? "per person" : "for the group"}`
+                  : "Optional · suggest in planner",
+              ],
+              ["Departure date", needs.start ?? start],
+            ].map(([label, value]) => (
+              <div key={label}>
+                <dt className="text-xs text-muted-foreground">{label}</dt>
+                <dd>{value}</dd>
+              </div>
+            ))}
+          </dl>
+          <p className="mt-3 text-xs text-muted-foreground">
+            Tell me a correction, such as “4 days instead”, “from Berlin”, or “budget €1,200”. These
+            details only enter your trip when you choose a destination.
+          </p>
+        </aside>
+      )}
+      <details className="rounded-2xl border p-4 text-sm">
+        <summary className="cursor-pointer font-medium">About this chat & live AI</summary>
+        <p className="mt-3 text-muted-foreground">
+          This chat works on the live website with no subscription or API charge. It recognizes
+          supported travel phrases and remembers your details during this session. It is not a
+          general-purpose AI model. Its current destination collection is Lisbon, Madeira and
+          Tenerife.
+        </p>
+        <p className="mt-2 text-muted-foreground">
+          A hosted AI model would require a separate provider and available usage allowance; a
+          permanently free public service is not connected. Running an open model on your own
+          computer avoids per-request provider fees but requires a model download and suitable
+          hardware, and does not automatically serve other website visitors. Paid AI remains
+          disabled.
+        </p>
+      </details>
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -177,14 +252,7 @@ export function DestinationDiscovery({ start, onChoose, onStartChange }: Props) 
               <Button
                 type="button"
                 className="mt-4 flex"
-                onClick={() =>
-                  onChoose({
-                    destination: place.destination,
-                    days: needs.days!,
-                    interest: discoveryInterest(needs.activity),
-                    ...(needs.activity === "family" ? { persona: "family" as const } : {}),
-                  })
-                }
+                onClick={() => onChoose(discoveryChoice(needs, place.destination))}
               >
                 Plan {place.destination.split(",")[0]} <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
