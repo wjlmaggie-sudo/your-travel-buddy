@@ -1,6 +1,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import { fileURLToPath, URL } from "node:url";
 
 // A client-only build of the same routes and components, without Start/Nitro.
@@ -8,7 +9,7 @@ import { fileURLToPath, URL } from "node:url";
 export default defineConfig(() => {
   return {
     base: process.env["PAGES_BASE_PATH"] || "/your-travel-buddy/",
-    plugins: [react(), tailwindcss()],
+    plugins: [tanstackRouter({ autoCodeSplitting: false }), react(), tailwindcss()],
     resolve: {
       alias: {
         "@/lib/ai.functions": fileURLToPath(new URL("./src/lib/ai.edge.ts", import.meta.url)),

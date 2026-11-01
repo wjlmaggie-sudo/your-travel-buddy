@@ -1,4 +1,6 @@
 import { DestinationDiscovery } from "./DestinationDiscovery";
+import { MobileTripSetup } from "./MobileTripSetup";
+import { NATIVE_APP } from "@/lib/native-app";
 import { CarRental } from "./CarRental";
 import {
   suggestBudget,
@@ -175,7 +177,10 @@ export function TravelPlanner() {
       ideas,
       revision: (current?.revision ?? 0) + 1,
     }));
-    setSection(requestedSection.current ?? (next.journey?.flightsRequired ? "flights" : "hotels"));
+    setSection(
+      requestedSection.current ??
+        (NATIVE_APP ? "planner" : next.journey?.flightsRequired ? "flights" : "hotels"),
+    );
     requestedSection.current = null;
     setEdited(false);
     setEditing(false);
@@ -243,6 +248,14 @@ export function TravelPlanner() {
           )
         }
       >
+        {!result && (
+          <WorkspacePanel active={section === "review"} label="Final budget">
+            <p>Create your trip and select your offers to review the final budget here.</p>
+            <Button variant="outline" onClick={() => setSection("planner")}>
+              Plan a trip
+            </Button>
+          </WorkspacePanel>
+        )}
         <WorkspacePanel active={section === "chat"} label="Travel Chatbot">
           <div className="mx-auto max-w-2xl">
             <DestinationDiscovery
@@ -273,191 +286,208 @@ export function TravelPlanner() {
           active={section === "planner" && (!result || editing)}
           label="Plan your trip"
         >
-          <div className="mx-auto max-w-2xl">
-            <p className="text-xs uppercase tracking-widest text-secondary">
-              A whole trip, with less effort
-            </p>
-            <h2 id="planner-heading" className="mt-2 text-3xl font-semibold">
-              Where are we going?
-            </h2>
-            <p className="mt-3 text-sm text-muted-foreground">
-              A few details. A whole trip to explore.
-            </p>
-            <Button
-              type="button"
-              variant="outline"
-              className="mt-4"
-              onClick={() => setSection("chat")}
-            >
-              Not sure where? Chat with Travel Buddy
-            </Button>
-            <form ref={formRef} className="mt-6" onSubmit={generate}>
-              <fieldset disabled={estimatingBudget} className="space-y-4">
-                <PersonaPreferences
-                  value={draft}
-                  travelers={draft.travelers}
-                  onChange={(next) =>
-                    setDraft({
-                      ...draft,
-                      ...next,
-                      travelers: Math.max(draft.travelers, childCount(next) + 1),
-                    })
-                  }
-                />
-
-                <div>
-                  <Label htmlFor="planner-destination">Where would you love to go?</Label>
-                  <div className="relative mt-2">
-                    <MapPin className="absolute left-3 top-3.5 h-4 w-4 text-primary" />
-                    <Input
-                      id="planner-destination"
-                      className="h-12 pl-10"
-                      placeholder="City or region, country"
-                      required
-                      maxLength={200}
-                      value={draft.destination}
-                      onChange={(e) => setDraft({ ...draft, destination: e.target.value })}
-                    />
-                  </div>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {["Lisbon, Portugal", "Kyoto, Japan", "Bali, Indonesia"].map((place) => (
-                      <button
-                        key={place}
-                        type="button"
-                        className="rounded-full border px-3 py-1 text-xs hover:bg-muted"
-                        onClick={() => setDraft({ ...draft, destination: place })}
-                      >
-                        {place.split(",")[0]}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="planner-start">When do you leave?</Label>
-                    <Input
-                      id="planner-start"
-                      type="date"
-                      className="mt-2 h-11"
-                      required
-                      value={draft.start}
-                      onChange={(e) => setDraft({ ...draft, start: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="planner-days">How many days?</Label>
-                    <Input
-                      id="planner-days"
-                      type="number"
-                      className="mt-2 h-11"
-                      min={1}
-                      max={30}
-                      required
-                      value={draft.days}
-                      onChange={(e) => setDraft({ ...draft, days: Number(e.target.value) })}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="planner-travelers">How many people?</Label>
-                    <Input
-                      id="planner-travelers"
-                      type="number"
-                      className="mt-2 h-11"
-                      min={1}
-                      max={20}
-                      required
-                      value={draft.travelers}
-                      onChange={(e) => setDraft({ ...draft, travelers: Number(e.target.value) })}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="planner-budget">Total group budget ({draft.currency})</Label>
-                    <Input
-                      id="planner-budget"
-                      type="number"
-                      className="mt-2 h-11"
-                      min={0}
-                      max={1000000}
-                      step="0.01"
-                      placeholder="Optional · suggest a budget for me"
-                      aria-describedby="planner-budget-help"
-                      value={budgetInput}
-                      onChange={(e) => {
-                        setBudgetInput(e.target.value);
-                        setDraft({ ...draft, budget: Number(e.target.value) });
-                      }}
-                    />
-                    <p id="planner-budget-help" className="mt-2 text-xs text-muted-foreground">
-                      Optional · leave blank for a suggested budget.
-                    </p>
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor="planner-departure">Departure city / airport</Label>
-                  <Input
-                    id="planner-departure"
-                    className="mt-2 h-11"
-                    placeholder="Optional · add it for flight comparisons"
-                    maxLength={200}
-                    value={draft.journey?.departure ?? ""}
-                    onChange={(e) =>
+          {NATIVE_APP ? (
+            <MobileTripSetup
+              draft={draft}
+              onChange={setDraft}
+              budgetInput={budgetInput}
+              onBudgetInput={setBudgetInput}
+              formRef={formRef}
+              busy={estimatingBudget || findingPlaces}
+              onDiscover={() => setSection("chat")}
+              onPreferences={() => setPreferences(true)}
+              onSubmit={(event) => {
+                requestedSection.current = null;
+                generate(event);
+              }}
+            />
+          ) : (
+            <div className="mx-auto max-w-2xl">
+              <p className="text-xs uppercase tracking-widest text-secondary">
+                A whole trip, with less effort
+              </p>
+              <h2 id="planner-heading" className="mt-2 text-3xl font-semibold">
+                Where are we going?
+              </h2>
+              <p className="mt-3 text-sm text-muted-foreground">
+                A few details. A whole trip to explore.
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                className="mt-4"
+                onClick={() => setSection("chat")}
+              >
+                Not sure where? Chat with Travel Buddy
+              </Button>
+              <form ref={formRef} className="mt-6" onSubmit={generate}>
+                <fieldset disabled={estimatingBudget} className="space-y-4">
+                  <PersonaPreferences
+                    value={draft}
+                    travelers={draft.travelers}
+                    onChange={(next) =>
                       setDraft({
                         ...draft,
-                        journey: {
-                          ...draft.journey,
-                          departure: e.target.value,
-                          flightsRequired: !!e.target.value.trim(),
-                          flightBudget: flightAllowance(draft.budget),
-                          hotelComfort: draft.journey?.hotelComfort ?? "Comfortable",
-                        },
+                        ...next,
+                        travelers: Math.max(draft.travelers, childCount(next) + 1),
                       })
                     }
                   />
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    Optional · add a departure city for flights.
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-3">
-                  <Button
-                    disabled={findingPlaces || estimatingBudget}
-                    type="submit"
-                    className="h-11"
-                    onClick={() => {
-                      requestedSection.current = null;
-                    }}
-                  >
-                    {estimatingBudget
-                      ? "Estimating a starting budget…"
-                      : findingPlaces
-                        ? "Finding matching places…"
-                        : result
-                          ? "Update trip & continue"
-                          : draft.journey?.departure.trim()
-                            ? "Continue to flights →"
-                            : "Continue to hotels →"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="h-11"
-                    ref={preferencesTrigger}
-                    onClick={() => setPreferences(true)}
-                  >
-                    <SlidersHorizontal className="mr-2 h-4 w-4" />
-                    Preferences
-                  </Button>
-                  {result && (
-                    <Button type="button" variant="ghost" onClick={() => setEditing(false)}>
-                      Back to overview
+
+                  <div>
+                    <Label htmlFor="planner-destination">Where would you love to go?</Label>
+                    <div className="relative mt-2">
+                      <MapPin className="absolute left-3 top-3.5 h-4 w-4 text-primary" />
+                      <Input
+                        id="planner-destination"
+                        className="h-12 pl-10"
+                        placeholder="City or region, country"
+                        required
+                        maxLength={200}
+                        value={draft.destination}
+                        onChange={(e) => setDraft({ ...draft, destination: e.target.value })}
+                      />
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {["Lisbon, Portugal", "Kyoto, Japan", "Bali, Indonesia"].map((place) => (
+                        <button
+                          key={place}
+                          type="button"
+                          className="rounded-full border px-3 py-1 text-xs hover:bg-muted"
+                          onClick={() => setDraft({ ...draft, destination: place })}
+                        >
+                          {place.split(",")[0]}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="planner-start">When do you leave?</Label>
+                      <Input
+                        id="planner-start"
+                        type="date"
+                        className="mt-2 h-11"
+                        required
+                        value={draft.start}
+                        onChange={(e) => setDraft({ ...draft, start: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="planner-days">How many days?</Label>
+                      <Input
+                        id="planner-days"
+                        type="number"
+                        className="mt-2 h-11"
+                        min={1}
+                        max={30}
+                        required
+                        value={draft.days}
+                        onChange={(e) => setDraft({ ...draft, days: Number(e.target.value) })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="planner-travelers">How many people?</Label>
+                      <Input
+                        id="planner-travelers"
+                        type="number"
+                        className="mt-2 h-11"
+                        min={1}
+                        max={20}
+                        required
+                        value={draft.travelers}
+                        onChange={(e) => setDraft({ ...draft, travelers: Number(e.target.value) })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="planner-budget">Total group budget ({draft.currency})</Label>
+                      <Input
+                        id="planner-budget"
+                        type="number"
+                        className="mt-2 h-11"
+                        min={0}
+                        max={1000000}
+                        step="0.01"
+                        placeholder="Optional · suggest a budget for me"
+                        aria-describedby="planner-budget-help"
+                        value={budgetInput}
+                        onChange={(e) => {
+                          setBudgetInput(e.target.value);
+                          setDraft({ ...draft, budget: Number(e.target.value) });
+                        }}
+                      />
+                      <p id="planner-budget-help" className="mt-2 text-xs text-muted-foreground">
+                        Optional · leave blank for a suggested budget.
+                      </p>
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="planner-departure">Departure city / airport</Label>
+                    <Input
+                      id="planner-departure"
+                      className="mt-2 h-11"
+                      placeholder="Optional · add it for flight comparisons"
+                      maxLength={200}
+                      value={draft.journey?.departure ?? ""}
+                      onChange={(e) =>
+                        setDraft({
+                          ...draft,
+                          journey: {
+                            ...draft.journey,
+                            departure: e.target.value,
+                            flightsRequired: !!e.target.value.trim(),
+                            flightBudget: flightAllowance(draft.budget),
+                            hotelComfort: draft.journey?.hotelComfort ?? "Comfortable",
+                          },
+                        })
+                      }
+                    />
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Optional · add a departure city for flights.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    <Button
+                      disabled={findingPlaces || estimatingBudget}
+                      type="submit"
+                      className="h-11"
+                      onClick={() => {
+                        requestedSection.current = null;
+                      }}
+                    >
+                      {estimatingBudget
+                        ? "Estimating a starting budget…"
+                        : findingPlaces
+                          ? "Finding matching places…"
+                          : result
+                            ? "Update trip & continue"
+                            : draft.journey?.departure.trim()
+                              ? "Continue to flights →"
+                              : "Continue to hotels →"}
                     </Button>
-                  )}
-                </div>
-                <p className="text-xs leading-relaxed text-muted-foreground">
-                  Real flight and hotel searches. Editable daily suggestions.
-                </p>
-              </fieldset>
-            </form>
-          </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-11"
+                      ref={preferencesTrigger}
+                      onClick={() => setPreferences(true)}
+                    >
+                      <SlidersHorizontal className="mr-2 h-4 w-4" />
+                      Preferences
+                    </Button>
+                    {result && (
+                      <Button type="button" variant="ghost" onClick={() => setEditing(false)}>
+                        Back to overview
+                      </Button>
+                    )}
+                  </div>
+                  <p className="text-xs leading-relaxed text-muted-foreground">
+                    Real flight and hotel searches. Editable daily suggestions.
+                  </p>
+                </fieldset>
+              </form>
+            </div>
+          )}
         </WorkspacePanel>
         <Dialog open={preferences} onOpenChange={setPreferences}>
           <DialogContent

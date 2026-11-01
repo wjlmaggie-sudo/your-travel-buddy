@@ -9,6 +9,14 @@ lerna-debug.log*
 
 node_modules
 dist
+dist-native
+ios/App/App/public
+ios/App/App/capacitor.config.json
+ios/App/App/config*.xml
+ios/App/DerivedData
+ios/App/build
+ios/App/**/xcuserdata/
+output/playwright/
 dist-ssr
 .output
 .vinxi

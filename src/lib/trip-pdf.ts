@@ -10,6 +10,7 @@ import { fetchPlacePhoto } from "./place-photos";
 import { admissionFor, routeLegs } from "./visit-logistics";
 import { budgetAllocation, dailyBudgets, endDate } from "./planning";
 import { connectedBudget } from "./travel-workspace";
+import { finalTripBudget } from "./final-trip-budget";
 import {
   bookingSearch,
   requestedRooms,
@@ -228,6 +229,15 @@ export async function buildTripPdf(
     ),
   ];
   const connected = journey ? connectedBudget(b, journey, stay) : null;
+  if (journey) {
+    const review = finalTripBudget(b, journey, stay);
+    content.push(
+      heading("Final budget · selected prices and remaining estimates"),
+      paragraph(
+        `Total trip estimate: ${money(review.total)} for the group · About ${money(review.total / review.travelers)} per person. Selected advertised prices / entered quotes: ${money(review.selectedTotal)}. Remaining estimates and allowances: ${money(review.estimatedTotal)}. ${review.missing.length ? `Selections still needed: ${review.missing.join("; ")}.` : "Main selections are included."} This is not a guaranteed booking price; confirm final checkout prices with providers.`,
+      ),
+    );
+  }
   const parts = journey
     ? journeyBudget(b, journey, stay).parts
     : budgetAllocation(b.budget, b.style);
@@ -559,10 +569,16 @@ export async function downloadTripPdf(trip: PdfTrip, progress?: (message: string
       )
       .getBlob(resolve),
   );
+  const filename = `${trip.brief.destination.replace(/[^\p{L}\p{N}-]+/gu, "-").slice(0, 80) || "trip"}-travel-plan.pdf`;
+  const { isNative, sharePdf } = await import("./native-app");
+  if (isNative()) {
+    const url = await sharePdf(blob, filename);
+    return { missingPhotos: result.missingPhotos, missingMaps: result.missingMaps, url, filename };
+  }
   const url = URL.createObjectURL(blob),
     anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = `${trip.brief.destination.replace(/[^\p{L}\p{N}-]+/gu, "-").slice(0, 80) || "trip"}-travel-plan.pdf`;
+  anchor.download = filename;
   document.body.append(anchor);
   anchor.click();
   anchor.remove();

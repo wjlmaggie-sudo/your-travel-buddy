@@ -1,3 +1,4 @@
+import { appOrigins } from "../_shared/app-origins.ts";
 import { createClient } from "@supabase/supabase-js";
 import { createSerpHotelHandler } from "../_shared/serpapi-hotels.ts";
 const database = createClient(
@@ -10,10 +11,7 @@ const database = createClient(
 Deno.serve(
   createSerpHotelHandler({
     apiKey: Deno.env.get("SERPAPI_API_KEY"),
-    allowedOrigins: (Deno.env.get("HOTEL_ALLOWED_ORIGINS") ?? "https://wjlmaggie-sudo.github.io")
-      .split(",")
-      .map((v) => v.trim())
-      .filter(Boolean),
+    allowedOrigins: appOrigins(Deno.env.get("HOTEL_ALLOWED_ORIGINS"), "https://wjlmaggie-sudo.github.io"),
     claim: async () => {
       // Shared with flights: at most 200 upstream requests per UTC month in total.
       const { data, error } = await database.rpc("claim_flight_search");

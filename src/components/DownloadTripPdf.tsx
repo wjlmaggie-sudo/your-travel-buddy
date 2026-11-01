@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { isNative } from "@/lib/native-app";
 import { Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import type { PdfTrip } from "@/lib/trip-pdf";
@@ -52,7 +53,7 @@ export function DownloadTripPdf({ trip, disabled = false }: { trip: PdfTrip; dis
       </p>
       <div className="min-h-5">
         {file && (
-          <a href={file.url} download={file.filename} className="text-xs text-secondary underline">
+          <a href={file.url} download={file.filename} onClick={isNative() ? (event) => { event.preventDefault(); void import("@capacitor/share").then(({ Share }) => Share.share({ files: [file.url], title: file.filename })).catch(() => toast.error("Could not share the PDF. Please try again.")); } : undefined} className="text-xs text-secondary underline">
             PDF ready · download again
           </a>
         )}

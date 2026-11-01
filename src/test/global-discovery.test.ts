@@ -10,6 +10,64 @@ import {
   type GlobalCity,
 } from "@/lib/global-discovery";
 import { understandDiscovery } from "@/lib/destination-discovery";
+
+it("identifies browser API requests and sends geographic requests in series", async () => {
+  resetGlobalDiscoveryCache();
+  let active = 0,
+    maximum = 0;
+  const fixture = fixtureFetch();
+  const request: typeof fetch = async (input, init) => {
+    if (String(input).includes("wikipedia.org")) {
+      active++;
+      maximum = Math.max(maximum, active);
+      expect(new Headers(init?.headers).get("Api-User-Agent")).toContain("TravelBuddy/1.0");
+      await Promise.resolve();
+      const result = await fixture(input, init);
+      active--;
+      return result;
+    }
+    return fixture(input, init);
+  };
+  await activityEvidence(
+    [{ id: 101, name: "Bangkok", countryCode: "TH", lat: 13.75, lon: 100.5, population: 10000000 }],
+    ["hiking", "family"],
+    new AbortController().signal,
+    request,
+  );
+  expect(maximum).toBe(1);
+});
+
+it("retries a short API rate limit once without ignoring a longer server backoff", async () => {
+  resetGlobalDiscoveryCache();
+  const city = {
+    id: 101,
+    name: "Bangkok",
+    countryCode: "TH",
+    lat: 13.75,
+    lon: 100.5,
+    population: 10000000,
+  };
+  const request = vi
+    .fn()
+    .mockResolvedValueOnce(
+      new Response("Rate limited", { status: 429, headers: { "Retry-After": "0" } }),
+    )
+    .mockResolvedValueOnce(Response.json({ query: { pages: {} } }));
+  await expect(
+    activityEvidence([city], ["hiking"], new AbortController().signal, request),
+  ).resolves.toEqual([[]]);
+  expect(request).toHaveBeenCalledTimes(2);
+  resetGlobalDiscoveryCache();
+  const longBackoff = vi
+    .fn()
+    .mockResolvedValue(
+      new Response("Rate limited", { status: 429, headers: { "Retry-After": "60" } }),
+    );
+  await expect(
+    activityEvidence([city], ["hiking"], new AbortController().signal, longBackoff),
+  ).rejects.toThrow("429");
+  expect(longBackoff).toHaveBeenCalledTimes(1);
+});
 const rows = [
   [101, "Bangkok", "TH", 13.75, 100.5, 10000000],
   [102, "Suva", "FJ", -18.1, 178.4, 100000],

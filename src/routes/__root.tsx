@@ -1,4 +1,9 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { NATIVE_APP, setupNativeApp } from "@/lib/native-app";
+import { clearAccountCopies, readCompanionTrips } from "@/lib/travel-companion";
+import { cancelTripReminder } from "@/lib/native-app";
+import { MobileNavigation } from "@/components/MobileNavigation";
+import { toast } from "sonner";
 import {
   Outlet,
   Link,
@@ -56,6 +61,11 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
         >
           Try again
         </button>
+        {NATIVE_APP && (
+          <Link to="/on-trip" search={{}} className="mt-4 block text-sm text-secondary underline">
+            Open offline itinerary
+          </Link>
+        )}
       </div>
     </div>
   );
@@ -65,7 +75,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { title: "AI Travel — Travel Planner" },
       { name: "description", content: "Plan itineraries, track budgets and get AI trip ideas." },
       { property: "og:type", content: "website" },
@@ -113,7 +123,23 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
   useEffect(() => {
-    const { data } = supabase.auth.onAuthStateChange((event) => {
+    const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT" || event === "SIGNED_IN" || event === "INITIAL_SESSION") {
+        if (event === "SIGNED_OUT" || session?.user) {
+          const ownerId = event === "SIGNED_OUT" ? undefined : session?.user.id;
+          for (const copy of readCompanionTrips()) {
+            if (copy.ownerId && copy.ownerId !== ownerId)
+              void cancelTripReminder(copy).catch(() => {});
+          }
+          try {
+            clearAccountCopies(ownerId);
+          } catch {
+            toast.error(
+              "Could not clear offline account copies. Remove them in Today before sharing this device.",
+            );
+          }
+        }
+      }
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
       router.invalidate();
       if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
@@ -121,9 +147,40 @@ function RootComponent() {
     return () => data.subscription.unsubscribe();
   }, [router, queryClient]);
 
+  useEffect(() => {
+    let disposed = false;
+    let cleanup: (() => void) | undefined;
+    void setupNativeApp(async (code) => {
+      const { error } = await supabase.auth.exchangeCodeForSession(code);
+      if (error) {
+        toast.error("The sign-in link could not be completed. Please sign in again.");
+        return;
+      }
+      await router.navigate({ to: "/trips" });
+    })
+      .then((remove) => {
+        if (disposed) remove();
+        else cleanup = remove;
+      })
+      .catch(() =>
+        toast.error("Some iPhone features could not start. Restart the app to try again."),
+      );
+    return () => {
+      disposed = true;
+      cleanup?.();
+    };
+  }, [router]);
+
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
+      {NATIVE_APP ? (
+        <div className="native-app">
+          <Outlet />
+          <MobileNavigation />
+        </div>
+      ) : (
+        <Outlet />
+      )}
       <Toaster />
     </QueryClientProvider>
   );

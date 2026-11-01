@@ -1,3 +1,4 @@
+import { NATIVE_APP } from "@/lib/native-app";
 import { publicAsset } from "@/lib/deployment";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
@@ -21,9 +22,18 @@ export function AppHeader() {
           <img src={publicAsset("ai-travel-logo.svg")} alt="" className="h-7 w-7" /> Travel Buddy
         </Link>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/">Plan a trip</Link>
-          </Button>
+          {!NATIVE_APP && (
+            <>
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/on-trip" search={{}}>
+                  Today
+                </Link>
+              </Button>
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/">Plan a trip</Link>
+              </Button>
+            </>
+          )}
           <Button variant="ghost" size="sm" onClick={signOut}>
             Sign out
           </Button>

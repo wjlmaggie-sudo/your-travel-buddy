@@ -4,6 +4,8 @@
     "src/**/*.tsx",
     "vite.config.ts",
     "vite.pages.config.ts",
+    "vite.native.config.ts",
+    "capacitor.config.ts",
     "vitest.config.ts",
     "eslint.config.js"
   ],

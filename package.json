@@ -15,13 +15,27 @@
     "build:pages": "node scripts/check-pages-env.mjs && vite build --config vite.pages.config.ts && node scripts/finalize-pages.mjs",
     "dev:pages": "vite --config vite.pages.config.ts",
     "preview:pages": "vite preview --config vite.pages.config.ts",
-    "publish:pages": "node scripts/publish-pages.mjs"
+    "publish:pages": "node scripts/publish-pages.mjs",
+    "build:ios": "node scripts/check-pages-env.mjs && vite build --config vite.native.config.ts",
+    "dev:ios": "vite --config vite.native.config.ts",
+    "preview:ios": "vite preview --config vite.native.config.ts",
+    "ios:sync": "pnpm run build:ios && cap sync ios",
+    "ios:open": "cap open ios",
+    "ios:run": "cap run ios"
   },
   "overrides": {
     "rolldown": "1.2.1"
   },
   "dependencies": {
     "@ai-sdk/openai": "^4.0.95",
+    "@capacitor/app": "8.1.2",
+    "@capacitor/app-launcher": "8.0.1",
+    "@capacitor/browser": "8.0.5",
+    "@capacitor/core": "8.6.0",
+    "@capacitor/filesystem": "8.1.5",
+    "@capacitor/ios": "8.6.0",
+    "@capacitor/local-notifications": "8.3.1",
+    "@capacitor/share": "8.0.3",
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -79,6 +93,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@capacitor/cli": "8.6.0",
     "@eslint/js": "^9.32.0",
     "@lovable.dev/vite-tanstack-config": "2.26.5",
     "@testing-library/jest-dom": "^6.6.0",
@@ -96,7 +111,7 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^15.15.0",
-    "jsdom": "^20.0.3",
+    "jsdom": "^30.1.3",
     "nitro": "3.0.260603-beta",
     "postgres": "^3.4.9",
     "prettier": "^3.7.3",

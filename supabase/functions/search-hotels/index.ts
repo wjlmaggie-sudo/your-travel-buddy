@@ -1,3 +1,4 @@
+import { appOrigins } from "../_shared/app-origins.ts";
 import { createClient } from "@supabase/supabase-js";
 import { createHotelSearchHandler } from "../_shared/hotel-search.ts";
 
@@ -19,10 +20,7 @@ Deno.serve(
     apiKey: Deno.env.get(
       mode === "production" ? "NUITEE_PRODUCTION_API_KEY" : "NUITEE_SANDBOX_API_KEY",
     ),
-    allowedOrigins: (Deno.env.get("HOTEL_ALLOWED_ORIGINS") ?? "")
-      .split(",")
-      .map((value) => value.trim())
-      .filter(Boolean),
+    allowedOrigins: appOrigins(Deno.env.get("HOTEL_ALLOWED_ORIGINS"), ""),
     claim: async () => {
       if (!database) throw new Error("Missing quota database.");
       const { data, error } = await database.rpc("claim_hotel_preview");

@@ -1,5 +1,22 @@
 # Your Travel Buddy
 
+## iPhone app
+
+The iPhone target uses the current shared platform with a dedicated phone layout,
+three-step trip setup, bottom navigation and an offline travel companion. See
+[iPhone build, feature coverage and release status](deployment/IPHONE_APP.md).
+Run `pnpm run dev:ios` for the browser preview or `pnpm run ios:sync` to prepare
+the Xcode project. Native device testing requires Xcode; live mobile searches
+also require deploying the prepared backend origin changes.
+
+## Final budget on website and iPhone
+
+Choose **Final budget** after selecting your offers to see the itemized group
+total, per-person average, exact split, selected prices, remaining estimates and
+any over-budget amount. Scoped selections replace their allowances without double
+counting. The shared review is included in PDF exports and downloaded offline
+trip copies; estimated costs are clearly distinguished from selected quotes.
+
 ## Travel planning personas
 
 See the [Business, Family and Budget Travel specifications](docs/personas/README.md)

@@ -1,4 +1,5 @@
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
+import { NATIVE_APP } from "@/lib/native-app";
 import { dailyMoney } from "./DailyBudget";
 import { TravelNavigation } from "./TravelNavigation";
 import { SECTIONS, type TravelSection } from "@/lib/travel-workspace";
@@ -17,13 +18,18 @@ export function TravelWorkspace({
   title?: string;
   summary?: ReactNode;
 }) {
+  useEffect(() => {
+    if (NATIVE_APP) window.scrollTo({ top: 0, behavior: "auto" });
+  }, [section]);
   return (
     <div className="travel-workspace" data-testid="travel-workspace">
       <aside className="workspace-navigation">
         <TravelNavigation section={section} onChange={onChange} />
       </aside>
       <div className="flex min-h-0 min-w-0 flex-col">
-        <header className="workspace-heading">
+        <header
+          className={`workspace-heading ${NATIVE_APP && (section === "planner" || section === "review") ? "mobile-planner-summary" : ""}`}
+        >
           <div className="min-w-0">
             <p className="truncate text-[10px] font-semibold uppercase tracking-[.18em] text-secondary">
               {title || "Your travel workspace"}

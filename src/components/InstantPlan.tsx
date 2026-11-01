@@ -1,4 +1,7 @@
+import { NATIVE_APP } from "@/lib/native-app";
+import { FinalTripBudget } from "./FinalTripBudget";
 import { TripCover } from "./TripCover";
+import { FollowPlanButton } from "./FollowPlanButton";
 import { CarRental } from "./CarRental";
 import { MorePlaces } from "./MorePlaces";
 import { extraActivity } from "@/lib/extra-places";
@@ -127,6 +130,24 @@ export function InstantPlan({
       ),
     }));
   }
+  function prepareForSave() {
+    if (ideas.days.some((day) => day.items.some((item) => !item.title.trim()))) {
+      toast.error("Give each activity a title before saving.");
+      return false;
+    }
+    if (
+      !savePlannerDraft({
+        ...brief,
+        ...(journey ? { journey } : {}),
+        ideas,
+        ...(stay ? { stay } : { stay: undefined }),
+      })
+    ) {
+      toast.error("Your browser could not keep this plan. Download a copy instead.");
+      return false;
+    }
+    return true;
+  }
   return (
     <div id="whole-trip-plan" className="contents">
       <WorkspacePanel active={section === "planner" && overviewActive} label="AI Travel Overview">
@@ -145,77 +166,18 @@ export function InstantPlan({
             </Button>
           </div>
         )}
-        <div className="grid gap-6 rounded-2xl border bg-card p-5 lg:grid-cols-[1fr_240px]">
-          <div className="min-w-0">
-            <span className="inline-flex items-center gap-2 rounded-full bg-secondary/10 px-3 py-1 text-xs font-medium text-secondary">
-              <Check className="h-3 w-3" /> Your whole trip is ready · free template plan
-            </span>
-            <h2 id="whole-plan-heading" tabIndex={-1} className="mt-4 text-3xl font-semibold">
-              {brief.days} days in {brief.destination}
-            </h2>
-            <p className="mt-3 text-sm text-muted-foreground">
-              {brief.start} · {brief.travelers} travelers · an editable template plan
-            </p>
-            {personaSummary(brief) && (
-              <p className="mt-3 text-sm font-medium text-secondary">{personaSummary(brief)}</p>
-            )}
-            <details className="mt-3">
-              <summary className="cursor-pointer text-xs text-muted-foreground">
-                About these suggestions
-              </summary>
-              <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{ideas.summary}</p>
-            </details>
+        {NATIVE_APP && (
+          <section className="mobile-plan-ready">
+            <span className="companion-eyebrow">YOUR NEXT ADVENTURE</span>
+            <h1 className="mt-3 text-3xl font-semibold">{brief.destination}</h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              Choose your favorites. Make the plan yours.
+              {brief.days} days · {brief.travelers} travellers · {brief.start}
             </p>
-            <div className="mt-5 flex flex-wrap gap-3">
-              <Button type="button" onClick={() => onSectionChange?.("hotels")}>
-                Search hotels →
+            <div className="mobile-plan-actions mt-5">
+              <Button variant="outline" onClick={() => onSectionChange?.("review")}>
+                Review final budget
               </Button>
-              {journey.flightsRequired !== false && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => onSectionChange?.("flights")}
-                >
-                  Compare flights
-                </Button>
-              )}
-              <Button type="button" variant="outline" onClick={onEditBrief}>
-                Edit trip details
-              </Button>
-
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setPlacesRequest((request) => request + 1);
-                  onSectionChange?.("attractions");
-                }}
-              >
-                Browse more places
-              </Button>
-              <SavePlanButton
-                prepare={() => {
-                  if (ideas.days.some((day) => day.items.some((item) => !item.title.trim()))) {
-                    toast.error("Give each activity a title before saving.");
-                    return false;
-                  }
-                  if (
-                    !savePlannerDraft({
-                      ...brief,
-                      ...(journey ? { journey } : {}),
-                      ideas,
-                      ...(stay ? { stay } : { stay: undefined }),
-                    })
-                  ) {
-                    toast.error("Your browser could not keep this plan. Download a copy instead.");
-                    return false;
-                  }
-                  return true;
-                }}
-              />
-              <DownloadTripPdf
+              <FollowPlanButton
                 trip={{
                   brief,
                   summary: ideas.summary,
@@ -225,24 +187,173 @@ export function InstantPlan({
                   days: ideas.days,
                 }}
               />
+              <Button variant="outline" onClick={() => onSectionChange?.("attractions")}>
+                Review day-by-day plan
+              </Button>
             </div>
             <p className="mt-3 text-xs text-muted-foreground">
-              Explore freely. Sign in only to save your plan.
+              Editable suggestions. Check opening times and bookings before travelling.
             </p>
+            <div className="mt-6 grid grid-cols-2 gap-2">
+              <Button variant="outline" onClick={() => onSectionChange?.("hotels")}>
+                Find a stay
+              </Button>
+              <Button variant="outline" onClick={onEditBrief}>
+                Edit trip
+              </Button>
+            </div>
+            <details className="mobile-setup-details mt-4">
+              <summary>Save, export & more</summary>
+              <div className="mt-4 space-y-4">
+                <SavePlanButton prepare={prepareForSave} />
+                <DownloadTripPdf
+                  trip={{
+                    brief,
+                    summary: ideas.summary,
+                    interest: brief.interest,
+                    journey,
+                    stay,
+                    days: ideas.days,
+                  }}
+                />
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setPlacesRequest((request) => request + 1);
+                    onSectionChange?.("attractions");
+                  }}
+                >
+                  Browse more places
+                </Button>
+              </div>
+            </details>
+          </section>
+        )}
+        {!NATIVE_APP && (
+          <div className="grid gap-6 rounded-2xl border bg-card p-5 lg:grid-cols-[1fr_240px]">
+            <div className="min-w-0">
+              <span className="inline-flex items-center gap-2 rounded-full bg-secondary/10 px-3 py-1 text-xs font-medium text-secondary">
+                <Check className="h-3 w-3" /> Your whole trip is ready · free template plan
+              </span>
+              <h2 id="whole-plan-heading" tabIndex={-1} className="mt-4 text-3xl font-semibold">
+                {brief.days} days in {brief.destination}
+              </h2>
+              <p className="mt-3 text-sm text-muted-foreground">
+                {brief.start} · {brief.travelers} travelers · an editable template plan
+              </p>
+              {personaSummary(brief) && (
+                <p className="mt-3 text-sm font-medium text-secondary">{personaSummary(brief)}</p>
+              )}
+              <details className="mt-3">
+                <summary className="cursor-pointer text-xs text-muted-foreground">
+                  About these suggestions
+                </summary>
+                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                  {ideas.summary}
+                </p>
+              </details>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Choose your favorites. Make the plan yours.
+              </p>
+              <div className="mt-5 flex flex-wrap gap-3">
+                <Button type="button" onClick={() => onSectionChange?.("hotels")}>
+                  Search hotels →
+                </Button>
+                {journey.flightsRequired !== false && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => onSectionChange?.("flights")}
+                  >
+                    Compare flights
+                  </Button>
+                )}
+                <Button type="button" variant="outline" onClick={onEditBrief}>
+                  Edit trip details
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setPlacesRequest((request) => request + 1);
+                    onSectionChange?.("attractions");
+                  }}
+                >
+                  Browse more places
+                </Button>
+                <SavePlanButton prepare={prepareForSave} />
+                <Button type="button" variant="outline" onClick={() => onSectionChange?.("review")}>
+                  Review final budget
+                </Button>
+                <FollowPlanButton
+                  trip={{
+                    brief,
+                    summary: ideas.summary,
+                    interest: brief.interest,
+                    journey,
+                    stay,
+                    days: ideas.days,
+                  }}
+                />
+                <DownloadTripPdf
+                  trip={{
+                    brief,
+                    summary: ideas.summary,
+                    interest: brief.interest,
+                    journey,
+                    stay,
+                    days: ideas.days,
+                  }}
+                />
+              </div>
+              <p className="mt-3 text-xs text-muted-foreground">
+                Explore freely. Sign in only to save your plan.
+              </p>
+            </div>
+            <TripCover
+              active={section === "planner" && overviewActive}
+              destination={brief.destination}
+              locations={ideas.days.flatMap((day) => day.items.map((item) => item.location ?? ""))}
+            />
           </div>
-          <TripCover
-            active={section === "planner" && overviewActive}
-            destination={brief.destination}
-            locations={ideas.days.flatMap((day) => day.items.map((item) => item.location ?? ""))}
+        )}
+        <details open={!NATIVE_APP} className={NATIVE_APP ? "mobile-setup-details" : "contents"}>
+          <summary className={NATIVE_APP ? "" : "hidden"}>
+            Budget breakdown · {brief.currency} {brief.budget.toLocaleString()}
+          </summary>
+          <TripBudgetDashboard
+            onReview={() => onSectionChange?.("review")}
+            brief={brief}
+            journey={journey}
+            stay={stay}
+            onChange={(next) => {
+              setJourney(next);
+              onEdited();
+            }}
           />
-        </div>
-        <TripBudgetDashboard
-          brief={brief}
-          journey={journey}
-          stay={stay}
-          onChange={(next) => {
-            setJourney(next);
-            onEdited();
+        </details>
+      </WorkspacePanel>
+      <WorkspacePanel active={section === "review"} label="Final budget">
+        {section === "review" && (
+          <FinalTripBudget
+            brief={brief}
+            journey={journey}
+            stay={stay}
+            onChange={(next) => {
+              setJourney(next);
+              onEdited();
+            }}
+          />
+        )}
+        <FollowPlanButton
+          trip={{
+            brief,
+            summary: ideas.summary,
+            interest: brief.interest,
+            journey,
+            stay,
+            days: ideas.days,
           }}
         />
       </WorkspacePanel>

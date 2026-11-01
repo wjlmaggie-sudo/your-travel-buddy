@@ -10,11 +10,13 @@ export function TripBudgetDashboard({
   journey,
   stay,
   onChange,
+  onReview,
 }: {
   brief: StayBrief;
   journey: Journey;
   stay?: StayChoice | null | undefined;
   onChange?: (next: Journey) => void;
+  onReview?: () => void;
 }) {
   const id = useId(),
     costs = connectedBudget(brief, journey, stay),
@@ -114,6 +116,15 @@ export function TripBudgetDashboard({
         Planned total: {money(costs.planned)} · {money(costs.planned / brief.days)} / day on
         average. Choosing a pricier offer does not silently reduce food or activity estimates.
       </p>
+      {onReview && (
+        <button
+          type="button"
+          onClick={onReview}
+          className="mt-4 min-h-11 rounded-xl bg-secondary px-4 py-3 text-sm font-semibold text-secondary-foreground"
+        >
+          Review final budget
+        </button>
+      )}
       {onChange && (
         <details className="mt-4 rounded-xl border p-3">
           <summary className="cursor-pointer text-sm font-medium">

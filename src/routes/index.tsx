@@ -1,4 +1,5 @@
 import travelLake from "@/assets/travel-lake.jpg";
+import { NATIVE_APP } from "@/lib/native-app";
 import { publicAsset } from "@/lib/deployment";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,10 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
+  if (NATIVE_APP) return <div className="mobile-planner-page">
+    <header className="companion-header"><Link to="/on-trip" search={{}} className="flex items-center gap-2 font-display text-xl font-semibold"><img src={publicAsset("ai-travel-logo.svg")} alt="" className="h-7 w-7" />Travel Buddy</Link><span className="companion-eyebrow">MAKE A MEMORY</span></header>
+    <TravelPlanner />
+  </div>;
   return (
     <div className="min-h-screen">
       <header className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">

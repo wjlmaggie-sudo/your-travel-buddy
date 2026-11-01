@@ -89,6 +89,532 @@
   box-shadow: var(--shadow-card);
 }
 
+/* The companion uses the same cream, terracotta and forest palette as the planner. */
+.native-app {
+  min-height: 100dvh;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: calc(82px + env(safe-area-inset-bottom, 0px));
+}
+.native-preview {
+  background: #e8e7e1;
+}
+.native-preview body {
+  width: 100%;
+  max-width: 430px;
+  margin: 0 auto;
+  min-height: 100dvh;
+  box-shadow: 0 0 50px #303e2c14;
+}
+.native-preview .mobile-navigation {
+  max-width: 430px;
+  margin: 0 auto;
+  gap: 24px;
+}
+.native-preview .native-app input,
+.native-preview .native-app select,
+.native-preview .native-app textarea {
+  font-size: 16px;
+}
+.native-host input,
+.native-host textarea,
+.native-host select {
+  font-size: 16px;
+}
+.native-host button,
+.native-host [role="button"] {
+  min-height: 44px;
+}
+.native-host [role="dialog"] {
+  max-height: calc(100dvh - 36px - env(safe-area-inset-top, 0px));
+  overflow-y: auto;
+}
+.native-host [role="dialog"] > button:last-child {
+  display: grid;
+  place-items: center;
+  min-width: 44px;
+  top: 8px;
+  right: 8px;
+}
+.mobile-navigation {
+  position: fixed;
+  z-index: 40;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: clamp(20px, 10vw, 100px);
+  border-top: 1px solid var(--border);
+  background: var(--card);
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
+}
+.mobile-navigation a {
+  display: flex;
+  min-width: 80px;
+  min-height: 48px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  color: var(--muted-foreground);
+  font-size: 11px;
+  font-weight: 600;
+}
+.mobile-navigation svg {
+  width: 21px;
+  height: 21px;
+}
+.mobile-navigation a[aria-current="page"] {
+  color: var(--primary);
+}
+.companion-page {
+  min-height: 100dvh;
+  padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px));
+}
+.native-app .companion-page {
+  min-height: auto;
+  padding-bottom: 24px;
+}
+.companion-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 16px 22px 12px;
+}
+.companion-header > a {
+  white-space: nowrap;
+}
+.mobile-planner-page .companion-header > .companion-eyebrow {
+  display: none;
+}
+.companion-main {
+  max-width: 620px;
+  margin: 0 auto;
+  padding: 4px 22px 28px;
+}
+.companion-main > h1 {
+  font-size: 30px;
+}
+.companion-eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--secondary);
+}
+.companion-card {
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--card);
+  padding: 22px;
+}
+.companion-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+  padding-top: 36px;
+  text-align: center;
+}
+.companion-empty h1 {
+  font-size: clamp(36px, 9vw, 52px);
+  line-height: 1.12;
+  font-weight: 600;
+}
+.companion-empty > p:not(.companion-eyebrow) {
+  max-width: 350px;
+  line-height: 1.7;
+  color: var(--muted-foreground);
+  font-size: 15px;
+}
+.companion-empty > a {
+  width: 100%;
+  max-width: 350px;
+  min-height: 48px;
+}
+.companion-empty .companion-card {
+  margin-top: 16px;
+  width: 100%;
+}
+.companion-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 24px;
+  background: var(--accent);
+  color: var(--secondary);
+  display: grid;
+  place-items: center;
+}
+.companion-tabs {
+  display: flex;
+  gap: 5px;
+  margin: 18px 0 12px;
+  padding: 4px;
+  border-radius: 15px;
+  background: var(--muted);
+}
+.companion-tabs button {
+  flex: 1;
+  min-height: 44px;
+  font-size: 14px;
+  border-radius: 11px;
+}
+.companion-tabs button[aria-selected="true"] {
+  background: var(--card);
+  box-shadow: 0 2px 6px #493e2810;
+  font-weight: 600;
+}
+.companion-days {
+  display: flex;
+  gap: 9px;
+  margin-top: 22px;
+  padding: 0 0 6px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.companion-days button {
+  flex-shrink: 0;
+  min-width: 94px;
+  min-height: 66px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  border-radius: 14px;
+  text-align: left;
+}
+.companion-days span {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+}
+.companion-days small {
+  font-size: 10px;
+}
+.companion-days button[aria-pressed="true"] {
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+  border-color: var(--secondary);
+}
+.companion-next {
+  background: #e8ede3;
+  border: 1px solid #cad7c3;
+  border-radius: 22px;
+  padding: 20px;
+  color: #273e32;
+}
+.companion-next .companion-eyebrow {
+  color: #43664d;
+}
+.companion-timeline {
+  margin-left: 12px;
+  border-left: 1px solid var(--border);
+}
+.companion-stop {
+  position: relative;
+  margin: 0 0 20px 23px;
+  border: 1px solid var(--border);
+  border-radius: 17px;
+  background: var(--card);
+  padding: 18px;
+  overflow-wrap: anywhere;
+}
+.companion-stop-number {
+  position: absolute;
+  top: 18px;
+  left: -36px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--background);
+  border: 1px solid var(--border);
+  font-size: 10px;
+  color: var(--secondary);
+}
+.companion-stop.is-settled {
+  background: color-mix(in srgb, var(--muted) 35%, var(--card));
+}
+.companion-stop.is-settled .companion-stop-number {
+  background: var(--secondary);
+  color: white;
+  border-color: var(--secondary);
+}
+.companion-select {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px;
+  background: var(--card);
+}
+.native-app #plan-your-trip {
+  padding: 0 18px 24px;
+}
+.native-app .travel-workspace {
+  display: flex;
+  flex-direction: column;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+.native-app .workspace-navigation {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.native-app .workspace-panel {
+  padding: 18px 0;
+}
+.native-app .workspace-heading {
+  padding: 15px 0;
+  height: auto;
+  min-height: 64px;
+}
+.native-app .workspace-heading h2 {
+  font-size: 17px;
+}
+.native-app .workspace-heading .w-32 {
+  width: 112px;
+}
+.native-app .workspace-heading.mobile-planner-summary {
+  display: none;
+}
+.mobile-section-nav {
+  display: flex;
+  gap: 5px;
+  padding: 3px 0 12px;
+  border-bottom: 1px solid var(--border);
+}
+.mobile-section-nav > button {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 52px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  border-radius: 12px;
+}
+.mobile-section-nav > button[aria-current="page"] {
+  color: var(--secondary);
+  background: #e8ede3;
+}
+.mobile-tools-sheet {
+  max-width: 430px;
+  top: auto;
+  bottom: 0;
+  transform: translateX(-50%);
+  border-radius: 26px 26px 0 0;
+  padding-bottom: calc(30px + env(safe-area-inset-bottom, 0px));
+}
+.mobile-tools-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 10px;
+}
+.mobile-tools-grid button {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  min-height: 100px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--card);
+  color: var(--secondary);
+  font-size: 12px;
+}
+.mobile-setup-progress {
+  display: flex;
+  gap: 12px;
+}
+.mobile-setup-progress > span {
+  flex: 1;
+  font-size: 10px;
+  color: var(--muted-foreground);
+}
+.mobile-setup-progress > span[aria-current="step"] {
+  color: var(--secondary);
+  font-weight: 700;
+}
+.mobile-setup-progress i {
+  display: block;
+  width: 100%;
+  height: 3px;
+  margin-bottom: 8px;
+  background: var(--border);
+  border-radius: 2px;
+}
+.mobile-setup-progress i.is-filled {
+  background: var(--secondary);
+}
+.mobile-destination-chip {
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  font-size: 13px;
+  background: var(--card);
+}
+.mobile-discovery-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 18px;
+  background: #e8ede3;
+  border: 1px solid #cad7c3;
+  border-radius: 18px;
+  text-align: left;
+}
+.mobile-discovery-card span {
+  flex: 1;
+}
+.mobile-discovery-card strong {
+  display: block;
+  font-size: 14px;
+}
+.mobile-discovery-card small {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--muted-foreground);
+}
+.mobile-setup-details {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+  background: var(--card);
+}
+.mobile-setup-details > summary {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+}
+.mobile-setup-recap {
+  border-left: 3px solid var(--secondary);
+  padding: 3px 0 3px 14px;
+}
+.mobile-setup-recap span,
+.mobile-setup-recap small {
+  display: block;
+}
+.mobile-setup-recap small {
+  margin-top: 5px;
+  font-size: 11px;
+  color: var(--muted-foreground);
+}
+.mobile-plan-ready {
+  border-radius: 20px;
+  padding: 22px;
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+.mobile-plan-actions {
+  display: grid;
+  gap: 10px;
+}
+.mobile-plan-actions > button {
+  width: 100%;
+  min-height: 48px;
+}
+.final-budget-card {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  padding: 24px;
+  background: var(--card);
+}
+.final-budget-total {
+  border-radius: 18px;
+  padding: 22px;
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+}
+.final-budget-total p {
+  overflow-wrap: anywhere;
+}
+.final-budget-rows > div {
+  border-bottom: 1px solid var(--border);
+}
+.final-budget-badge {
+  display: inline-block;
+  margin: 0 6px 3px 0;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: var(--muted);
+  color: var(--muted-foreground);
+  font-size: 10px;
+  font-weight: 600;
+}
+.final-budget-badge.is-selected {
+  background: #e8ede3;
+  color: var(--secondary);
+}
+.native-app .final-budget-card,
+.companion-page .final-budget-card {
+  padding: 18px;
+}
+.native-app .final-budget-total,
+.companion-page .final-budget-total {
+  padding: 18px;
+}
+.native-app .final-budget-total .text-4xl,
+.companion-page .final-budget-total .text-4xl {
+  font-size: 32px;
+}
+.native-app .tool-card {
+  padding: 16px;
+}
+.native-app .workspace-panel .grid-cols-3 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.companion-page button,
+.companion-page summary {
+  touch-action: manipulation;
+}
+.companion-stop button,
+.companion-stop summary {
+  min-height: 32px;
+}
+.companion-page input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--secondary);
+}
+@media (max-width: 640px) {
+  .native-app input,
+  .native-app textarea,
+  .native-app select,
+  .companion-page input,
+  .companion-page textarea,
+  .companion-page select {
+    font-size: 16px;
+  }
+  .native-app button,
+  .native-app [role="button"] {
+    min-height: 44px;
+  }
+  .native-app header > div {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .native-app header a.font-display {
+    font-size: 16px;
+  }
+  .native-app .travel-hero {
+    max-height: 240px;
+  }
+}
+
 .travel-map-pin {
   display: flex;
   width: 30px;
@@ -544,8 +1070,24 @@ html {
 }
 
 /* Image-led cards share one calm visual language, without moving on hover. */
-.visual-offer { box-shadow: var(--shadow-card); transition: box-shadow 160ms ease, border-color 160ms ease; }
-.visual-offer:hover { border-color: var(--secondary); box-shadow: 0 8px 24px -16px var(--foreground); }
-.visual-offer figure { margin: 0; }
-.tool-card { background: linear-gradient(145deg, var(--card), var(--background)); }
-@media (prefers-reduced-motion: reduce) { .visual-offer { transition: none; } }
+.visual-offer {
+  box-shadow: var(--shadow-card);
+  transition:
+    box-shadow 160ms ease,
+    border-color 160ms ease;
+}
+.visual-offer:hover {
+  border-color: var(--secondary);
+  box-shadow: 0 8px 24px -16px var(--foreground);
+}
+.visual-offer figure {
+  margin: 0;
+}
+.tool-card {
+  background: linear-gradient(145deg, var(--card), var(--background));
+}
+@media (prefers-reduced-motion: reduce) {
+  .visual-offer {
+    transition: none;
+  }
+}

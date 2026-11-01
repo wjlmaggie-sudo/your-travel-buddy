@@ -1,4 +1,6 @@
 import { DestinationDiscovery } from "@/components/DestinationDiscovery";
+import { FollowPlanButton } from "@/components/FollowPlanButton";
+import { FinalTripBudget } from "@/components/FinalTripBudget";
 import { saveGuestSimulation } from "@/lib/planner-draft";
 import { CarRental } from "@/components/CarRental";
 import { MorePlaces } from "@/components/MorePlaces";
@@ -64,6 +66,7 @@ type Data = Awaited<ReturnType<NonNullable<ReturnType<typeof tripQuery>["queryFn
 
 function TripPage() {
   const { tripId } = Route.useParams();
+  const { user } = Route.useRouteContext();
   const { suggest } = Route.useSearch();
   const [tab, setTab] = useState("ideas");
   const [selectionBusy, setSelectionBusy] = useState(false);
@@ -129,6 +132,7 @@ function TripPage() {
     places: "planner",
     currency: "currency",
     weather: "weather",
+    review: "review",
   };
   const tabMap: Record<TravelSection, string> = {
     planner: "ideas",
@@ -140,6 +144,7 @@ function TripPage() {
     shopping: "shop",
     currency: "currency",
     weather: "weather",
+    review: "review",
   };
 
   async function deleteTrip() {
@@ -171,6 +176,31 @@ function TripPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
+            <FollowPlanButton
+              disabled={
+                preferences.isPending ||
+                preferences.isError ||
+                journey.isPending ||
+                journey.isError ||
+                stay.isPending ||
+                stay.isError ||
+                selectionBusy
+              }
+              source={{ tripId, ownerId: user.id }}
+              trip={{
+                brief,
+                journey: journey.data,
+                stay: stay.data,
+                days: Array.from({ length: brief.days }, (_, i) => ({
+                  day: i + 1,
+                  items: data.activities.filter((a) => a.day === i + 1),
+                })),
+                expenses: data.expenses,
+                packing: preferences.preference.packing.map(
+                  (id) => PRODUCTS.find((p) => p.id === id)?.name ?? id,
+                ),
+              }}
+            />
             <DownloadTripPdf
               disabled={
                 preferences.isPending ||
@@ -217,6 +247,27 @@ function TripPage() {
               )
             }
           >
+            <WorkspacePanel active={tab === "review"} label="Final budget">
+              {journey.data &&
+              !stay.isPending &&
+              !stay.isError &&
+              !preferences.isPending &&
+              !preferences.isError ? (
+                <fieldset disabled={selectionBusy} className="min-w-0">
+                  <FinalTripBudget
+                    brief={brief}
+                    journey={journey.data}
+                    stay={stay.data}
+                    onChange={updateJourney}
+                  />
+                </fieldset>
+              ) : (
+                <p>
+                  Open the planner and enable connected planning to review selections. Wait for trip
+                  preferences and prices to finish loading.
+                </p>
+              )}
+            </WorkspacePanel>
             <WorkspacePanel active={tab === "chat"} label="Travel Chatbot">
               <div className="mx-auto max-w-2xl">
                 <p className="text-sm text-muted-foreground">
@@ -359,6 +410,7 @@ function TripPage() {
               {journey.data && !stay.isPending && !stay.isError && (
                 <fieldset disabled={selectionBusy} className="min-w-0">
                   <TripBudgetDashboard
+                    onReview={() => setTab("review")}
                     brief={brief}
                     journey={journey.data}
                     stay={stay.data}

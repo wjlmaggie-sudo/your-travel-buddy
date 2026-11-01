@@ -1,3 +1,4 @@
+import { appOrigins } from "../_shared/app-origins.ts";
 import { createClient } from "@supabase/supabase-js";
 import { createCarHandler } from "../_shared/car-search.ts";
 const database = createClient(
@@ -8,7 +9,7 @@ const database = createClient(
 Deno.serve(
   createCarHandler({
     apiKey: Deno.env.get("SCRAPPA_API_KEY"),
-    allowedOrigins: ["https://wjlmaggie-sudo.github.io"],
+    allowedOrigins: appOrigins(Deno.env.get("CAR_ALLOWED_ORIGINS")),
     claim: async () => {
       const { data, error } = await database.rpc("claim_car_search");
       if (error) throw error;

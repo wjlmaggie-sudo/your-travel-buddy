@@ -1,4 +1,5 @@
 import { authRedirectUrl, publicAsset } from "@/lib/deployment";
+import { AUTH_CALLBACK, isNative } from "@/lib/native-app";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Compass } from "lucide-react";
@@ -43,7 +44,7 @@ function AuthPage() {
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: authRedirectUrl(window.location.origin) },
+          options: { emailRedirectTo: isNative() ? AUTH_CALLBACK : authRedirectUrl(window.location.origin) },
         });
         if (error) throw error;
         if (data.session) navigate({ to: "/trips" });

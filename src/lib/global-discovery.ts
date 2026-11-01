@@ -67,16 +67,48 @@ async function readJSON(
   fetcher: typeof fetch,
   body?: URLSearchParams,
 ) {
-  const response = await fetcher(url, {
+  const wiki = String(url).startsWith("https://en.wikipedia.org/");
+  const identity = "TravelBuddy/1.0 (+https://wjlmaggie-sudo.github.io/your-travel-buddy/)";
+  const options: RequestInit = {
     headers: {
       Accept: "application/json",
-      ...(typeof window === "undefined"
-        ? { "User-Agent": "TravelBuddy/1.0 (+https://wjlmaggie-sudo.github.io/your-travel-buddy/)" }
-        : {}),
+      ...(wiki ? { "Api-User-Agent": identity } : {}),
+      ...(typeof window === "undefined" ? { "User-Agent": identity } : {}),
     },
     signal: AbortSignal.any([signal, AbortSignal.timeout(30000)]),
     ...(body ? { method: "POST", body } : {}),
-  });
+  };
+  let response = await fetcher(url, options);
+  // A user-triggered request may retry once, respecting a short server backoff.
+  if (response.status === 429) {
+    const retry = response.headers.get("retry-after");
+    const parsed = retry ? Number(retry) : 1;
+    const seconds = Number.isFinite(parsed) ? parsed : (Date.parse(retry!) - Date.now()) / 1000;
+    if (seconds >= 0 && seconds <= 5) {
+      await new Promise<void>((resolve, reject) => {
+        if (signal.aborted) {
+          reject(new DOMException("Aborted", "AbortError"));
+          return;
+        }
+        const abort = () => {
+          clearTimeout(timer);
+          reject(new DOMException("Aborted", "AbortError"));
+        };
+        const timer = setTimeout(
+          () => {
+            signal.removeEventListener("abort", abort);
+            resolve();
+          },
+          Math.max(0, seconds * 1000),
+        );
+        signal.addEventListener("abort", abort, { once: true });
+      });
+      response = await fetcher(url, {
+        ...options,
+        signal: AbortSignal.any([signal, AbortSignal.timeout(30000)]),
+      });
+    }
+  }
   if (!response.ok)
     throw new Error(`Public data service unavailable (${response.status}). Please retry later.`);
   return response.json();
@@ -204,7 +236,7 @@ export async function activityEvidence(
     const result: ActivityEvidence[][] = cities.map(() => []);
     const tasks = cities.flatMap((city, i) => tags.map((tag) => ({ city, i, tag })));
     let cursor = 0;
-    // Two in-flight requests maximum. No background polling or paid fallback.
+    // Wikimedia recommends serial requests. No background polling or paid fallback.
     async function worker() {
       while (cursor < tasks.length) {
         if (signal.aborted) throw new DOMException("Aborted", "AbortError");
@@ -246,7 +278,7 @@ export async function activityEvidence(
         }
       }
     }
-    await Promise.all([worker(), worker()]);
+    await worker();
     return result;
   });
 }
@@ -358,10 +390,12 @@ export async function searchGlobalDestinations(
   if (evidence.status === "rejected" && tags.length)
     throw new Error(
       "The public geographic search service could not verify your activities. Retry later; no fixed destination list has been substituted.",
+      { cause: evidence.reason },
     );
   if (weather.status === "rejected" && needs.warm !== undefined)
     throw new Error(
       "The public weather service is unavailable. Your temperature preference has not been verified; please retry later.",
+      { cause: weather.reason },
     );
   const groupBudget =
     needs.budget && (!needs.budgetPerPerson || needs.travelers)

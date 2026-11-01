@@ -21,6 +21,7 @@ export const SECTIONS = [
   { id: "shopping", label: "Local Shopping" },
   { id: "currency", label: "Currency" },
   { id: "weather", label: "Weather" },
+  { id: "review", label: "Final budget" },
 ] as const;
 export type TravelSection = (typeof SECTIONS)[number]["id"];
 export const flightChoiceSchema = z.object({
