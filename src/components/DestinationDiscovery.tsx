@@ -28,6 +28,9 @@ export function DestinationDiscovery({ start, onChoose, onStartChange, active = 
   function send(text: string) {
     if (!text.trim()) return;
     const next = understandDiscovery(text, needs);
+    const assumedDays =
+      !!next.country && !next.days && !/\b\d+\s*(days?|nights?|weeks?)\b/i.test(text);
+    if (assumedDays) next.days = 5;
     setNeeds(next);
     setVisible(3);
     setOffset(0);
@@ -39,7 +42,7 @@ export function DestinationDiscovery({ start, onChoose, onStartChange, active = 
       ? missing
       : next.unsupported
         ? "Safari availability cannot be verified by this search. Try hiking, beaches, culture, family outings, surfing, skiing, diving, golf or tennis."
-        : "I'll search the global city directory and check public geographic and weather data. The matching locations will appear below; they are not confirmed travel offers.";
+        : `${next.country ? `I'll look for places in ${next.country}. ` : ""}${assumedDays ? "I'll start with 5 days; tell me a different duration anytime. " : ""}${next.warm !== undefined ? `Your ${next.warm ? "warm-weather" : "cooler-weather"} preference is active; say ‘any weather’ to remove it. ` : ""}I'll check public geographic and weather data. These are destination ideas, not confirmed travel offers.`;
     setMessages((current) => [
       ...current.slice(-8),
       { role: "You", text: text.trim().slice(0, 500) },
@@ -217,6 +220,8 @@ export function DestinationDiscovery({ start, onChoose, onStartChange, active = 
                   No match was verified in this batch. Try another batch or refine your region,
                   country, activity or temperature preference. No demonstration destinations have
                   been substituted.
+                  {needs.warm !== undefined &&
+                    " Your temperature filter is active. Say ‘any weather’ to broaden the search."}
                 </p>
               )}
             </>

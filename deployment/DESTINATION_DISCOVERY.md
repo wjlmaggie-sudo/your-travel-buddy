@@ -14,6 +14,8 @@ The **Travel Chatbot** section now discovers destinations from a GeoNames direct
 
 ## Understanding and planner handoff
 
+A country name alone (for example “Germany”) starts destination ideas with a disclosed, editable 5-day assumption; an activity preference is optional when a country is known. Existing duration/preferences are retained on country changes. The response identifies an active temperature preference and accepts “any weather” to clear it. Explicit invalid durations still prompt for clarification.
+
 Supported messages now extract multiple details in one turn: days/weeks/nights, weather preference, multiple supported activities, excluded activities, departure city, ISO dates or explicit day-month-year dates, adults, children and exact ages, group size, EUR/USD/GBP budgets and per-person budgets. Number words are recognized. Follow-up corrections retain previous details. Nights convert to days plus one. Children with missing ages cause a follow-up; no ages are fabricated. Per-person budgets require a known group before conversion. Extracted details carry into the existing editable planner only after a destination is selected. The chat omits a separate interpretation summary to keep the conversation compact. Existing unspecified details stay intact. The saved-trip chat starts a new draft without altering the saved trip.
 
 

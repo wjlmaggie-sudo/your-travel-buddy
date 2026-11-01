@@ -137,3 +137,34 @@ it("preserves explicit currency codes before a budget amount", () => {
     });
   }
 });
+
+it("starts suggestions for a country name alone with a disclosed editable duration", async () => {
+  setup();
+  fireEvent.change(screen.getByLabelText("Tell Travel Buddy what you have in mind"), {
+    target: { value: "Germany" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Send" }));
+  await vi.waitFor(() =>
+    expect(search).toHaveBeenCalledWith(
+      expect.objectContaining({ country: "Germany", days: 5 }),
+      "2030-12-01",
+      0,
+      expect.any(AbortSignal),
+    ),
+  );
+  expect(screen.getByText(/I'll start with 5 days/)).toBeVisible();
+});
+
+it("recognizes bare country changes, keeps exclusions and departure distinct, and can clear temperature filtering", () => {
+  expect(understandDiscovery("Germany", { country: "Spain", days: 7, warm: true })).toMatchObject({
+    country: "Germany",
+    days: 7,
+    warm: true,
+  });
+  expect(understandDiscovery("Germany, 4 days", {})).toMatchObject({ country: "Germany", days: 4 });
+  expect(understandDiscovery("not Germany", {}).country).toBeUndefined();
+  expect(understandDiscovery("from Germany", {}).country).toBeUndefined();
+  const next = understandDiscovery("any weather", { country: "Germany", days: 7, warm: true });
+  expect(next.warm).toBeUndefined();
+  expect(discoveryMissing(next)).toBeNull();
+});

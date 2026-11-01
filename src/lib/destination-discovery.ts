@@ -81,7 +81,13 @@ export function understandDiscovery(message: string, previous: DiscoveryNeeds): 
           ? 3
           : undefined;
   if (days !== undefined) next.days = days >= 1 && days <= 30 ? days : undefined;
-  if (/not warm|no heat|cool weather|cold|snow|ski/.test(text)) next.warm = false;
+  if (
+    /\b(any weather|no weather preference|weather does not matter|remove weather filter)\b/.test(
+      text,
+    )
+  )
+    delete next.warm;
+  else if (/not warm|no heat|cool weather|cold|snow|ski/.test(text)) next.warm = false;
   else if (/\b(warm|sunny|sunshine|hot|sunbathing)\b/.test(text)) next.warm = true;
   const positive = text.replace(/\b(no|not|without|avoid)\s+(\w+)(?:\s+or\s+\w+)?/g, "");
   const matched = ACTIVITY_PATTERNS.filter(([, pattern]) => pattern.test(positive)).map(
@@ -226,9 +232,10 @@ export function understandDiscovery(message: string, previous: DiscoveryNeeds): 
       next.excludedCountries = [...new Set([...(next.excludedCountries ?? []), country])];
       if (next.country === country) delete next.country;
     } else if (
-      new RegExp(`\\b(?:in|to|prefer|only|visit)\\s+${alias}\\b|\\b${alias}\\s+only\\b`, "i").test(
-        text,
-      )
+      new RegExp(
+        `\\b(?:in|to|prefer|only|visit|consider|explore)\\s+${alias}\\b|\\b${alias}\\s+only\\b|^${alias}(?:[,.!?]|\\s|$)`,
+        "i",
+      ).test(text.trim())
     ) {
       next.country = country;
       delete next.region;
@@ -248,7 +255,7 @@ export function discoveryMissing(needs: DiscoveryNeeds) {
     return "Please include at least one adult. How many adults and children are traveling?";
   if (needs.budgetPerPerson && !needs.travelers)
     return "How many people are coming? I'll convert the per-person budget to your whole-group budget.";
-  if (needs.warm === undefined && !needs.activity && !needs.family)
+  if (!needs.country && needs.warm === undefined && !needs.activity && !needs.family)
     return "What sounds good: warm weather, hiking, beaches, surfing, culture, or activities with children?";
   return null;
 }
