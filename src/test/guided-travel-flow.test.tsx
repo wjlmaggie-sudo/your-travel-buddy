@@ -234,9 +234,6 @@ it("offers a dedicated chatbot section and transfers the understood group budget
     },
   });
   fireEvent.click(screen.getByRole("button", { name: "Send" }));
-  expect(screen.getByRole("complementary", { name: "What I understood" })).toHaveTextContent(
-    "Berlin",
-  );
   fireEvent.click(await screen.findByRole("button", { name: "Plan Lisbon" }));
   expect(screen.getByLabelText("Departure city / airport")).toHaveValue("Berlin");
   expect(screen.getByLabelText("How many people?")).toHaveValue(3);

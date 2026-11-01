@@ -107,65 +107,6 @@ export function DestinationDiscovery({ start, onChoose, onStartChange, active = 
           </div>
         ))}
       </div>
-      {messages.length > 0 && (
-        <aside aria-label="What I understood" className="rounded-2xl border bg-card p-4">
-          <h4 className="font-semibold">What I understood</h4>
-          <dl className="mt-3 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
-            {[
-              ["Duration", needs.days ? `${needs.days} days` : "Not provided"],
-              [
-                "Weather",
-                needs.warm === true
-                  ? "Warm / sunny preferred"
-                  : needs.warm === false
-                    ? "Less heat preferred"
-                    : "No preference given",
-              ],
-              [
-                "Activities",
-                needs.activities?.length
-                  ? needs.activities.join(", ")
-                  : needs.family
-                    ? "Family outings"
-                    : "Not provided",
-              ],
-              ["Departure", needs.departure ?? "Not provided"],
-              [
-                "Travelers",
-                needs.travelers
-                  ? `${needs.travelers} people${needs.childrenCount ? ", including children" : ""}`
-                  : "Use group size in the planner",
-              ],
-              [
-                "Children",
-                needs.childrenAges
-                  ? needs.childrenAges.join(", ") + " years"
-                  : needs.childrenCount
-                    ? `${needs.childrenCount} · ages needed`
-                    : "Not specified",
-              ],
-              [
-                "Budget",
-                needs.budget
-                  ? `${needs.currency ?? "Planner currency"} ${needs.budget.toLocaleString()} ${needs.budgetPerPerson ? "per person" : "for the group"}`
-                  : "Optional · suggest in planner",
-              ],
-              ["Departure date", needs.start ?? start],
-              ["Destination area", needs.country ?? needs.region ?? "Any region"],
-              ["Avoid countries", needs.excludedCountries?.join(", ") || "None specified"],
-            ].map(([label, value]) => (
-              <div key={label}>
-                <dt className="text-xs text-muted-foreground">{label}</dt>
-                <dd>{value}</dd>
-              </div>
-            ))}
-          </dl>
-          <p className="mt-3 text-xs text-muted-foreground">
-            Tell me a correction, such as “4 days instead”, “not Spain”, “Europe only”, or “budget
-            €1,200”. These details only enter your trip when you choose a destination.
-          </p>
-        </aside>
-      )}
       <details className="rounded-2xl border p-4 text-sm">
         <summary className="cursor-pointer font-medium">About this chat & live AI</summary>
         <p className="mt-3 text-muted-foreground">
