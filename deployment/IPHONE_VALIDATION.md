@@ -81,3 +81,7 @@ real bookings were not part of validation.
 Full regression: 70 files and 303 tests passed, including the opt-in real public-data integration (63.31 seconds). Focused follow-up checks cover partial geographic-service outages, bypassing a broken local image, and real bundled JPEGs for all curated Lisbon activity stops. TypeScript, scoped lint, both static bundles, the server build, iOS plugin sync and property-list validation passed. The browser phone frame loads Today and navigates to the planner and itinerary. A real Germany culture search returned Berlin, Hamburg and Munich with source references.
 
 Local preview servers stop when their process stops; the public V1.0 app demo is hosted alongside the website and does not depend on localhost. An installable iOS release still requires the native verification described above.
+
+### V1.0 Tools layout correction
+
+The Tools dialog inherited Tailwind 4's individual `translate` property in addition to its custom transform, shifting the sheet outside the phone viewport. The sheet now resets both properties and anchors to the bottom with left/right margins. Its entry animation moves vertically and respects reduced motion. Browser checks confirmed all seven tools and Close fit inside the app viewport, selecting Currency opens the converter, and Close/Escape dismiss the dialog.
