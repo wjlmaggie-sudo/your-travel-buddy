@@ -85,3 +85,7 @@ Local preview servers stop when their process stops; the public V1.0 app demo is
 ### V1.0 Tools layout correction
 
 The Tools dialog inherited Tailwind 4's individual `translate` property in addition to its custom transform, shifting the sheet outside the phone viewport. The dialog now supports bottom placement that omits the center translation utilities entirely, and the sheet anchors to the bottom with left/right margins. This also avoids a production minifier removing a redundant CSS translate reset. Its entry animation moves vertically and respects reduced motion. Browser checks confirmed all seven tools and Close fit inside the app viewport, selecting Currency opens the converter, and Close/Escape dismiss the dialog.
+
+### Activity photographs in Today
+
+Today now renders the same attributed place photographs as the planner, in both the next-activity card and the daily timeline. Existing saved Lisbon plans resolve against the bundled guide without a migration or re-download. Other destinations use their actual city guide when available. Matching uses the saved location (or a legacy title when location is absent), so changing a stop's location does not keep the old place photo. Generic meals or unmatched manual stops do not receive an unrelated attraction image. Lisbon images are bundled; other guide/photo requests still require internet unless already cached. Production browser verification confirmed a real 960-pixel Alfama photograph on the next-activity card after advancing the test plan.

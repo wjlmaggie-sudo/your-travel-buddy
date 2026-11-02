@@ -1124,3 +1124,19 @@ html {
     transition: none;
   }
 }
+
+.companion-activity-photo {
+  margin-block: 12px;
+  overflow: hidden;
+  border-radius: 14px;
+}
+.companion-activity-photo img {
+  aspect-ratio: 16 / 9;
+  max-height: 180px;
+  border-radius: 14px;
+}
+.companion-activity-photo figcaption {
+  height: auto;
+  padding: 5px 2px 0;
+  font-size: 9px;
+}

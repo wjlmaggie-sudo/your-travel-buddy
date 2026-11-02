@@ -1,5 +1,8 @@
+import { companionActivityPlace } from "@/lib/companion-place";
+import { loadCityGuide } from "@/lib/city-guides";
+import { PlacePhoto } from "./PlacePhoto";
 import { useEffect, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowRight,
@@ -171,6 +174,21 @@ export function TravelCompanion({ requestedId }: { requestedId: string | undefin
       setBusy(false);
     }
   }
+  const guide = useQuery({
+    queryKey: ["visual-city-guide", trip?.destination],
+    queryFn: () => loadCityGuide(trip!.destination),
+    enabled: !!trip && view === "plan" && !/^(lisbon|lisboa)(,|$)/i.test(trip.destination.trim()),
+    staleTime: 1800000,
+    retry: false,
+  });
+  function activityPhoto(item: CompanionStop) {
+    const place = trip && companionActivityPlace(trip.destination, item, guide.data?.days.flat());
+    return place ? (
+      <div className="companion-activity-photo">
+        <PlacePhoto place={place} />
+      </div>
+    ) : null;
+  }
   const stop = trip && nextStop(trip, day);
   const dayStops = trip?.stops.filter((item) => item.day === day) ?? [];
   const done = dayStops.filter((item) => item.status === "done").length;
@@ -292,6 +310,7 @@ export function TravelCompanion({ requestedId }: { requestedId: string | undefin
                     <p className="companion-eyebrow">
                       UP NEXT · DAY {day} · {stop.time || "AT YOUR PACE"}
                     </p>
+                    {activityPhoto(stop)}
                     <h2 className="mt-3 text-3xl font-semibold">{stop.title}</h2>
                     <p className="mt-2 flex items-start gap-1.5 text-sm">
                       <MapPin size={16} className="mt-0.5 shrink-0" />
@@ -463,6 +482,7 @@ export function TravelCompanion({ requestedId }: { requestedId: string | undefin
                               {item.status === "planned" ? "" : item.status}
                             </span>
                           </div>
+                          {activityPhoto(item)}
                           <h3 className="mt-1 font-sans text-base font-semibold">{item.title}</h3>
                           <p className="mt-1 text-sm text-muted-foreground">{item.location}</p>
                           {item.notes && (

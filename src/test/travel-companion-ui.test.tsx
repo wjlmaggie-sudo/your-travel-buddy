@@ -68,3 +68,12 @@ it("records spending on the device and never describes it as cloud synced", () =
   expect(readCompanionTrips()[0]?.localExpenses[0]).toMatchObject({ amount: 12.5, note: "Lunch" });
   expect(screen.getByText(/separate from the cloud spending tracker/)).toBeVisible();
 });
+
+it("shows credited activity photos on Today, including previously saved stops", () => {
+  show();
+  const photos = screen.getAllByRole("img", { name: "Alfama" });
+  expect(photos).toHaveLength(2);
+  for (const photo of photos)
+    expect(photo.getAttribute("src")).toContain("images/lisbon/landmark-0.jpg");
+  expect(screen.getAllByRole("link", { name: /Photo: Arne/ })).toHaveLength(2);
+});
