@@ -293,3 +293,26 @@ it("rejects ignored geographic filters and does not count distant or administrat
     [],
   ]);
 });
+
+it("retains verified activity matches when another city's public lookup fails", async () => {
+  resetGlobalDiscoveryCache();
+  const cities: GlobalCity[] = [
+    { id: 1, name: "One", countryCode: "PT", lat: 38.7, lon: -9.1, population: 1 },
+    { id: 2, name: "Two", countryCode: "DE", lat: 52.5, lon: 13.4, population: 1 },
+  ];
+  const request = vi
+    .fn()
+    .mockResolvedValueOnce(
+      Response.json({
+        query: {
+          pages: {
+            10: { pageid: 10, title: "Art museum", coordinates: [{ lat: 38.7, lon: -9.1 }] },
+          },
+        },
+      }),
+    )
+    .mockRejectedValueOnce(new TypeError("Failed to fetch"));
+  const result = await activityEvidence(cities, ["culture"], new AbortController().signal, request);
+  expect(result[0]).toEqual([expect.objectContaining({ name: "Art museum" })]);
+  expect(result[1]).toEqual([]);
+});

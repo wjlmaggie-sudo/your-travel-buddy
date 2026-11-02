@@ -26,7 +26,12 @@ const metadata = z.object({
 async function get(host: string, params: Record<string, string>, signal: AbortSignal) {
   const response = await fetch(
     host + "?" + new URLSearchParams({ ...params, format: "json", origin: "*" }),
-    { signal: AbortSignal.any([signal, AbortSignal.timeout(10000)]) },
+    {
+      signal: AbortSignal.any([signal, AbortSignal.timeout(10000)]),
+      headers: {
+        "Api-User-Agent": "TravelBuddy/1.0 (+https://wjlmaggie-sudo.github.io/your-travel-buddy/)",
+      },
+    },
   );
   if (!response.ok) return null;
   return metadata.parse(await response.json());
@@ -35,9 +40,10 @@ async function get(host: string, params: Record<string, string>, signal: AbortSi
 export async function fetchPlacePhoto(
   place: VisualPlace,
   signal: AbortSignal,
+  skipLocal = false,
 ): Promise<VisualPlace["image"] | null> {
   const local = localPlacePhoto(place);
-  if (local) return local;
+  if (local && !skipLocal) return local;
   const result = await get(
     "https://en.wikipedia.org/w/api.php",
     {

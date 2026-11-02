@@ -97,7 +97,10 @@
 }
 .native-preview {
   background: #e8e7e1;
+  scrollbar-gutter: auto;
+  scrollbar-width: none;
 }
+.native-preview::-webkit-scrollbar { display: none; }
 .native-preview body {
   width: 100%;
   max-width: 430px;

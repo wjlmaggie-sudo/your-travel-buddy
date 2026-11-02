@@ -33,3 +33,21 @@ These locally served copies are 960-pixel Wikimedia Commons renditions, retained
 ## Worldwide discovery data — 31 October 2026
 
 `public/data/global-cities.json`, `src/lib/discovery-countries.json` and metadata are derived from the [GeoNames free gazetteer](https://www.geonames.org/export/), cities15000/countryInfo snapshot. © GeoNames contributors, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Fields are filtered/reformatted, PPLX districts removed; updater and retrieval timestamp are included in the repository. Nearby activity topic references link [Wikipedia articles](https://en.wikipedia.org/wiki/Wikipedia:Copyrights); no article prose is copied. Geographic search uses the MediaWiki API and returned primary Earth coordinates. Live forecast/historical reference data credits [Open-Meteo](https://open-meteo.com/), CC BY 4.0, under their free non-commercial hosted-service limits. Visible attribution and source links appear in Travel Chatbot.
+
+## Additional bundled Lisbon photographs — V1.0, 2 November 2026
+
+These existing open-licensed itinerary images are now served locally for reliable website and bundled app access. Source renditions are unchanged; card crops use CSS.
+
+| Place / asset | Photographer | License and source |
+| --- | --- | --- |
+| Alfama · `images/lisbon/landmark-0.jpg` | Arne Müseler | [CC BY-SA 3.0 de](https://commons.wikimedia.org/wiki/File:Lisbon_alfalma.jpg) |
+| Belém Tower · `images/lisbon/landmark-1.jpg` | Alvesgaspar | [CC BY-SA 3.0](https://commons.wikimedia.org/wiki/File:Torre_Bel%C3%A9m_April_2009-4a.jpg) |
+| Carmo Convent · `images/lisbon/landmark-2.jpg` | Georges Jansoone | [CC BY 2.5](https://commons.wikimedia.org/wiki/File:Lisbon09.jpg) |
+| Chiado · `images/lisbon/landmark-3.jpg` | Luca Galuzzi (Lucag) | [CC BY-SA 2.5](https://commons.wikimedia.org/wiki/File:Lisbon_10064_Lisboa_Pra%C3%A7a_Lu%C3%ADs_de_Cam%C3%B5es_2006_Luca_Galuzzi_(cropped).jpg) |
+| Jerónimos Monastery · `images/lisbon/landmark-4.jpg` | Holger Uwe Schmitt | [CC BY-SA 4.0](https://commons.wikimedia.org/wiki/File:1502_legte_K%C3%B6nig_Manuel_I._den_Grundstein_f%C3%BCr_das_Hieronymus_Kloster_in_Lissabon._06.jpg) |
+| Lisbon Cathedral · `images/lisbon/landmark-5.jpg` | Diego Delso | [CC BY-SA 4.0](https://commons.wikimedia.org/wiki/File:Catedral,_Lisboa,_Portugal,_2022-07-24,_DD_24.jpg) |
+| Pena Palace · `images/lisbon/landmark-6.jpg` | Singa Hitam | [CC BY 2.0](https://commons.wikimedia.org/wiki/File:Sintra_-_Palacio_da_Pena_(20332995770).jpg) |
+| Santa Justa Lift · `images/lisbon/landmark-7.jpg` | Dicklyon | [CC BY-SA 4.0](https://commons.wikimedia.org/wiki/File:Elevador_de_Santa_Justa_from_Rua_de_Santa_Justa.jpg) |
+| Sintra National Palace · `images/lisbon/landmark-8.jpg` | Kent Wang | [CC BY 4.0](https://commons.wikimedia.org/wiki/File:Pal%C3%A1cio_Nacional_de_Sintra_from_above_74.jpg) |
+| São Jorge Castle · `images/lisbon/landmark-9.jpg` | Wikimedia Commons contributor | [CC BY-SA 2.0](https://commons.wikimedia.org/wiki/File:Castelo_Sao_Jorge_Lisboa_1.JPG) |
+| Time Out Market Lisboa · `images/lisbon/landmark-10.jpg` | Paul Arps from The Netherlands | [CC BY 2.0](https://commons.wikimedia.org/wiki/File:Drinks_at_Mercado_da_Ribeira_(Lissabon_2016)_(26003375942).jpg) |

@@ -207,3 +207,9 @@ disclosures and screenshots. App Store approval has not been requested or claime
 Reference requirements: [Capacitor environment setup](https://capacitorjs.com/docs/getting-started/environment-setup),
 [iOS workflow](https://capacitorjs.com/docs/ios),
 [Filesystem privacy declaration](https://capacitorjs.com/docs/apis/filesystem).
+
+## V1.0 interactive phone demo
+
+Open [the permanent iPhone demo](https://wjlmaggie-sudo.github.io/your-travel-buddy/iphone-demo.html), or locally `http://127.0.0.1:4180/iphone-demo.html` while the native preview server is running. The public viewer embeds the same-origin app build under `app-demo/`; it does not depend on a local server or embed an external preview provider. A direct full-screen app link is also available. The phone frame offers Fit and Full size modes. `build:pages` builds both the website and hosted app demo, then scans both for server-only secrets.
+
+See [V1.0 release notes](releases/V1.0.md). This is a website/demo and native-source release; installation on iPhone still needs Xcode, signing and native validation.

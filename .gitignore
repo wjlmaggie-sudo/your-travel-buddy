@@ -10,6 +10,7 @@ lerna-debug.log*
 node_modules
 dist
 dist-native
+dist-app-demo
 ios/App/App/public
 ios/App/App/capacitor.config.json
 ios/App/App/config*.xml

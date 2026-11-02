@@ -12,7 +12,7 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "build:pages": "node scripts/check-pages-env.mjs && vite build --config vite.pages.config.ts && node scripts/finalize-pages.mjs",
+    "build:pages": "node scripts/check-pages-env.mjs && vite build --config vite.pages.config.ts && node scripts/build-iphone-demo.mjs && node scripts/finalize-pages.mjs",
     "dev:pages": "vite --config vite.pages.config.ts",
     "preview:pages": "vite preview --config vite.pages.config.ts",
     "publish:pages": "node scripts/publish-pages.mjs",
@@ -119,5 +119,6 @@
     "typescript-eslint": "^8.56.1",
     "vite": "8.1.5",
     "vitest": "^4.1.10"
-  }
+  },
+  "version": "1.0.0"
 }

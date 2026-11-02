@@ -54,5 +54,93 @@
     "source": "https://commons.wikimedia.org/wiki/File:Villa_Sassetti_(Sintra)_15.jpg",
     "lat": 38.79572222222222,
     "lon": -9.390666666666666
+  },
+  "Alfama": {
+    "credit": "Arne Müseler",
+    "license": "CC BY-SA 3.0 de",
+    "source": "https://commons.wikimedia.org/wiki/File:Lisbon_alfalma.jpg",
+    "file": "images/lisbon/landmark-0.jpg",
+    "lat": 38.71222222,
+    "lon": -9.13
+  },
+  "Belém Tower": {
+    "credit": "Alvesgaspar",
+    "license": "CC BY-SA 3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Torre_Bel%C3%A9m_April_2009-4a.jpg",
+    "file": "images/lisbon/landmark-1.jpg",
+    "lat": 38.69166667,
+    "lon": -9.21611111
+  },
+  "Carmo Convent": {
+    "credit": "Georges Jansoone",
+    "license": "CC BY 2.5",
+    "source": "https://commons.wikimedia.org/wiki/File:Lisbon09.jpg",
+    "file": "images/lisbon/landmark-2.jpg",
+    "lat": 38.71222222,
+    "lon": -9.14
+  },
+  "Chiado": {
+    "credit": "Luca Galuzzi (Lucag)",
+    "license": "CC BY-SA 2.5",
+    "source": "https://commons.wikimedia.org/wiki/File:Lisbon_10064_Lisboa_Pra%C3%A7a_Lu%C3%ADs_de_Cam%C3%B5es_2006_Luca_Galuzzi_(cropped).jpg",
+    "file": "images/lisbon/landmark-3.jpg",
+    "lat": 38.71055556,
+    "lon": -9.14222222
+  },
+  "Jerónimos Monastery": {
+    "credit": "Holger Uwe Schmitt",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:1502_legte_K%C3%B6nig_Manuel_I._den_Grundstein_f%C3%BCr_das_Hieronymus_Kloster_in_Lissabon._06.jpg",
+    "file": "images/lisbon/landmark-4.jpg",
+    "lat": 38.69777778,
+    "lon": -9.20611111
+  },
+  "Lisbon Cathedral": {
+    "credit": "Diego Delso",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Catedral,_Lisboa,_Portugal,_2022-07-24,_DD_24.jpg",
+    "file": "images/lisbon/landmark-5.jpg",
+    "lat": 38.70972222,
+    "lon": -9.13305556
+  },
+  "Pena Palace": {
+    "credit": "Singa Hitam",
+    "license": "CC BY 2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Sintra_-_Palacio_da_Pena_(20332995770).jpg",
+    "file": "images/lisbon/landmark-6.jpg",
+    "lat": 38.78777778,
+    "lon": -9.39055556
+  },
+  "Santa Justa Lift": {
+    "credit": "Dicklyon",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Elevador_de_Santa_Justa_from_Rua_de_Santa_Justa.jpg",
+    "file": "images/lisbon/landmark-7.jpg",
+    "lat": 38.71222222,
+    "lon": -9.13944444
+  },
+  "Sintra National Palace": {
+    "credit": "Kent Wang",
+    "license": "CC BY 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Pal%C3%A1cio_Nacional_de_Sintra_from_above_74.jpg",
+    "file": "images/lisbon/landmark-8.jpg",
+    "lat": 38.79777778,
+    "lon": -9.39083333
+  },
+  "São Jorge Castle": {
+    "credit": "Wikimedia Commons contributor",
+    "license": "CC BY-SA 2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Castelo_Sao_Jorge_Lisboa_1.JPG",
+    "file": "images/lisbon/landmark-9.jpg",
+    "lat": 38.71388889,
+    "lon": -9.13361111
+  },
+  "Time Out Market Lisboa": {
+    "credit": "Paul Arps from The Netherlands",
+    "license": "CC BY 2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Drinks_at_Mercado_da_Ribeira_(Lissabon_2016)_(26003375942).jpg",
+    "file": "images/lisbon/landmark-10.jpg",
+    "lat": 38.70694444,
+    "lon": -9.14555556
   }
 }

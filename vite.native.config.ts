@@ -6,7 +6,7 @@ import { fileURLToPath, URL } from "node:url";
 
 // Bundle the maintained app locally. No remote website is used as the app shell.
 export default defineConfig({
-  base: "/",
+  base: process.env["NATIVE_BASE_PATH"] || "/",
   plugins: [tanstackRouter({ autoCodeSplitting: false }), react(), tailwindcss()],
   resolve: {
     alias: {
@@ -18,7 +18,7 @@ export default defineConfig({
     "import.meta.env.VITE_STATIC_PAGES": JSON.stringify("true"),
     "import.meta.env.VITE_NATIVE_APP": JSON.stringify("true"),
   },
-  build: { outDir: "dist-native", emptyOutDir: true },
+  build: { outDir: process.env["NATIVE_OUT_DIR"] || "dist-native", emptyOutDir: true },
   server: { host: "127.0.0.1", port: 4180 },
   preview: { host: "127.0.0.1", port: 4180 },
 });

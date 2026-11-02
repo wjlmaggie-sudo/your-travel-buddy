@@ -9,7 +9,7 @@ export function PlacePhoto({ place, active = true }: { place: VisualPlace; activ
   useEffect(() => setFailedUrl(null), [place.name, preferred?.url]);
   const query = useQuery({
     queryKey: ["place-photo", place.name, place.lat, place.lon],
-    queryFn: ({ signal }) => fetchPlacePhoto(place, signal),
+    queryFn: ({ signal }) => fetchPlacePhoto(place, signal, true),
     enabled: active && (!preferred || failedUrl === preferred.url),
     staleTime: 86400000,
     retry: false,

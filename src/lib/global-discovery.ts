@@ -232,7 +232,11 @@ export async function activityEvidence(
 ): Promise<ActivityEvidence[][]> {
   if (tags.length > 3) throw new Error("Choose up to three activity themes per search.");
   const key = "wiki:" + cities.map((c) => c.id).join(",") + ":" + tags.join(",");
-  return cached(key, 86400000, async () => {
+  return cached(key, 600000, async () => {
+    let successful = 0;
+    let consecutiveFailures = 0;
+    const requestSignal = AbortSignal.any([signal, AbortSignal.timeout(45000)]);
+    let lastError: unknown;
     const result: ActivityEvidence[][] = cities.map(() => []);
     const tasks = cities.flatMap((city, i) => tags.map((tag) => ({ city, i, tag })));
     let cursor = 0;
@@ -240,6 +244,7 @@ export async function activityEvidence(
     async function worker() {
       while (cursor < tasks.length) {
         if (signal.aborted) throw new DOMException("Aborted", "AbortError");
+        if (requestSignal.aborted) break;
         const { city, i, tag } = tasks[cursor++]!;
         const url = new URL("https://en.wikipedia.org/w/api.php");
         url.search = new URLSearchParams({
@@ -253,10 +258,21 @@ export async function activityEvidence(
           prop: "coordinates",
           coprimary: "primary",
         }).toString();
-        const data = wikiResponse.parse(await readJSON(url, signal, fetcher));
-        // Ignoring warnings could silently discard the geographic constraint.
-        if (data.error || data.warnings)
-          throw new Error("Public geographic search could not verify the query.");
+        let data: z.infer<typeof wikiResponse>;
+        try {
+          data = wikiResponse.parse(await readJSON(url, requestSignal, fetcher));
+          if (data.error || data.warnings)
+            throw new Error("Public geographic search could not verify the query.");
+          successful++;
+          consecutiveFailures = 0;
+        } catch (error) {
+          if (signal.aborted) throw error;
+          lastError = error;
+          consecutiveFailures++;
+          if (requestSignal.aborted || consecutiveFailures >= 2) break;
+          // A failed location must not erase already verified locations.
+          continue;
+        }
         for (const page of Object.values(data.query?.pages ?? {})) {
           // A nearby city/province article is not a specific activity place.
           const title = normalize(page.title).replace(/\s*\([^)]*\)$/, "");
@@ -279,6 +295,7 @@ export async function activityEvidence(
       }
     }
     await worker();
+    if (!successful && lastError) throw lastError;
     return result;
   });
 }

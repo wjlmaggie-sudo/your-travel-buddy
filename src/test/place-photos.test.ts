@@ -33,14 +33,12 @@ function commons(license: string) {
 afterEach(() => vi.unstubAllGlobals());
 describe("place photo matching", () => {
   it("rejects an image for a different geographic place", async () => {
-    const fetcher = vi
-      .fn()
-      .mockResolvedValue({
-        ok: true,
-        json: async () => ({
-          query: { pages: { "1": { pageimage: "Wrong.jpg", coordinates: [{ lat: 48, lon: 2 }] } } },
-        }),
-      });
+    const fetcher = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        query: { pages: { "1": { pageimage: "Wrong.jpg", coordinates: [{ lat: 48, lon: 2 }] } } },
+      }),
+    });
     vi.stubGlobal("fetch", fetcher);
     expect(await fetchPlacePhoto(place, new AbortController().signal)).toBeNull();
     expect(fetcher).toHaveBeenCalledOnce();
@@ -59,4 +57,15 @@ describe("place photo matching", () => {
       .mockResolvedValueOnce({ ok: true, json: async () => commons("All rights reserved") });
     expect(await fetchPlacePhoto(place, new AbortController().signal)).toBeNull();
   });
+});
+
+it("can bypass a broken bundled photo to attempt a verified remote replacement", async () => {
+  const fetcher = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
+  vi.stubGlobal("fetch", fetcher);
+  await fetchPlacePhoto(
+    { ...place, name: "Praça do Comércio", lat: 38.7077, lon: -9.1365 },
+    new AbortController().signal,
+    true,
+  );
+  expect(fetcher).toHaveBeenCalledOnce();
 });

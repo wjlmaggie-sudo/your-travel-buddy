@@ -56,6 +56,8 @@ export function DestinationDiscovery({ start, onChoose, onStartChange, active = 
     queryFn: ({ signal }) => searchGlobalDestinations(needs, effectiveStart, offset, signal),
     enabled: ready && active,
     staleTime: 600000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     retry: false,
   });
   const matches = ready ? (discovery.data?.results ?? []) : [];
@@ -194,7 +196,7 @@ export function DestinationDiscovery({ start, onChoose, onStartChange, active = 
           {discovery.isFetching ? (
             <p role="status">
               Checking a batch of global locations, nearby activity references and temperature
-              references… This can take around 30 seconds.
+              references… Public services can be slow; your message stays here if a retry is needed.
             </p>
           ) : discovery.isError ? (
             <>
@@ -211,9 +213,10 @@ export function DestinationDiscovery({ start, onChoose, onStartChange, active = 
           ) : discovery.data ? (
             <>
               <p>
-                Checked {discovery.data.scanned} city bases in this batch from{" "}
+                Considered {discovery.data.scanned} city bases in this batch from{" "}
                 {discovery.data.total.toLocaleString()} matching directory locations. This is a
-                bounded search, not every destination worldwide.
+                bounded search, not every destination worldwide. Some public references may be
+                temporarily unavailable; only verified activity matches appear.
               </p>
               {!matches.length && (
                 <p className="mt-2">

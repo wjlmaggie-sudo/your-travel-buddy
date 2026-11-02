@@ -75,3 +75,9 @@ origins and provider quota rules are preserved.
 Use [the iPhone build and feature guide](IPHONE_APP.md) to finish signing, backend
 configuration and device tests. Paid API activation, Google billing, purchases and
 real bookings were not part of validation.
+
+## V1.0 follow-up — 2 November 2026
+
+Full regression: 70 files and 303 tests passed, including the opt-in real public-data integration (63.31 seconds). Focused follow-up checks cover partial geographic-service outages, bypassing a broken local image, and real bundled JPEGs for all curated Lisbon activity stops. TypeScript, scoped lint, both static bundles, the server build, iOS plugin sync and property-list validation passed. The browser phone frame loads Today and navigates to the planner and itinerary. A real Germany culture search returned Berlin, Hamburg and Munich with source references.
+
+Local preview servers stop when their process stops; the public V1.0 app demo is hosted alongside the website and does not depend on localhost. An installable iOS release still requires the native verification described above.

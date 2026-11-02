@@ -24,3 +24,15 @@ it("ships real local JPEGs and attribution for every additional Lisbon persona s
 it("never gives another city's same-named place a Lisbon photo", () => {
   expect(localPlacePhoto({ name: "Praça do Comércio", lat: 40.2, lon: -8.4 })).toBeUndefined();
 });
+
+it("bundles a credited JPEG for every curated Lisbon itinerary activity", () => {
+  const places = Array.from({ length: 5 }, (_, i) => curatedDay("Lisbon", i + 1)!).flat();
+  for (const place of places) {
+    const photo = localPlacePhoto(place);
+    expect(photo, place.name).toBeDefined();
+    expect(photo!.credit).toBeTruthy();
+    expect(photo!.license).toMatch(/^CC|Public domain|PD/);
+    const file = resolve("public", photo!.url.slice(import.meta.env.BASE_URL.length));
+    expect([...readFileSync(file).subarray(0, 3)]).toEqual([255, 216, 255]);
+  }
+});
