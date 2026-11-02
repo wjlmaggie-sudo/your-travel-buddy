@@ -410,7 +410,6 @@
   background: #e8ede3;
 }
 .mobile-tools-sheet {
-  /* Dialog's centered translate utility is separate from transform in Tailwind 4. */
   left: 0;
   right: 0;
   top: auto;

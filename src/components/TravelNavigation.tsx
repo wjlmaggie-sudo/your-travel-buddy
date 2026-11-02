@@ -73,7 +73,7 @@ export function TravelNavigation({
           Tools
         </button>
         <Dialog open={toolsOpen} onOpenChange={setToolsOpen}>
-          <DialogContent className="mobile-tools-sheet">
+          <DialogContent placement="bottom" className="mobile-tools-sheet">
             <DialogHeader>
               <DialogTitle>Everything for the journey</DialogTitle>
               <DialogDescription>Find what you need, then get back to your trip.</DialogDescription>
