@@ -84,7 +84,7 @@
     <script>
       const localNativePreview = ["127.0.0.1", "localhost"].includes(location.hostname) && location.port === "4180";
       const entry = new URL(localNativePreview ? "./" : "./app-demo/", location.href);
-      const revision = "02795b8d91a089eeb9bb0971c99778e1904a0597";
+      const revision = "497338f024fb65155f0a09ff55d380f78cb3c9d1";
       if (revision !== "development") entry.searchParams.set("v", revision);
       entry.hash = "/on-trip";
       document.getElementById("app-screen").src = entry.href;
