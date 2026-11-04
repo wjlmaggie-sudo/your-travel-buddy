@@ -72,7 +72,7 @@ function Index() {
             className="absolute inset-0 -z-20 h-full w-full object-cover"
           />
           <div className="absolute inset-0 -z-10 bg-gradient-to-r from-black/75 via-black/40 to-black/10" />
-          <div className="max-w-2xl px-6 py-10 sm:px-10 sm:py-14">
+          <div className="max-w-2xl px-6 py-4 sm:px-10 sm:py-6">
             <p className="text-[10px] font-semibold uppercase tracking-[.24em] text-white/80">
               Less searching. More exploring.
             </p>
