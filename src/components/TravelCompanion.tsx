@@ -1,6 +1,7 @@
 import { companionActivityPlace } from "@/lib/companion-place";
 import { loadCityGuide } from "@/lib/city-guides";
 import { PlacePhoto } from "./PlacePhoto";
+import { DayWeather } from "./DayWeather";
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -403,6 +404,13 @@ export function TravelCompanion({ requestedId }: { requestedId: string | undefin
                   {tripDate(trip, day) === today ? "Today" : displayDate(tripDate(trip, day))} ·
                   Times in {trip.timezone}. Change the timezone in Essentials.
                 </p>
+                <div className="mt-3">
+                  <DayWeather
+                    destination={trip.destination}
+                    date={tripDate(trip, day)}
+                    active={view === "plan"}
+                  />
+                </div>
                 <div className="mb-4 mt-7 flex items-center justify-between">
                   <h2 className="text-xl">The day's plan</h2>
                   <span className="text-xs text-muted-foreground">
