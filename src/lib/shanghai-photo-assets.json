@@ -1,0 +1,66 @@
+{
+  "Shanghai Grand Theatre": {
+    "file": "images/shanghai/shanghai-grand-theatre.jpg",
+    "lat": 31.232,
+    "lon": 121.467,
+    "credit": "Coolcaesar",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Shanghaigrandtheatre.jpg"
+  },
+  "History of Shanghai Art Museum": {
+    "file": "images/shanghai/history-of-shanghai-art-museum.jpg",
+    "lat": 31.2326,
+    "lon": 121.4665,
+    "credit": "Art Museum Photographer",
+    "license": "CC BY-SA 3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:%E7%BE%8E%E6%9C%AF%E9%A6%86%E5%BB%BA%E7%AD%91DSC_9557.JPG"
+  },
+  "Tomorrow Square": {
+    "file": "images/shanghai/tomorrow-square.jpg",
+    "lat": 31.232,
+    "lon": 121.465,
+    "credit": "DvTor8303",
+    "license": "CC0",
+    "source": "https://commons.wikimedia.org/wiki/File:Tomorrow_Square_20260417.jpg"
+  },
+  "People's Square (Shanghai)": {
+    "file": "images/shanghai/people-s-square-shanghai.jpg",
+    "lat": 31.229564,
+    "lon": 121.47438,
+    "credit": "Jordiferrer",
+    "license": "CC BY-SA 3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:People_Square_seen_from_Urban_Planning_Exhibition_Center.JPG"
+  },
+  "Confucian Temple of Shanghai": {
+    "file": "images/shanghai/confucian-temple-of-shanghai.jpg",
+    "lat": 31.21972222,
+    "lon": 121.48305556,
+    "credit": "https://www.flickr.com/photos/kanegen/",
+    "license": "CC BY 2.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Confucius_Temple_of_Shanghai2.jpg"
+  },
+  "Yu Garden": {
+    "file": "images/shanghai/yu-garden.jpg",
+    "lat": 31.22916667,
+    "lon": 121.4875,
+    "credit": "Stefan Fussan",
+    "license": "CC BY-SA 3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Shanghai_-_Yu_Garden_-_0035.jpg"
+  },
+  "City God Temple of Shanghai": {
+    "file": "images/shanghai/city-god-temple-of-shanghai.jpg",
+    "lat": 31.22777778,
+    "lon": 121.48805556,
+    "credit": "Legolas1024",
+    "license": "CC BY-SA 4.0",
+    "source": "https://commons.wikimedia.org/wiki/File:%E5%9F%8E%E9%9A%8D%E5%BA%99%C2%B7%E4%B8%8A%E6%B5%B7%E5%8D%97%E5%B8%82.jpg"
+  },
+  "Shanghai Urban Planning Exhibition Center": {
+    "file": "images/shanghai/shanghai-urban-planning-exhibition-center.jpg",
+    "lat": 31.233368,
+    "lon": 121.47048,
+    "credit": "Daniel Case",
+    "license": "CC BY-SA 3.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Shanghai_Urban_Planning_Exhibition_Center_from_northeast.jpg"
+  }
+}

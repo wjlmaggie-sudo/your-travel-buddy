@@ -69,3 +69,18 @@ it("can bypass a broken bundled photo to attempt a verified remote replacement",
   );
   expect(fetcher).toHaveBeenCalledOnce();
 });
+
+it("removes tracking parameters from Commons thumbnail URLs while keeping attribution", async () => {
+  const data = commons("CC BY-SA 4.0");
+  data.query.pages["2"].imageinfo[0]!.thumburl += "?utm_source=commons.wikimedia.org";
+  vi.stubGlobal(
+    "fetch",
+    vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => first })
+      .mockResolvedValueOnce({ ok: true, json: async () => data }),
+  );
+  const photo = await fetchPlacePhoto(place, new AbortController().signal);
+  expect(photo?.url).not.toContain("?");
+  expect(photo?.credit).toBe("Example photographer");
+});

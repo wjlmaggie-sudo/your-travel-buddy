@@ -40,10 +40,11 @@ it("matches the activity date to its forecast rather than current weather", asyn
   expect(screen.getByText("Rain or drizzle")).toBeVisible();
   expect(screen.queryByText(/30°C|23°C/)).not.toBeInTheDocument();
 });
-it("identifies travel dates outside the forecast instead of substituting today's temperature", async () => {
+it("shows clearly labeled current weather for distant trips without claiming a trip-date forecast", async () => {
   setup("2026-12-25");
-  expect(await screen.findByText("Forecast not available for this date")).toBeVisible();
-  expect(screen.queryByText(/30°C/)).not.toBeInTheDocument();
+  expect(await screen.findByText("Now at destination: 30°C")).toBeVisible();
+  expect(screen.getByText("Trip-date forecast available within 16 days of travel.")).toBeVisible();
+  expect(screen.getByText(/Not the weather for 2026-12-25/)).toBeVisible();
 });
 it("does not fetch weather for hidden activity days", () => {
   setup("2026-10-25", false);
@@ -57,4 +58,12 @@ it("reports lookup failures without breaking activities", async () => {
     </QueryClientProvider>,
   );
   expect(await screen.findByText("Weather unavailable")).toBeVisible();
+});
+
+it("labels past dates separately from today's current temperature", async () => {
+  setup("2026-09-01");
+  expect(
+    await screen.findByText("Past-date weather is not included in this forecast."),
+  ).toBeVisible();
+  expect(screen.getByText("Now at destination: 30°C")).toBeVisible();
 });

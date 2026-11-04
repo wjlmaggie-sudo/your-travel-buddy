@@ -33,7 +33,7 @@ async function get(host: string, params: Record<string, string>, signal: AbortSi
       },
     },
   );
-  if (!response.ok) return null;
+  if (!response.ok) throw new Error("Photo provider is temporarily unavailable.");
   return metadata.parse(await response.json());
 }
 /** Only use a coordinate-matched Wikipedia subject and a Commons image with an open license. */
@@ -89,7 +89,7 @@ export async function fetchPlacePhoto(
   )
     return null;
   return {
-    url: info.thumburl,
+    url: info.thumburl.split("?")[0]!,
     credit: clean("Artist") || "Wikimedia Commons contributor",
     license,
     source: info.descriptionurl,

@@ -60,7 +60,24 @@ export function DayWeather({
           {row.rain != null && <span>{row.rain}% rain</span>}
         </>
       ) : weather.data ? (
-        "Forecast not available for this date"
+        <>
+          {weather.data.current?.temperature_2m != null && (
+            <span className="font-semibold">
+              Now at destination: {temperature(weather.data.current.temperature_2m)}
+            </span>
+          )}
+          <span>
+            {date && date < (weather.data.daily.time[0] ?? "")
+              ? "Past-date weather is not included in this forecast."
+              : "Trip-date forecast available within 16 days of travel."}
+          </span>
+          {weather.data.current?.temperature_2m != null && (
+            <span className="text-[10px]">
+              Current reading: {weather.data.current.time.replace("T", " ")} ·{" "}
+              {weather.data.timezone}. Not the weather for {date}.
+            </span>
+          )}
+        </>
       ) : (
         "Checking weather…"
       )}

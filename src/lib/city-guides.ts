@@ -2,6 +2,7 @@ import { curatedPersonaDay, rankPersonaPlaces, PERSONA_LISBON_PLACES } from "./p
 import type { PersonaDetails } from "../../supabase/functions/_shared/travel-persona";
 import { distanceKm } from "./visit-logistics";
 import lisbon from "./lisbon-places.json";
+import shanghai from "./shanghai-places.json";
 import { nearbyPlaces, searchDestinations } from "./place-directory";
 import type { TravelStyle } from "./travel-data";
 
@@ -120,6 +121,9 @@ export async function loadCityGuide(destination: string): Promise<CityGuide> {
       ),
       curated: true,
     };
+  // A credited directory snapshot avoids an empty day when a remote directory times out.
+  if (/^(shanghai|上海)(,|$)/i.test(destination.trim()))
+    return { days: groupNearbyStops(shanghai), restaurants: [], curated: false };
   const destinations = await searchDestinations(destination);
   const city = destinations[0];
   if (!city) return { days: [], restaurants: [], curated: false };

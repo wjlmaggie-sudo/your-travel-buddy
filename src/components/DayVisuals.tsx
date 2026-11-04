@@ -198,7 +198,9 @@ export function DayVisuals({
         </>
       ) : (
         <p className="text-sm text-muted-foreground">
-          Place details are unavailable for this destination right now.{" "}
+          {query.data?.days.flat().length
+            ? "This day has no confirmed attraction locations yet. Work blocks, meals and unconfirmed places do not have attraction photos. Choose a photographed backup place below."
+            : "Place details are unavailable for this destination right now."}{" "}
           <a href={maps(destination)} target="_blank" rel="noreferrer" className="underline">
             Explore the destination map
           </a>

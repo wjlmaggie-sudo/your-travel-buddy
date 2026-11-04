@@ -12,7 +12,8 @@ export function PlacePhoto({ place, active = true }: { place: VisualPlace; activ
     queryFn: ({ signal }) => fetchPlacePhoto(place, signal, true),
     enabled: active && (!preferred || failedUrl === preferred.url),
     staleTime: 86400000,
-    retry: false,
+    retry: 1,
+    retryDelay: 1000,
   });
   const photo = preferred && failedUrl !== preferred.url ? preferred : query.data;
   if (!photo || failedUrl === photo.url)

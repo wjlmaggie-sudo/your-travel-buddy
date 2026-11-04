@@ -1,6 +1,8 @@
-import assets from "./lisbon-photo-assets.json";
+import lisbonAssets from "./lisbon-photo-assets.json";
+import shanghaiAssets from "./shanghai-photo-assets.json";
+const assets = { ...lisbonAssets, ...shanghaiAssets };
 import type { VisualPlace } from "./city-guides";
-/** Licensed local copies avoid fragile translated-title lookups for the curated Lisbon guide. */
+/** Licensed local copies keep supported destination photos available during provider outages. */
 export function localPlacePhoto(
   place: Pick<VisualPlace, "name" | "lat" | "lon">,
 ): VisualPlace["image"] | undefined {

@@ -51,3 +51,18 @@ These existing open-licensed itinerary images are now served locally for reliabl
 | Sintra National Palace · `images/lisbon/landmark-8.jpg` | Kent Wang | [CC BY 4.0](https://commons.wikimedia.org/wiki/File:Pal%C3%A1cio_Nacional_de_Sintra_from_above_74.jpg) |
 | São Jorge Castle · `images/lisbon/landmark-9.jpg` | Wikimedia Commons contributor | [CC BY-SA 2.0](https://commons.wikimedia.org/wiki/File:Castelo_Sao_Jorge_Lisboa_1.JPG) |
 | Time Out Market Lisboa · `images/lisbon/landmark-10.jpg` | Paul Arps from The Netherlands | [CC BY 2.0](https://commons.wikimedia.org/wiki/File:Drinks_at_Mercado_da_Ribeira_(Lissabon_2016)_(26003375942).jpg) |
+
+## Shanghai activity photos · 4 November 2026
+
+Directory snapshot from the English Wikipedia coordinate directory around central Shanghai. Local copies retain the original licensed renditions; display crops use CSS. Coordinates gate photo matching so a same-named venue elsewhere never receives a Shanghai photo.
+
+| Place / asset | Photographer | License and source |
+| --- | --- | --- |
+| Shanghai Grand Theatre · `images/shanghai/shanghai-grand-theatre.jpg` | Coolcaesar | [CC BY-SA 4.0](https://commons.wikimedia.org/wiki/File:Shanghaigrandtheatre.jpg) |
+| History of Shanghai Art Museum · `images/shanghai/history-of-shanghai-art-museum.jpg` | Art Museum Photographer | [CC BY-SA 3.0](https://commons.wikimedia.org/wiki/File:%E7%BE%8E%E6%9C%AF%E9%A6%86%E5%BB%BA%E7%AD%91DSC_9557.JPG) |
+| Tomorrow Square · `images/shanghai/tomorrow-square.jpg` | DvTor8303 | [CC0](https://commons.wikimedia.org/wiki/File:Tomorrow_Square_20260417.jpg) |
+| People's Square (Shanghai) · `images/shanghai/people-s-square-shanghai.jpg` | Jordiferrer | [CC BY-SA 3.0](https://commons.wikimedia.org/wiki/File:People_Square_seen_from_Urban_Planning_Exhibition_Center.JPG) |
+| Confucian Temple of Shanghai · `images/shanghai/confucian-temple-of-shanghai.jpg` | https://www.flickr.com/photos/kanegen/ | [CC BY 2.0](https://commons.wikimedia.org/wiki/File:Confucius_Temple_of_Shanghai2.jpg) |
+| Yu Garden · `images/shanghai/yu-garden.jpg` | Stefan Fussan | [CC BY-SA 3.0](https://commons.wikimedia.org/wiki/File:Shanghai_-_Yu_Garden_-_0035.jpg) |
+| City God Temple of Shanghai · `images/shanghai/city-god-temple-of-shanghai.jpg` | Legolas1024 | [CC BY-SA 4.0](https://commons.wikimedia.org/wiki/File:%E5%9F%8E%E9%9A%8D%E5%BA%99%C2%B7%E4%B8%8A%E6%B5%B7%E5%8D%97%E5%B8%82.jpg) |
+| Shanghai Urban Planning Exhibition Center · `images/shanghai/shanghai-urban-planning-exhibition-center.jpg` | Daniel Case | [CC BY-SA 3.0](https://commons.wikimedia.org/wiki/File:Shanghai_Urban_Planning_Exhibition_Center_from_northeast.jpg) |
