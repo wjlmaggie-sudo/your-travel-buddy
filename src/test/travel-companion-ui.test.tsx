@@ -17,7 +17,7 @@ vi.mock("@/components/DayWeather", () => ({
     </span>
   ),
 }));
-vi.mock("@/components/MobileNavigation", () => ({ MobileNavigation: () => null }));
+vi.mock("@/components/AppNavigation", () => ({ AppNavigation: () => null }));
 vi.mock("@/lib/native-app", () => ({
   NATIVE_APP: false,
   isNative: () => false,

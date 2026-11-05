@@ -12,12 +12,12 @@ import { Label } from "@/components/ui/label";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Sign in — Travel Buddy" },
+      { title: "Sign in — AiTravel" },
       {
         name: "description",
-        content: "Sign in or create a Travel Buddy account to save your trips.",
+        content: "Sign in or create a AiTravel account to save your trips.",
       },
-      { property: "og:title", content: "Sign in — Travel Buddy" },
+      { property: "og:title", content: "Sign in — AiTravel" },
       { property: "og:description", content: "Access your saved trips." },
     ],
   }),
@@ -44,7 +44,9 @@ function AuthPage() {
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: isNative() ? AUTH_CALLBACK : authRedirectUrl(window.location.origin) },
+          options: {
+            emailRedirectTo: isNative() ? AUTH_CALLBACK : authRedirectUrl(window.location.origin),
+          },
         });
         if (error) throw error;
         if (data.session) navigate({ to: "/trips" });
@@ -60,8 +62,8 @@ function AuthPage() {
   return (
     <div className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-sm rounded-2xl border bg-card p-8 shadow-card">
-        <Link to="/" className="flex items-center gap-2 font-display text-xl font-semibold">
-          <img src={publicAsset("ai-travel-logo.svg")} alt="" className="h-7 w-7" /> Travel Buddy
+        <Link to="/" className="app-wordmark">
+          <img src={publicAsset("ai-travel-logo.svg")} alt="" className="h-7 w-7" /> AiTravel
         </Link>
         <p className="mt-4 text-sm text-muted-foreground">
           Create a free account to save your travel plans and access them anytime.

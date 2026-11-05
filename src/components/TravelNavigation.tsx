@@ -36,37 +36,27 @@ export function TravelNavigation({
 }) {
   const [toolsOpen, setToolsOpen] = useState(false);
   if (NATIVE_APP) {
-    const main = [
-      { id: "planner", label: "Plan", Icon: Sparkles },
-      { id: "chat", label: "Discover", Icon: MessageCircle },
-      { id: "attractions", label: "Itinerary", Icon: MapPinned },
-    ] as const;
-    const labels: Record<string, string> = {
-      flights: "Flights",
-      hotels: "Hotels",
-      cars: "Car rental",
-      shopping: "Shopping",
-      currency: "Currency",
-      weather: "Weather",
-      review: "Final budget",
-    };
+    const tabs: TravelSection[] = ["planner", "chat", "attractions"];
+    const items = SECTIONS.map((item, index) => ({ ...item, Icon: icons[index]! }));
     return (
       <nav aria-label="Travel sections" className="mobile-section-nav">
-        {main.map(({ id, label, Icon }) => (
-          <button
-            key={id}
-            type="button"
-            aria-current={section === id ? "page" : undefined}
-            onClick={() => onChange(id)}
-          >
-            <Icon size={18} />
-            {label}
-          </button>
-        ))}
+        {items
+          .filter(({ id }) => tabs.includes(id))
+          .map(({ id, label, Icon }) => (
+            <button
+              key={id}
+              type="button"
+              aria-current={section === id ? "page" : undefined}
+              onClick={() => onChange(id)}
+            >
+              <Icon size={18} />
+              {label}
+            </button>
+          ))}
         <button
           type="button"
           aria-expanded={toolsOpen}
-          aria-current={!["planner", "chat", "attractions"].includes(section) ? "page" : undefined}
+          aria-current={!tabs.includes(section) ? "page" : undefined}
           onClick={() => setToolsOpen(true)}
         >
           <LayoutGrid size={18} />
@@ -75,15 +65,16 @@ export function TravelNavigation({
         <Dialog open={toolsOpen} onOpenChange={setToolsOpen}>
           <DialogContent placement="bottom" className="mobile-tools-sheet">
             <DialogHeader>
-              <DialogTitle>Everything for the journey</DialogTitle>
-              <DialogDescription>Find what you need, then get back to your trip.</DialogDescription>
+              <DialogTitle>Trip tools</DialogTitle>
+              <DialogDescription>Choose a tool for your trip.</DialogDescription>
             </DialogHeader>
             <div className="mobile-tools-grid">
-              {SECTIONS.map((item, index) => ({ ...item, Icon: icons[index]! }))
-                .filter((item) => labels[item.id])
-                .map(({ id, Icon }) => (
+              {items
+                .filter(({ id }) => !tabs.includes(id))
+                .map(({ id, label, Icon }) => (
                   <button
                     key={id}
+                    aria-current={section === id ? "page" : undefined}
                     type="button"
                     onClick={() => {
                       onChange(id);
@@ -91,7 +82,7 @@ export function TravelNavigation({
                     }}
                   >
                     <Icon size={24} />
-                    <span>{labels[id]}</span>
+                    <span>{label}</span>
                   </button>
                 ))}
             </div>
@@ -126,7 +117,7 @@ export function TravelNavigation({
               type="button"
               aria-current={section === item.id ? "page" : undefined}
               onClick={() => onChange(item.id)}
-              className={`flex shrink-0 items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium transition-colors ${section === item.id ? "bg-secondary text-secondary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted"}`}
+              className="section-nav-link"
             >
               <Icon className="h-4 w-4" />
               {item.label}

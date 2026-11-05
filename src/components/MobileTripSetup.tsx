@@ -101,7 +101,7 @@ export function MobileTripSetup({
                 <MessageCircle className="h-6 w-6 text-secondary" />
                 <span>
                   <strong>Not sure where?</strong>
-                  <small>Find a place with Travel Buddy</small>
+                  <small>Find a place with AiTravel</small>
                 </span>
                 <ArrowRight size={18} />
               </button>

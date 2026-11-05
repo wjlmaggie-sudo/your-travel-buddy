@@ -2,7 +2,7 @@ import { NATIVE_APP } from "@/lib/native-app";
 import { publicAsset } from "@/lib/deployment";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { Compass } from "lucide-react";
+import { AppNavigation } from "./AppNavigation";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 
@@ -17,27 +17,14 @@ export function AppHeader() {
   }
   return (
     <header className="border-b bg-card/60">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-        <Link to="/trips" className="flex items-center gap-2 font-display text-xl font-semibold">
-          <img src={publicAsset("ai-travel-logo.svg")} alt="" className="h-7 w-7" /> Travel Buddy
+      <div className="app-header">
+        <Link to="/" className="app-wordmark">
+          <img src={publicAsset("ai-travel-logo.svg")} alt="" className="h-7 w-7" /> AiTravel
         </Link>
-        <div className="flex items-center gap-2">
-          {!NATIVE_APP && (
-            <>
-              <Button variant="ghost" size="sm" asChild>
-                <Link to="/on-trip" search={{}}>
-                  Today
-                </Link>
-              </Button>
-              <Button variant="outline" size="sm" asChild>
-                <Link to="/">Plan a trip</Link>
-              </Button>
-            </>
-          )}
-          <Button variant="ghost" size="sm" onClick={signOut}>
-            Sign out
-          </Button>
-        </div>
+        {!NATIVE_APP && <AppNavigation />}
+        <Button className="app-header-action" variant="ghost" size="sm" onClick={signOut}>
+          Sign out
+        </Button>
       </div>
     </header>
   );

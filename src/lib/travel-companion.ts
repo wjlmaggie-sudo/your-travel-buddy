@@ -213,7 +213,7 @@ export function directionsUrl(
 }
 export function companionText(trip: CompanionTrip) {
   return [
-    `${trip.destination} · Travel Buddy`,
+    `${trip.destination} · AiTravel`,
     `${trip.start} · ${trip.days} days · times in ${trip.timezone}`,
     ...Array.from(
       { length: trip.days },

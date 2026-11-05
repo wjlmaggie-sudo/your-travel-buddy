@@ -46,7 +46,7 @@ export function DestinationDiscovery({ start, onChoose, onStartChange, active = 
     setMessages((current) => [
       ...current.slice(-8),
       { role: "You", text: text.trim().slice(0, 500) },
-      { role: "Travel Buddy", text: reply },
+      { role: "AiTravel", text: reply },
     ]);
     setInput("");
   }
@@ -144,7 +144,7 @@ export function DestinationDiscovery({ start, onChoose, onStartChange, active = 
       >
         <div className="min-w-0 flex-1">
           <label htmlFor="discovery-message" className="text-sm font-medium">
-            Tell Travel Buddy what you have in mind
+            Tell AiTravel what you have in mind
           </label>
           <Input
             id="discovery-message"

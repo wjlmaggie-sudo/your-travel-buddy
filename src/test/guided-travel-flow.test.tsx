@@ -199,7 +199,7 @@ it("keeps a direct hotel-search button on the completed overview and automatical
   fireEvent.click(screen.getByRole("button", { name: /Continue to hotels/ }));
   await screen.findAllByRole("button", { name: "Choose this hotel" });
   const query = services.hotels.mock.calls[0]?.[0];
-  fireEvent.click(screen.getByRole("button", { name: "AI Travel Planner" }));
+  fireEvent.click(screen.getByRole("button", { name: "Trip planner" }));
   fireEvent.click(screen.getByRole("button", { name: "Search hotels →" }));
   await screen.findAllByRole("button", { name: "Choose this hotel" });
   expect(services.hotels.mock.calls.at(-1)?.[0]).toEqual(query);
@@ -211,8 +211,8 @@ it("lets guests discover a destination and keeps their existing group and budget
   fireEvent.change(screen.getByLabelText("Total group budget (EUR)"), {
     target: { value: "1800" },
   });
-  fireEvent.click(screen.getByRole("button", { name: "Not sure where? Chat with Travel Buddy" }));
-  fireEvent.change(screen.getByLabelText("Tell Travel Buddy what you have in mind"), {
+  fireEvent.click(screen.getByRole("button", { name: "Not sure where? Chat with AiTravel" }));
+  fireEvent.change(screen.getByLabelText("Tell AiTravel what you have in mind"), {
     target: { value: "5 days culture" },
   });
   fireEvent.click(screen.getByRole("button", { name: "Send" }));
@@ -227,8 +227,8 @@ it("lets guests discover a destination and keeps their existing group and budget
 
 it("offers a dedicated chatbot section and transfers the understood group budget and origin", async () => {
   setup();
-  fireEvent.click(screen.getByRole("button", { name: "Travel Chatbot" }));
-  fireEvent.change(screen.getByLabelText("Tell Travel Buddy what you have in mind"), {
+  fireEvent.click(screen.getByRole("button", { name: "Discover" }));
+  fireEvent.change(screen.getByLabelText("Tell AiTravel what you have in mind"), {
     target: {
       value: "5 days from Berlin, 2 adults and 1 child aged 6, budget €1200, family activities",
     },

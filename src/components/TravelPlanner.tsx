@@ -256,7 +256,7 @@ export function TravelPlanner() {
             </Button>
           </WorkspacePanel>
         )}
-        <WorkspacePanel active={section === "chat"} label="Travel Chatbot">
+        <WorkspacePanel active={section === "chat"} label="Discover">
           <div className="mx-auto max-w-2xl">
             <DestinationDiscovery
               active={section === "chat"}
@@ -318,7 +318,7 @@ export function TravelPlanner() {
                 className="mt-4"
                 onClick={() => setSection("chat")}
               >
-                Not sure where? Chat with Travel Buddy
+                Not sure where? Chat with AiTravel
               </Button>
               <form ref={formRef} className="mt-6" onSubmit={generate}>
                 <fieldset disabled={estimatingBudget} className="space-y-4">
@@ -556,7 +556,7 @@ export function TravelPlanner() {
           </DialogContent>
         </Dialog>
         {!result && (
-          <WorkspacePanel active={section === "cars"} label="Car Rental">
+          <WorkspacePanel active={section === "cars"} label="Car rental">
             <CarRental
               active={section === "cars"}
               standalone

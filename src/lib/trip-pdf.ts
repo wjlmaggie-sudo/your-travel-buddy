@@ -200,7 +200,7 @@ export async function buildTripPdf(
   await mapTask;
   const content: Content[] = [
     {
-      text: "TRAVEL BUDDY / YOUR TRAVEL GUIDE",
+      text: "AiTravel / YOUR TRAVEL GUIDE",
       color: "#17685d",
       fontSize: 10,
       characterSpacing: 2,
@@ -533,7 +533,7 @@ export async function buildTripPdf(
       pageMargins: [48, 48, 48, 48],
       content,
       images,
-      info: { title: `${b.destination} - Travel Buddy plan`, author: "Travel Buddy" },
+      info: { title: `${b.destination} - AiTravel plan`, author: "AiTravel" },
       defaultStyle: { font: "Roboto", fontSize: 10, lineHeight: 1.25, color: "#243d37" },
       styles: {
         heading: { fontSize: 15, bold: true, color: "#17685d", margin: [0, 15, 0, 7] },
@@ -541,7 +541,7 @@ export async function buildTripPdf(
         notice: { fontSize: 9, color: "#6b5023", fillColor: "#fff4dc", margin: [0, 10, 0, 12] },
       },
       footer: (page, count) => ({
-        text: `TRAVEL BUDDY  ·  ${page} / ${count}`,
+        text: `AiTravel  ·  ${page} / ${count}`,
         alignment: "center",
         fontSize: 8,
         color: "#61746e",

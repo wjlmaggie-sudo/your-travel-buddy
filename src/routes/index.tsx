@@ -3,19 +3,19 @@ import travelLake from "@/assets/travel-lake.jpg";
 import { NATIVE_APP } from "@/lib/native-app";
 import { publicAsset } from "@/lib/deployment";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Button } from "@/components/ui/button";
+import { AppNavigation } from "@/components/AppNavigation";
 import { TravelPlanner } from "@/components/TravelPlanner";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Travel Buddy — One connected travel plan" },
+      { title: "AiTravel — One connected travel plan" },
       {
         name: "description",
         content:
           "A warm, simple travel planner: day-by-day itineraries, budget tracking and template trip ideas.",
       },
-      { property: "og:title", content: "Travel Buddy — Travel Planner" },
+      { property: "og:title", content: "AiTravel — Travel Planner" },
       {
         property: "og:description",
         content: "Day-by-day itineraries, budget tracking and template trip ideas in one place.",
@@ -32,13 +32,9 @@ function Index() {
     return (
       <div className="mobile-planner-page">
         <header className="companion-header">
-          <Link
-            to="/on-trip"
-            search={{}}
-            className="flex items-center gap-2 font-display text-xl font-semibold"
-          >
+          <Link to="/on-trip" search={{}} className="app-wordmark">
             <img src={publicAsset("ai-travel-logo.svg")} alt="" className="h-7 w-7" />
-            Travel Buddy
+            AiTravel
           </Link>
           <span className="companion-eyebrow">{RELEASE_LABEL}</span>
         </header>
@@ -47,16 +43,14 @@ function Index() {
     );
   return (
     <div className="min-h-screen">
-      <header className="mx-auto flex max-w-7xl items-center justify-between gap-3 flex-wrap px-6 py-4">
-        <Link to="/" className="flex items-center gap-2 font-display text-2xl font-semibold">
-          <img src={publicAsset("ai-travel-logo.svg")} alt="" className="h-7 w-7" /> Travel Buddy
+      <header className="app-header">
+        <Link to="/" className="app-wordmark">
+          <img src={publicAsset("ai-travel-logo.svg")} alt="" className="h-7 w-7" /> AiTravel
         </Link>
-        <a className="text-sm font-medium underline" href={publicAsset("iphone-demo.html")}>
-          iPhone demo · {RELEASE_LABEL}
+        <AppNavigation />
+        <a className="app-header-action" href={publicAsset("iphone-demo.html")}>
+          iPhone demo
         </a>
-        <Button asChild variant="outline">
-          <Link to="/trips">My trips</Link>
-        </Button>
       </header>
       <main className="mx-auto max-w-7xl px-4 sm:px-6">
         <section
@@ -106,8 +100,8 @@ function Index() {
       </main>
       <TravelPlanner />
       <footer className="mx-auto max-w-7xl border-t px-6 py-8 text-xs text-muted-foreground">
-        Travel Buddy · {RELEASE_LABEL} · Plan thoughtfully. Explore freely. Confirm prices,
-        availability and booking terms with providers.
+        AiTravel · {RELEASE_LABEL} · Plan thoughtfully. Explore freely. Confirm prices, availability
+        and booking terms with providers.
       </footer>
     </div>
   );

@@ -1,4 +1,4 @@
-# Your Travel Buddy
+# AiTravel
 
 ## iPhone app
 

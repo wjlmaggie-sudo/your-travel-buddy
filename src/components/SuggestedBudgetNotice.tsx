@@ -17,8 +17,8 @@ export function SuggestedBudgetNotice({
         <p className="font-semibold">Suggested trip budget: {money(suggestion.amount)}</p>
         <p className="mt-1 text-xs">
           Reference range {money(suggestion.low)}–{money(suggestion.high)} for the group · not live
-          prices. Review the daily breakdown in AI Travel Planner, or set your own total in Edit
-          trip details.
+          prices. Review the daily breakdown in Trip planner, or set your own total in Edit trip
+          details.
         </p>
       </div>
     );

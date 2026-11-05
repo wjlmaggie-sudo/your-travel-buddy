@@ -268,7 +268,7 @@ function TripPage() {
                 </p>
               )}
             </WorkspacePanel>
-            <WorkspacePanel active={tab === "chat"} label="Travel Chatbot">
+            <WorkspacePanel active={tab === "chat"} label="Discover">
               <div className="mx-auto max-w-2xl">
                 <p className="text-sm text-muted-foreground">
                   Explore a new trip. Your saved trip stays unchanged.
@@ -369,7 +369,7 @@ function TripPage() {
                 />
               </details>
             </WorkspacePanel>
-            <WorkspacePanel active={tab === "cars"} label="Car Rental">
+            <WorkspacePanel active={tab === "cars"} label="Car rental">
               {journey.data ? (
                 <fieldset disabled={selectionBusy} className="min-w-0">
                   <CarRental
@@ -383,12 +383,10 @@ function TripPage() {
                   />
                 </fieldset>
               ) : (
-                <p>
-                  Open AI Travel Planner and enable connected planning to add a rental to this trip.
-                </p>
+                <p>Open Trip planner and enable connected planning to add a rental to this trip.</p>
               )}
             </WorkspacePanel>
-            <WorkspacePanel active={tab === "itinerary"} label="Attractions & Activities">
+            <WorkspacePanel active={tab === "itinerary"} label="Activities">
               <Itinerary
                 data={data}
                 refresh={refresh}
@@ -406,7 +404,7 @@ function TripPage() {
               />
               <Budget data={data} refresh={refresh} />
             </WorkspacePanel>
-            <WorkspacePanel active={tab === "ideas"} label="AI Travel Planner">
+            <WorkspacePanel active={tab === "ideas"} label="Trip planner">
               {journey.data && !stay.isPending && !stay.isError && (
                 <fieldset disabled={selectionBusy} className="min-w-0">
                   <TripBudgetDashboard
@@ -494,7 +492,7 @@ function TripPage() {
                 refresh={refresh}
               />
             </WorkspacePanel>
-            <WorkspacePanel active={tab === "shop"} label="Local Shopping">
+            <WorkspacePanel active={tab === "shop"} label="Shopping">
               <LocalShopping destination={trip.destination} />
               <details className="mt-6 rounded-xl border bg-card p-4">
                 <summary className="cursor-pointer text-sm font-medium">

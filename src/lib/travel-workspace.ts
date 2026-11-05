@@ -12,13 +12,13 @@ import {
 } from "./stay-planning";
 
 export const SECTIONS = [
-  { id: "planner", label: "AI Travel Planner" },
-  { id: "chat", label: "Travel Chatbot" },
+  { id: "planner", label: "Trip planner" },
+  { id: "chat", label: "Discover" },
   { id: "flights", label: "Flights" },
   { id: "hotels", label: "Hotels" },
-  { id: "cars", label: "Car Rental" },
-  { id: "attractions", label: "Attractions & Activities" },
-  { id: "shopping", label: "Local Shopping" },
+  { id: "cars", label: "Car rental" },
+  { id: "attractions", label: "Activities" },
+  { id: "shopping", label: "Shopping" },
   { id: "currency", label: "Currency" },
   { id: "weather", label: "Weather" },
   { id: "review", label: "Final budget" },

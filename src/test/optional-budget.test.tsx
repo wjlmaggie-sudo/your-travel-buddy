@@ -24,7 +24,7 @@ it("generates a plan with a blank optional budget, shows the assumptions and ret
   fireEvent.click(
     screen.getByRole("button", { name: /^Continue to (flights|hotels)/, hidden: true }),
   );
-  fireEvent.click(screen.getByRole("button", { name: "AI Travel Planner", hidden: true }));
+  fireEvent.click(screen.getByRole("button", { name: "Trip planner", hidden: true }));
   expect(screen.getByText("Suggested starting budget: €1,300.00")).toBeVisible();
   expect(readGuestSimulation()?.budget).toBe(1300);
   expect(readGuestSimulation()?.journey?.budgetSuggestion?.profile).toBe("Lisbon reference");
@@ -50,7 +50,7 @@ it("lets the guest replace a suggested total with their own budget", () => {
   fireEvent.click(
     screen.getByRole("button", { name: /^Continue to (flights|hotels)/, hidden: true }),
   );
-  fireEvent.click(screen.getByRole("button", { name: "AI Travel Planner" }));
+  fireEvent.click(screen.getByRole("button", { name: "Trip planner" }));
   fireEvent.click(screen.getByRole("button", { name: "Edit trip details" }));
   fireEvent.change(screen.getByLabelText("Total group budget (EUR)"), { target: { value: "800" } });
   fireEvent.click(screen.getByRole("button", { name: "Update trip & continue", hidden: true }));

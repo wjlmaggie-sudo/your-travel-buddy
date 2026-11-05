@@ -34,7 +34,7 @@ export function TravelWorkspace({
             <p className="truncate text-[10px] font-semibold uppercase tracking-[.18em] text-secondary">
               {title || "Your travel workspace"}
             </p>
-            <h2 className="mt-1 truncate font-sans text-lg font-semibold">
+            <h2 className="mt-1 truncate text-xl font-semibold">
               {SECTIONS.find((item) => item.id === section)?.label}
             </h2>
           </div>

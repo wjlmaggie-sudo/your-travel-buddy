@@ -51,7 +51,7 @@ import { readStayChoice } from "@/lib/stay-planning";
 import { PRODUCTS } from "@/lib/travel-data";
 import { dailyBudgets } from "@/lib/planning";
 import { publicAsset } from "@/lib/deployment";
-import { MobileNavigation } from "./MobileNavigation";
+import { AppNavigation } from "./AppNavigation";
 import { FinalBudgetSummary } from "./FinalTripBudget";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -198,12 +198,13 @@ export function TravelCompanion({ requestedId }: { requestedId: string | undefin
 
   return (
     <div className="companion-page">
-      <header className="companion-header">
-        <Link to="/" className="flex items-center gap-2 font-display text-xl font-semibold">
+      <header className={NATIVE_APP ? "companion-header" : "app-header"}>
+        <Link to="/" className="app-wordmark">
           <img src={publicAsset("ai-travel-logo.svg")} className="h-7 w-7" alt="" />
-          Travel Buddy
+          AiTravel
         </Link>
-        <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        {!NATIVE_APP && <AppNavigation />}
+        <span className="app-header-action inline-flex items-center gap-1.5">
           {online ? <Wifi size={14} /> : <WifiOff size={14} />}
           {online ? "Online" : "Offline"}
         </span>
@@ -978,7 +979,6 @@ export function TravelCompanion({ requestedId }: { requestedId: string | undefin
           </>
         )}
       </main>
-      {!NATIVE_APP && <MobileNavigation />}
     </div>
   );
 }

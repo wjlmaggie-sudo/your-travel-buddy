@@ -150,7 +150,7 @@ export function InstantPlan({
   }
   return (
     <div id="whole-trip-plan" className="contents">
-      <WorkspacePanel active={section === "planner" && overviewActive} label="AI Travel Overview">
+      <WorkspacePanel active={section === "planner" && overviewActive} label="Trip overview">
         {(ideas.activityRevision !== 1 || (brief.persona && ideas.personaRevision !== 2)) && (
           <div className="rounded-2xl border border-secondary bg-secondary/10 p-4 text-sm">
             <p>
@@ -411,7 +411,7 @@ export function InstantPlan({
           </p>
         )}
       </WorkspacePanel>
-      <WorkspacePanel active={section === "cars"} label="Car Rental">
+      <WorkspacePanel active={section === "cars"} label="Car rental">
         <CarRental
           active={section === "cars"}
           brief={brief}
@@ -423,7 +423,7 @@ export function InstantPlan({
           }}
         />
       </WorkspacePanel>
-      <WorkspacePanel active={section === "attractions"} label="Attractions & Activities">
+      <WorkspacePanel active={section === "attractions"} label="Activities">
         <div>
           <p className="text-xs uppercase tracking-widest text-secondary">
             Make every day a discovery
@@ -638,7 +638,7 @@ export function InstantPlan({
           }}
         />
       </WorkspacePanel>
-      <WorkspacePanel active={section === "shopping"} label="Local Shopping">
+      <WorkspacePanel active={section === "shopping"} label="Shopping">
         <LocalShopping destination={brief.destination} />
       </WorkspacePanel>
     </div>

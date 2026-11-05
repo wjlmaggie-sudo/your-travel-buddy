@@ -92,7 +92,7 @@ it("does not invent child ages or confuse a duration with an age and converts pe
 it("asks missing details before searching public APIs and hands an actual result to the planner", async () => {
   const onChoose = vi.fn();
   setup(onChoose);
-  const input = screen.getByLabelText("Tell Travel Buddy what you have in mind");
+  const input = screen.getByLabelText("Tell AiTravel what you have in mind");
   fireEvent.change(input, { target: { value: "warm and hiking" } });
   fireEvent.click(screen.getByRole("button", { name: "Send" }));
   expect(search).not.toHaveBeenCalled();
@@ -140,7 +140,7 @@ it("preserves explicit currency codes before a budget amount", () => {
 
 it("starts suggestions for a country name alone with a disclosed editable duration", async () => {
   setup();
-  fireEvent.change(screen.getByLabelText("Tell Travel Buddy what you have in mind"), {
+  fireEvent.change(screen.getByLabelText("Tell AiTravel what you have in mind"), {
     target: { value: "Germany" },
   });
   fireEvent.click(screen.getByRole("button", { name: "Send" }));

@@ -25,7 +25,7 @@ it("preserves edits in mounted views while switching document sections", () => {
   expect(first).toHaveAttribute("hidden");
   const flight = screen.getByRole("region", { name: "Flights view" });
 
-  fireEvent.click(screen.getByRole("button", { name: "AI Travel Planner" }));
+  fireEvent.click(screen.getByRole("button", { name: "Trip planner" }));
   expect(screen.getByRole("region", { name: "Overview" })).toBe(first);
   expect(screen.getByLabelText("Trip notes")).toHaveValue("My edited plan");
   fireEvent.click(screen.getByRole("button", { name: "Flights" }));

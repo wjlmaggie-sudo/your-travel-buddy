@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { NATIVE_APP, setupNativeApp } from "@/lib/native-app";
 import { clearAccountCopies, readCompanionTrips } from "@/lib/travel-companion";
 import { cancelTripReminder } from "@/lib/native-app";
-import { MobileNavigation } from "@/components/MobileNavigation";
+import { AppNavigation } from "@/components/AppNavigation";
 import { toast } from "sonner";
 import {
   Outlet,
@@ -76,7 +76,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-      { title: "AI Travel — Travel Planner" },
+      { title: "AiTravel — Travel Planner" },
       { name: "description", content: "Plan itineraries, track budgets and get AI trip ideas." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -88,7 +88,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Karla:wght@400;500;700&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Karla:wght@400;500;600;700&display=swap",
       },
     ],
   }),
@@ -176,7 +176,7 @@ function RootComponent() {
       {NATIVE_APP ? (
         <div className="native-app">
           <Outlet />
-          <MobileNavigation />
+          <AppNavigation bottom />
         </div>
       ) : (
         <Outlet />

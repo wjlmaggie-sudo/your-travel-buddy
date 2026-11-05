@@ -31,7 +31,7 @@ function start(departure = "Berlin") {
     });
   fireEvent.click(screen.getByRole("button", { name: "Lisbon" }));
   fireEvent.click(screen.getByRole("button", { name: /^Continue to (flights|hotels)/ }));
-  go("AI Travel Planner");
+  go("Trip planner");
 }
 function go(name: string) {
   const buttons = screen.getAllByRole("button", { name, hidden: true });
@@ -151,7 +151,7 @@ describe("guest workspace", () => {
     expect(screen.getByRole("region", { name: "Currency converter" })).toBeVisible();
     expect(screen.queryByRole("region", { name: "Connected trip budget" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^Weather$/ })).toBeVisible();
-    go("Attractions & Activities");
+    go("Activities");
     expect(
       screen.queryByRole("heading", { name: "Three ideas for your day." }),
     ).not.toBeInTheDocument();
@@ -187,7 +187,7 @@ describe("guest workspace", () => {
       target: { value: "My arrival plan" },
     });
     go("Hotels");
-    go("AI Travel Planner");
+    go("Trip planner");
     expect(readGuestSimulation()?.ideas?.days[0]?.items[0]?.title).toBe("My arrival plan");
     cleanup();
     setup();
@@ -228,7 +228,7 @@ describe("guest workspace", () => {
     expect(screen.queryByText("Explore simulated flight comparisons")).not.toBeInTheDocument();
     expect(screen.queryByText("Use a real quote you found")).not.toBeInTheDocument();
     expect(screen.queryByText("Edit route & flight allowance")).not.toBeInTheDocument();
-    go("AI Travel Planner");
+    go("Trip planner");
     expect(readGuestSimulation()?.budget).toBe(before.budget);
   }, 15000);
   it("allows departure to be omitted and requires it only when adding flights", () => {
