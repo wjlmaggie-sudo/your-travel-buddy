@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SkyCast — BBC Weather</title>
+<style>
+  :root {
+    --bg: #0b1020;
+    --panel: rgba(255, 255, 255, 0.06);
+    --panel-border: rgba(255, 255, 255, 0.12);
+    --text: #eef2ff;
+    --muted: #9aa6c4;
+    --accent: #5b8cff;
+    --accent-2: #7ee0c3;
+    --danger: #ff6b81;
+    --radius: 18px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+    background: radial-gradient(1200px 700px at 80% -10%, #1d2b5a 0%, transparent 60%),
+                radial-gradient(900px 600px at -10% 110%, #123f4a 0%, transparent 55%),
+                var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 32px 20px 60px;
+  }
+
+  .wrap { max-width: 960px; margin: 0 auto; }
+
+  header { text-align: center; margin-bottom: 28px; }
+  header h1 { font-size: 2.2rem; letter-spacing: 0.5px; }
+  header h1 span { color: var(--accent-2); }
+  header p { color: var(--muted); margin-top: 6px; font-size: 0.95rem; }
+
+  /* ---------- Search ---------- */
+  .search { position: relative; max-width: 520px; margin: 0 auto 28px; }
+  .search input {
+    width: 100%;
+    padding: 15px 18px;
+    font-size: 1rem;
+    color: var(--text);
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 999px;
+    outline: none;
+    backdrop-filter: blur(8px);
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .search input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px rgba(91, 140, 255, 0.18);
+  }
+  .search input::placeholder { color: var(--muted); }
+
+  .suggestions {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0; right: 0;
+    background: #131a33;
+    border: 1px solid var(--panel-border);
+    border-radius: 14px;
+    overflow: hidden;
+    z-index: 20;
+    display: none;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+  }
+  .suggestions.open { display: block; }
+  .suggestions button {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 16px;
+    background: none;
+    border: none;
+    color: var(--text);
+    font-size: 0.95rem;
+    text-align: left;
+    cursor: pointer;
+  }
+  .suggestions button:hover, .suggestions button.active { background: rgba(91, 140, 255, 0.2); }
+  .suggestions .sub { color: var(--muted); font-size: 0.85rem; white-space: nowrap; }
+
+  /* ---------- Status ---------- */
+  .status { text-align: center; color: var(--muted); padding: 40px 10px; }
+  .status.error { color: var(--danger); }
+
+  .spinner {
+    width: 34px; height: 34px;
+    margin: 0 auto 14px;
+    border: 3px solid rgba(255,255,255,0.15);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ---------- Cards ---------- */
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius);
+    backdrop-filter: blur(10px);
+    padding: 24px;
+  }
+
+  .hidden { display: none; }
+
+  .now {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 26px;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  .now .icon { font-size: 5rem; line-height: 1; }
+  .now .place { font-size: 1.35rem; font-weight: 600; }
+  .now .place small { display: block; color: var(--muted); font-size: 0.9rem; font-weight: 400; margin-top: 3px; }
+  .now .temp { font-size: 3.4rem; font-weight: 700; margin-top: 8px; }
+  .now .cond { color: var(--muted); font-size: 1.05rem; }
+
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 14px;
+    margin-bottom: 26px;
+  }
+  .metric {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--panel-border);
+    border-radius: 14px;
+    padding: 14px 16px;
+  }
+  .metric .label { color: var(--muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1px; }
+  .metric .value { font-size: 1.35rem; font-weight: 600; margin-top: 5px; }
+
+  h2 { font-size: 1.05rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin-bottom: 14px; }
+
+  .forecast {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    gap: 12px;
+  }
+  .day {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--panel-border);
+    border-radius: 14px;
+    padding: 16px 10px;
+    text-align: center;
+  }
+  .day .name { font-weight: 600; font-size: 0.92rem; }
+  .day .ico { font-size: 2rem; margin: 10px 0; }
+  .day .hi { font-weight: 600; }
+  .day .lo { color: var(--muted); font-size: 0.9rem; }
+  .day.today { border-color: var(--accent); background: rgba(91, 140, 255, 0.12); }
+
+  footer { text-align: center; margin-top: 30px; color: var(--muted); font-size: 0.85rem; }
+  footer a { color: var(--accent-2); }
+
+  @media (max-width: 560px) {
+    .now { grid-template-columns: 1fr; text-align: center; }
+    .now .icon { font-size: 4rem; }
+    header h1 { font-size: 1.7rem; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Sky<span>Cast</span></h1>
+    <p>Search any city for current conditions &amp; a 14-day forecast — powered by BBC Weather data.</p>
+  </header>
+
+  <div class="search">
+    <input id="q" type="text" placeholder="Search a city… (e.g. Tokyo, Nairobi, Lima)" autocomplete="off" />
+    <div id="suggestions" class="suggestions"></div>
+  </div>
+
+  <div id="status" class="status">
+    <div class="spinner"></div>
+    Loading weather…
+  </div>
+
+  <div id="result" class="hidden">
+    <div class="card now">
+      <div class="icon" id="nowIcon">—</div>
+      <div>
+        <div class="place" id="place">—</div>
+        <div class="temp" id="temp">—</div>
+        <div class="cond" id="cond">—</div>
+      </div>
+    </div>
+
+    <div class="metrics">
+      <div class="metric"><div class="label">Feels like</div><div class="value" id="feels">—</div></div>
+      <div class="metric"><div class="label">Humidity</div><div class="value" id="humidity">—</div></div>
+      <div class="metric"><div class="label">Wind</div><div class="value" id="wind">—</div></div>
+      <div class="metric"><div class="label">Sunrise</div><div class="value" id="sunrise">—</div></div>
+      <div class="metric"><div class="label">Sunset</div><div class="value" id="sunset">—</div></div>
+    </div>
+
+    <div class="card">
+      <h2>14-Day Forecast</h2>
+      <div class="forecast" id="forecast"></div>
+    </div>
+  </div>
+
+  <footer>Weather data by <a href="https://www.bbc.co.uk/weather" target="_blank" rel="noopener">BBC Weather</a> · city search via <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a></footer>
+</div>
+
+<script>
+/* Weather: BBC Weather's public forecast endpoint (no key, CORS-enabled).
+   City search: Open-Meteo's geocoder, which returns GeoNames IDs — the same IDs
+   BBC uses — because BBC's own locator service only accepts bbc.co.uk origins. */
+const GEO = "https://geocoding-api.open-meteo.com/v1/search";
+const FORECAST = "https://weather-broker-cdn.api.bbci.co.uk/en/forecast/aggregated/";
+const DEFAULT_PLACE = { id: 2643743, name: "London", admin1: "England", country: "United Kingdom" };
+
+/* BBC uses text descriptions ("Sunny Intervals", "Mist", …), so icons are
+   matched by keyword. Only emoji with broad font support are used. */
+function iconFor(text) {
+  const t = String(text || "").toLowerCase();
+  if (/thunder|storm/.test(t)) return "⛈️";
+  if (/sleet/.test(t)) return "🌨️";
+  if (/snow|hail/.test(t)) return "❄️";
+  if (/sunny intervals/.test(t)) return "⛅";
+  if (/light rain|drizzle/.test(t)) return "🌦️";
+  if (/rain/.test(t)) return "🌧️";
+  if (/mist|fog|haze/.test(t)) return "🌁";
+  if (/clear/.test(t)) return "🌙";
+  if (/sun/.test(t)) return "☀️";
+  if (/cloud|overcast/.test(t)) return "☁️";
+  return "🌡️";
+}
+
+const $ = id => document.getElementById(id);
+const statusEl = $("status"), resultEl = $("result");
+
+function showStatus(html, isError) {
+  resultEl.classList.add("hidden");
+  statusEl.classList.remove("hidden", "error");
+  if (isError) statusEl.classList.add("error");
+  statusEl.innerHTML = html;
+}
+
+function showResult() { statusEl.classList.add("hidden"); resultEl.classList.remove("hidden"); }
+
+/* Fetch JSON with retries — the free tier occasionally rate-limits bursts */
+async function fetchJSON(url, label, tries = 3) {
+  let lastErr;
+  for (let i = 0; i < tries; i++) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(label + " returned " + res.status);
+      return await res.json();
+    } catch (err) {
+      lastErr = err;
+      if (i < tries - 1) await new Promise(r => setTimeout(r, 700 * (i + 1)));
+    }
+  }
+  throw lastErr;
+}
+
+const fmtDay = (iso, i) => i === 0 ? "Today"
+  : new Date(iso + "T00:00").toLocaleDateString(undefined, { weekday: "short", day: "numeric" });
+
+/* ---------- Current weather + 14-day outlook ---------- */
+async function loadForecast(place) {
+  showStatus('<div class="spinner"></div>Loading BBC forecast for ' + escapeHtml(place.name) + '…');
+  try {
+    const d = await fetchJSON(FORECAST + encodeURIComponent(place.id), "BBC Weather");
+    const days = (d.forecasts || []).map(f => f.summary && f.summary.report).filter(Boolean);
+    if (!days.length) throw new Error("BBC Weather returned no forecast data");
+
+    const now = (d.forecasts[0].detailed.reports || [])[0] || null;
+    const today = days[0];
+    const region = [place.admin1, place.country].filter(Boolean).join(", ");
+
+    $("place").innerHTML = escapeHtml(place.name) + (region ? "<small>" + escapeHtml(region) + "</small>" : "");
+    $("nowIcon").textContent = iconFor(now ? now.weatherTypeText : today.weatherTypeText);
+    $("temp").textContent = Math.round(now ? now.temperatureC : today.maxTempC) + "°C";
+    $("cond").textContent = now ? now.weatherTypeText : today.weatherTypeText;
+    $("cond").title = (now && now.enhancedWeatherDescription) || today.enhancedWeatherDescription || "";
+    $("feels").textContent = now ? Math.round(now.feelsLikeTemperatureC) + "°C" : "—";
+    $("humidity").textContent = now ? Math.round(now.humidity) + "%" : "—";
+    $("wind").textContent = now
+      ? Math.round(now.windSpeedKph) + " km/h " + (now.windDirectionAbbreviation || "")
+      : "—";
+    $("sunrise").textContent = today.sunrise || "—";
+    $("sunset").textContent = today.sunset || "—";
+
+    $("forecast").innerHTML = days.slice(0, 14).map((r, i) => {
+      const desc = r.enhancedWeatherDescription || r.weatherTypeText || "";
+      return '<div class="day' + (i === 0 ? " today" : "") + '" title="' + escapeHtml(desc) + '">' +
+        '<div class="name">' + fmtDay(r.localDate, i) + '</div>' +
+        '<div class="ico">' + iconFor(r.weatherTypeText) + '</div>' +
+        '<div class="hi">' + Math.round(r.maxTempC) + '°</div>' +
+        '<div class="lo">' + Math.round(r.minTempC) + '°</div>' +
+      '</div>';
+    }).join("");
+
+    showResult();
+  } catch (err) {
+    const msg = /404/.test(err.message)
+      ? "BBC Weather doesn’t cover this location — try a larger town or city nearby."
+      : err.message;
+    showStatus("⚠️ " + escapeHtml(msg), true);
+  }
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+/* ---------- Search ---------- */
+const qInput = $("q"), suggEl = $("suggestions");
+let debounce, activeIndex = -1, currentResults = [], searchController = null;
+
+qInput.addEventListener("input", () => {
+  clearTimeout(debounce);
+  const term = qInput.value.trim();
+  if (term.length < 2) return closeSugg();
+  debounce = setTimeout(() => search(term), 300);
+});
+
+qInput.addEventListener("keydown", e => {
+  const buttons = suggEl.querySelectorAll("button");
+  if (!buttons.length) return;
+  if (e.key === "ArrowDown") { e.preventDefault(); activeIndex = (activeIndex + 1) % buttons.length; paintActive(buttons); }
+  else if (e.key === "ArrowUp") { e.preventDefault(); activeIndex = (activeIndex - 1 + buttons.length) % buttons.length; paintActive(buttons); }
+  else if (e.key === "Enter" && activeIndex > -1) { e.preventDefault(); buttons[activeIndex].click(); }
+  else if (e.key === "Escape") closeSugg();
+});
+
+function paintActive(buttons) {
+  buttons.forEach((b, i) => b.classList.toggle("active", i === activeIndex));
+}
+
+async function search(term) {
+  if (searchController) searchController.abort();
+  searchController = new AbortController();
+  try {
+    const res = await fetch(
+      GEO + "?" + new URLSearchParams({ name: term, count: 6, language: "en", format: "json" }),
+      { signal: searchController.signal }
+    );
+    if (!res.ok) throw new Error("City search returned " + res.status);
+    const data = await res.json();
+    currentResults = (data.results || []).filter(r => r.id);
+    activeIndex = -1;
+
+    if (!currentResults.length) {
+      suggEl.innerHTML = '<div style="padding:12px 16px;color:var(--muted)">No matches found</div>';
+      return suggEl.classList.add("open");
+    }
+
+    suggEl.innerHTML = currentResults.map((r, i) => {
+      const sub = [r.admin1, r.country].filter(Boolean).join(", ");
+      return '<button data-i="' + i + '"><span>' + escapeHtml(r.name) + '</span>' +
+             '<span class="sub">' + escapeHtml(sub) + '</span></button>';
+    }).join("");
+    suggEl.classList.add("open");
+
+    suggEl.querySelectorAll("button").forEach(btn => {
+      btn.addEventListener("click", () => pick(currentResults[+btn.dataset.i]));
+    });
+  } catch (err) {
+    if (err.name === "AbortError") return;
+    const msg = /fetch|network/i.test(err.message)
+      ? "City search is temporarily unavailable — please try again."
+      : err.message;
+    suggEl.innerHTML = '<div style="padding:12px 16px;color:var(--danger)">' + escapeHtml(msg) + '</div>';
+    suggEl.classList.add("open");
+  }
+}
+
+function pick(place) {
+  closeSugg();
+  qInput.value = place.name;
+  try { localStorage.setItem("skycast:place", JSON.stringify(place)); } catch (_) {}
+  loadForecast(place);
+}
+
+function closeSugg() {
+  suggEl.classList.remove("open");
+  suggEl.innerHTML = "";
+  activeIndex = -1;
+}
+
+document.addEventListener("click", e => {
+  if (!e.target.closest(".search")) closeSugg();
+});
+
+/* ---------- Boot: saved city or London ---------- */
+(function init() {
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem("skycast:place")); } catch (_) {}
+
+  if (saved && saved.id) {
+    qInput.value = saved.name;
+    return loadForecast(saved);
+  }
+  loadForecast(DEFAULT_PLACE);
+})();
+</script>
+</body>
+</html>

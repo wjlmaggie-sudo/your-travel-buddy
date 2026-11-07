@@ -1,0 +1,4 @@
+# Created when you save a Duffel token in the app's Settings - never commit it.
+.env
+
+*.log

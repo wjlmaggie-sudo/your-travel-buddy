@@ -1,0 +1,1804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>iTravel — Travel Explorer</title>
+<style>
+  :root {
+    --bg: #0a0f1e;
+    --panel: rgba(255, 255, 255, 0.055);
+    --panel-border: rgba(255, 255, 255, 0.11);
+    --text: #eef2ff;
+    --muted: #97a3c2;
+    --accent: #4f8cff;
+    --accent-2: #58d6b4;
+    --warn: #ffb454;
+    --danger: #ff6b81;
+    --radius: 18px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+    background: radial-gradient(1100px 650px at 85% -10%, #1c2a58 0%, transparent 58%),
+                radial-gradient(900px 600px at -10% 115%, #0f3d47 0%, transparent 55%),
+                var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 60px;
+  }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 22px 18px 0; }
+
+  /* ---------- top bar ---------- */
+  .topbar { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+  .logo { font-size: 1.45rem; font-weight: 700; white-space: nowrap; }
+  .logo span { color: var(--accent-2); }
+  .search { position: relative; flex: 1; max-width: 520px; }
+  .search input {
+    width: 100%; padding: 13px 18px; font-size: 0.98rem; color: var(--text);
+    background: var(--panel); border: 1px solid var(--panel-border); border-radius: 999px;
+    outline: none; backdrop-filter: blur(8px); transition: border-color .2s, box-shadow .2s;
+  }
+  .search input:focus { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(79,140,255,.16); }
+  .search input::placeholder { color: var(--muted); }
+  .suggestions {
+    position: absolute; top: calc(100% + 8px); left: 0; right: 0; background: #121a33;
+    border: 1px solid var(--panel-border); border-radius: 14px; overflow: hidden; z-index: 40;
+    display: none; box-shadow: 0 18px 40px rgba(0,0,0,.5);
+  }
+  .suggestions.open { display: block; }
+  .suggestions button {
+    display: flex; justify-content: space-between; gap: 12px; width: 100%; padding: 11px 16px;
+    background: none; border: none; color: var(--text); font-size: .93rem; text-align: left; cursor: pointer;
+  }
+  .suggestions button:hover, .suggestions button.active { background: rgba(79,140,255,.18); }
+  .suggestions .sub { color: var(--muted); font-size: .83rem; white-space: nowrap; }
+  .iconbtn {
+    margin-left: auto; width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--panel-border);
+    background: var(--panel); color: var(--text); font-size: 1.1rem; cursor: pointer; position: relative;
+    backdrop-filter: blur(8px); transition: border-color .2s;
+  }
+  .iconbtn:hover { border-color: var(--accent); }
+  .iconbtn .dot {
+    position: absolute; top: 2px; right: 2px; width: 10px; height: 10px; border-radius: 50%;
+    background: var(--danger); border: 2px solid var(--bg); display: none;
+  }
+  .iconbtn.configured .dot { display: block; background: var(--accent-2); }
+
+  /* ---------- hero ---------- */
+  .hero {
+    position: relative; border-radius: 22px; overflow: hidden; margin-bottom: 18px;
+    border: 1px solid var(--panel-border); background: linear-gradient(160deg, #17224a, #10233a);
+    min-height: 170px; display: flex; align-items: flex-end;
+  }
+  .hero img {
+    position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .55;
+  }
+  .hero .shade { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 20%, rgba(8,12,26,.92)); }
+  .hero .info { position: relative; padding: 20px 24px; width: 100%; display: flex; align-items: flex-end; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+  .hero h1 { font-size: 1.9rem; letter-spacing: .4px; }
+  .hero .sub { color: var(--muted); margin-top: 4px; font-size: .92rem; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .chip {
+    background: rgba(255,255,255,.09); border: 1px solid var(--panel-border); border-radius: 999px;
+    padding: 5px 12px; font-size: .8rem; color: var(--text); white-space: nowrap;
+  }
+  .chip.green { color: var(--accent-2); }
+
+  /* ---------- tabs ---------- */
+  .tabs { display: flex; gap: 6px; overflow-x: auto; padding: 4px; background: var(--panel); border: 1px solid var(--panel-border); border-radius: 999px; margin-bottom: 20px; }
+  .tabs button {
+    flex: 1; white-space: nowrap; padding: 10px 16px; border: none; border-radius: 999px; background: none;
+    color: var(--muted); font-size: .92rem; font-weight: 600; cursor: pointer; transition: all .18s;
+  }
+  .tabs button.active { background: rgba(79,140,255,.22); color: var(--text); }
+  .tabs button:hover:not(.active) { color: var(--text); }
+
+  /* ---------- generic ---------- */
+  .card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--radius); backdrop-filter: blur(10px); padding: 22px; }
+  .card + .card { margin-top: 16px; }
+  h2 { font-size: .95rem; text-transform: uppercase; letter-spacing: 1.6px; color: var(--muted); margin-bottom: 14px; }
+  .muted { color: var(--muted); }
+  .hidden { display: none !important; }
+  a.link { color: var(--accent-2); text-decoration: none; }
+  a.link:hover { text-decoration: underline; }
+
+  .status { text-align: center; color: var(--muted); padding: 46px 10px; }
+  .status.error { color: var(--danger); }
+  .spinner {
+    width: 32px; height: 32px; margin: 0 auto 14px; border: 3px solid rgba(255,255,255,.14);
+    border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+  .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+  .metric { background: rgba(255,255,255,.04); border: 1px solid var(--panel-border); border-radius: 14px; padding: 13px 15px; }
+  .metric .label { color: var(--muted); font-size: .74rem; text-transform: uppercase; letter-spacing: 1px; }
+  .metric .value { font-size: 1.15rem; font-weight: 600; margin-top: 5px; }
+
+  .forecast { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; }
+  .day { background: rgba(255,255,255,.04); border: 1px solid var(--panel-border); border-radius: 14px; padding: 14px 8px; text-align: center; }
+  .day .name { font-weight: 600; font-size: .88rem; }
+  .day .ico { font-size: 1.8rem; margin: 8px 0; }
+  .day .hi { font-weight: 600; }
+  .day .lo { color: var(--muted); font-size: .87rem; }
+  .day.today { border-color: var(--accent); background: rgba(79,140,255,.12); }
+
+  /* ---------- listings (highlights / food / sleep) ---------- */
+  .listings { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+  .listing {
+    background: rgba(255,255,255,.04); border: 1px solid var(--panel-border); border-radius: 16px;
+    overflow: hidden; display: flex; flex-direction: column;
+  }
+  .listing img { width: 100%; height: 140px; object-fit: cover; }
+  .listing .body { padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+  .listing h3 { font-size: 1.02rem; }
+  .listing p { color: var(--muted); font-size: .86rem; line-height: 1.45; }
+  .listing .chips { margin-top: auto; }
+  .clamp { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+
+  /* ---------- forms ---------- */
+  .form { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; align-items: end; }
+  .field label { display: block; font-size: .74rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 6px; }
+  .field input, .field select {
+    width: 100%; padding: 11px 13px; color: var(--text); background: rgba(255,255,255,.05);
+    border: 1px solid var(--panel-border); border-radius: 12px; outline: none; font-size: .93rem;
+  }
+  .field input:focus, .field select:focus { border-color: var(--accent); }
+  .field select option { background: #121a33; }
+  .btn {
+    padding: 12px 20px; border: none; border-radius: 12px; background: var(--accent); color: #fff;
+    font-size: .93rem; font-weight: 600; cursor: pointer; transition: filter .15s;
+  }
+  .btn:hover { filter: brightness(1.12); }
+  .btn.secondary { background: rgba(255,255,255,.08); border: 1px solid var(--panel-border); color: var(--text); }
+  .btn.small { padding: 8px 14px; font-size: .84rem; border-radius: 10px; }
+  .btnrow { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+
+  .ac { position: relative; }
+  .ac-list {
+    position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 30; display: none;
+    background: #121a33; border: 1px solid var(--panel-border); border-radius: 12px; overflow: hidden;
+    box-shadow: 0 14px 34px rgba(0,0,0,.5); max-height: 220px; overflow-y: auto;
+  }
+  .ac-list.open { display: block; }
+  .ac-list button {
+    display: flex; gap: 10px; width: 100%; padding: 10px 14px; background: none; border: none;
+    color: var(--text); font-size: .88rem; text-align: left; cursor: pointer;
+  }
+  .ac-list button:hover { background: rgba(79,140,255,.18); }
+  .ac-list .code { font-weight: 700; color: var(--accent-2); min-width: 40px; }
+  .ac-list .sub { color: var(--muted); margin-left: auto; font-size: .8rem; }
+
+  /* ---------- offers ---------- */
+  .offer {
+    display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: center;
+    background: rgba(255,255,255,.04); border: 1px solid var(--panel-border); border-radius: 16px;
+    padding: 16px 18px; margin-bottom: 12px;
+  }
+  .offer .route { font-weight: 600; font-size: .98rem; }
+  .offer .leg { color: var(--muted); font-size: .86rem; margin-top: 4px; line-height: 1.5; }
+  .offer .leg b { color: var(--text); font-weight: 600; }
+  .offer .price { font-size: 1.3rem; font-weight: 700; text-align: right; }
+  .offer .price small { display: block; color: var(--muted); font-weight: 400; font-size: .74rem; margin-top: 3px; }
+  .stop0 { color: var(--accent-2); }
+  .stopN { color: var(--warn); }
+
+  .hotel { display: grid; grid-template-columns: 170px 1fr auto; gap: 16px; align-items: center; background: rgba(255,255,255,.04); border: 1px solid var(--panel-border); border-radius: 16px; padding: 14px; margin-bottom: 12px; }
+  .hotel img { width: 170px; height: 115px; object-fit: cover; border-radius: 12px; }
+  .hotel h3 { font-size: 1.05rem; }
+  .hotel .addr { color: var(--muted); font-size: .85rem; margin-top: 4px; }
+  .hotel .price { font-size: 1.25rem; font-weight: 700; text-align: right; white-space: nowrap; }
+  .hotel .price small { display: block; color: var(--muted); font-weight: 400; font-size: .72rem; margin-top: 3px; }
+  .score { display: inline-block; background: var(--accent-2); color: #06301f; font-weight: 700; border-radius: 8px; padding: 2px 8px; font-size: .82rem; margin-left: 8px; }
+  .stars { color: var(--warn); font-size: .85rem; letter-spacing: 2px; }
+
+  .note {
+    background: rgba(255,180,84,.09); border: 1px solid rgba(255,180,84,.35); border-radius: 14px;
+    padding: 14px 16px; font-size: .88rem; line-height: 1.55; color: var(--text);
+  }
+  .note b { color: var(--warn); }
+
+  /* ---------- modal ---------- */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(5,8,18,.72); backdrop-filter: blur(4px);
+    display: none; align-items: center; justify-content: center; z-index: 100; padding: 18px;
+  }
+  .overlay.open { display: flex; }
+  .modal { width: 100%; max-width: 520px; background: #121a33; border: 1px solid var(--panel-border); border-radius: 20px; padding: 26px; max-height: 90vh; overflow-y: auto; }
+  .modal h2 { font-size: 1.15rem; text-transform: none; letter-spacing: 0; color: var(--text); margin-bottom: 6px; }
+  .modal ol { margin: 12px 0 12px 20px; color: var(--muted); font-size: .9rem; line-height: 1.7; }
+  .modal input {
+    width: 100%; padding: 12px 14px; color: var(--text); background: rgba(255,255,255,.05);
+    border: 1px solid var(--panel-border); border-radius: 12px; outline: none; font-size: .92rem; margin-top: 10px;
+  }
+  .modal input:focus { border-color: var(--accent); }
+  .modal .msg { font-size: .86rem; margin-top: 10px; min-height: 20px; }
+  .modal .msg.ok { color: var(--accent-2); }
+  .modal .msg.err { color: var(--danger); }
+
+  .chat-fab {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    border: none;
+    color: #fff;
+    font-size: 1.5rem;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(79, 140, 255, 0.4);
+    z-index: 90;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .chat-fab:hover {
+    transform: scale(1.05);
+    box-shadow: 0 12px 32px rgba(79, 140, 255, 0.5);
+  }
+  .chat-panel {
+    position: fixed;
+    bottom: 90px;
+    right: 24px;
+    width: 380px;
+    max-height: 500px;
+    background: #121a33;
+    border: 1px solid var(--panel-border);
+    border-radius: 18px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+    z-index: 95;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .chat-panel.open {
+    display: flex;
+  }
+  .chat-header {
+    padding: 14px 16px;
+    background: linear-gradient(135deg, rgba(79, 140, 255, 0.2), rgba(88, 214, 180, 0.2));
+    border-bottom: 1px solid var(--panel-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .chat-header h3 {
+    font-size: 0.95rem;
+    color: var(--text);
+  }
+  .chat-close {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 1.2rem;
+  }
+  .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 380px;
+  }
+  .chat-msg {
+    max-width: 85%;
+    padding: 10px 14px;
+    border-radius: 16px;
+    font-size: 0.88rem;
+    line-height: 1.5;
+  }
+  .chat-msg.bot {
+    background: rgba(79, 140, 255, 0.2);
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+  }
+  .chat-msg.user {
+    background: rgba(88, 214, 180, 0.2);
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+  }
+  .chat-msg a {
+    color: var(--accent-2);
+    cursor: pointer;
+    text-decoration: underline;
+  }
+  .chat-input-area {
+    padding: 12px;
+    border-top: 1px solid var(--panel-border);
+    display: flex;
+    gap: 8px;
+  }
+  .chat-input {
+    flex: 1;
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--panel-border);
+    border-radius: 12px;
+    color: var(--text);
+    font-size: 0.88rem;
+    outline: none;
+  }
+  .chat-input:focus {
+    border-color: var(--accent);
+  }
+  .chat-send {
+    padding: 10px 16px;
+    background: var(--accent);
+    border: none;
+    border-radius: 12px;
+    color: #fff;
+    cursor: pointer;
+    font-size: 0.88rem;
+  }
+  .chat-suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 0 16px 12px;
+  }
+  .chat-sug {
+    padding: 6px 10px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--panel-border);
+    border-radius: 999px;
+    font-size: 0.78rem;
+    color: var(--text);
+    cursor: pointer;
+  }
+  .chat-sug:hover {
+    background: rgba(79, 140, 255, 0.2);
+  }
+  @media (max-width: 640px) {
+    .chat-panel {
+      width: calc(100vw - 32px);
+      right: 16px;
+      bottom: 86px;
+    }
+    .chat-fab {
+      bottom: 16px;
+      right: 16px;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .topbar { flex-wrap: wrap; }
+    .search { order: 3; max-width: none; width: 100%; }
+    .hero h1 { font-size: 1.45rem; }
+    .offer { grid-template-columns: 1fr; }
+    .offer .price { text-align: left; }
+    .hotel { grid-template-columns: 1fr; }
+    .hotel img { width: 100%; height: 150px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <div class="logo">i<span>Travel</span></div>
+    <div class="search">
+      <input id="q" type="text" placeholder="Where to? Search a city or country…" autocomplete="off" />
+      <div id="suggestions" class="suggestions"></div>
+    </div>
+    <button class="iconbtn" id="settingsBtn" title="API settings">⚙<span class="dot"></span></button>
+  </div>
+
+  <div id="boot" class="status"><div class="spinner"></div>Finding your location…</div>
+
+  <div id="app" class="hidden">
+    <div class="hero">
+      <img id="heroImg" alt="" />
+      <div class="shade"></div>
+      <div class="info">
+        <div>
+          <h1 id="placeName">—</h1>
+          <div class="sub" id="placeSub">—</div>
+          <div class="chips" id="heroChips"></div>
+        </div>
+        <div class="chips" id="heroLinks"></div>
+      </div>
+    </div>
+
+    <div class="tabs" id="tabs">
+      <button data-tab="overview" class="active">Overview</button>
+      <button data-tab="highlights">Highlights</button>
+      <button data-tab="food">Food &amp; Drink</button>
+      <button data-tab="planner">iTravel</button>
+      <button data-tab="flights">Flights</button>
+      <button data-tab="hotels">Hotels</button>
+      <button data-tab="cars">Cars</button>
+    </div>
+
+    <div id="panel"></div>
+  </div>
+
+  <footer>
+    Keyless data by <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> ·
+    <a href="https://www.wikidata.org/" target="_blank" rel="noopener">Wikidata</a> ·
+    <a href="https://www.wikivoyage.org/" target="_blank" rel="noopener">Wikivoyage</a> &amp;
+    <a href="https://www.wikipedia.org/" target="_blank" rel="noopener">Wikipedia</a><br />
+    Flights &amp; hotels search via <a href="https://duffel.com" target="_blank" rel="noopener">Duffel</a> (test mode, free token) · Booking links open third-party sites directly
+  </footer>
+</div>
+
+<!-- Weather Travel Chatbot -->
+<button class="chat-fab" id="chatFab" title="iTravel weather advisor">💬</button>
+<div class="chat-panel" id="chatPanel">
+  <div class="chat-header">
+    <h3>🌤️ iTravel Weather Advisor</h3>
+    <button class="chat-close" id="chatClose">×</button>
+  </div>
+  <div class="chat-messages" id="chatMessages"></div>
+  <div class="chat-suggestions" id="chatSuggestions">
+    <button class="chat-sug" data-msg="warm places with sun">☀️ Warm & sunny</button>
+    <button class="chat-sug" data-msg="skiing destinations">⛷️ Skiing</button>
+    <button class="chat-sug" data-msg="city breaks">🏙️ City breaks</button>
+    <button class="chat-sug" data-msg="beach vacation">🏖️ Beach vacation</button>
+    <button class="chat-sug" data-msg="winter sun">❄️☀️ Winter sun</button>
+    <button class="chat-sug" data-msg="adventure travel">🧗 Adventure</button>
+  </div>
+  <div class="chat-input-area">
+    <input type="text" class="chat-input" id="chatInput" placeholder="Ask about weather-based trips..." />
+    <button class="chat-send" id="chatSend">Send</button>
+  </div>
+</div>
+
+<!-- Settings modal -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h2>Flight &amp; hotel search — Duffel test API</h2>
+    <p class="muted" style="font-size:.9rem;margin-top:6px">Flights and hotels are searched live through Duffel's free <b style="color:var(--text)">test mode</b> (synthetic offers, nothing is ever booked or charged). Your token stays on this machine.</p>
+    <ol>
+      <li>Create a free account at <a class="link" href="https://app.duffel.com/join" target="_blank" rel="noopener">app.duffel.com/join</a></li>
+      <li>In the dashboard: <b style="color:var(--text)">More → Developers → Access tokens</b></li>
+      <li>Create a <b style="color:var(--text)">test</b> token and paste it below</li>
+    </ol>
+    <input id="tokenInput" type="password" placeholder="duffel_test_…" autocomplete="off" />
+    <div class="btnrow">
+      <button class="btn" id="saveTokenBtn">Save &amp; verify</button>
+      <button class="btn secondary" id="clearTokenBtn">Remove token</button>
+      <button class="btn secondary" id="closeModalBtn" style="margin-left:auto">Close</button>
+    </div>
+    <div class="msg" id="tokenMsg"></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* =============================== helpers ================================= */
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+const todayISO = (offset = 0) => { const d = new Date(Date.now() + offset * 864e5); return d.toISOString().slice(0, 10); };
+const addDays = (iso, n) => { const d = new Date(iso + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+
+/* Some keyless APIs (Wikidata, Wikivoyage) lack CORS headers, so all
+   external data requests go through the local server's allow-listed proxy */
+const px = u => "/api/proxy?u=" + encodeURIComponent(u);
+
+async function fetchJSON(url, tries = 2) {
+  let lastErr;
+  const attempts = Math.max(1, tries);
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const res = await fetch(url);
+      if (res.status === 404) return null;              // article doesn't exist
+      if (!res.ok) { const e = new Error("HTTP " + res.status); e.status = res.status; throw e; }
+      return await res.json();
+    } catch (err) {
+      lastErr = err;
+      // Retry transient failures (network errors, 429 rate limits, 5xx) with a
+      // growing delay; give up immediately on real client errors like 400/403.
+      const transient = err.status === undefined || err.status === 429 || err.status === 502 || err.status === 503;
+      if (i < attempts - 1 && transient) await new Promise(r => setTimeout(r, 500 * (i + 1)));
+      else break;
+    }
+  }
+  throw lastErr;
+}
+
+async function postJSON(path, body) {
+  const res = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body || {}) });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || ("Request failed (HTTP " + res.status + ")"));
+  return json;
+}
+
+/* ============================ bundled data =============================== */
+
+/* Major airports + IATA city codes: [code, city, airport name, country] */
+const AIRPORTS = [
+  ["NYC","New York","All airports (JFK/EWR/LGA)","US"],["JFK","New York","John F. Kennedy Intl","US"],["EWR","Newark","Newark Liberty Intl","US"],["LGA","New York","LaGuardia","US"],
+  ["LON","London","All airports (LHR/LGW/STN/LTN)","GB"],["LHR","London","Heathrow","GB"],["LGW","London","Gatwick","GB"],["STN","London","Stansted","GB"],["LTN","London","Luton","GB"],
+  ["PAR","Paris","All airports (CDG/ORY)","FR"],["CDG","Paris","Charles de Gaulle","FR"],["ORY","Paris","Orly","FR"],
+  ["TYO","Tokyo","All airports (HND/NRT)","JP"],["HND","Tokyo","Haneda","JP"],["NRT","Tokyo","Narita Intl","JP"],
+  ["OSA","Osaka","All airports (KIX/ITM)","JP"],["KIX","Osaka","Kansai Intl","JP"],
+  ["CHI","Chicago","All airports (ORD/MDW)","US"],["ORD","Chicago","O'Hare Intl","US"],["MDW","Chicago","Midway","US"],
+  ["WAS","Washington","All airports (DCA/IAD/BWI)","US"],["IAD","Washington","Dulles Intl","US"],["DCA","Washington","Reagan National","US"],
+  ["LAX","Los Angeles","Los Angeles Intl","US"],["SFO","San Francisco","San Francisco Intl","US"],["MIA","Miami","Miami Intl","US"],["BOS","Boston","Logan Intl","US"],
+  ["SEA","Seattle","Seattle–Tacoma Intl","US"],["DEN","Denver","Denver Intl","US"],["ATL","Atlanta","Hartsfield–Jackson","US"],["DFW","Dallas","Dallas/Fort Worth Intl","US"],
+  ["IAH","Houston","George Bush Intercontinental","US"],["LAS","Las Vegas","Harry Reid Intl","US"],["MCO","Orlando","Orlando Intl","US"],["SAN","San Diego","San Diego Intl","US"],
+  ["YYZ","Toronto","Toronto Pearson Intl","CA"],["YVR","Vancouver","Vancouver Intl","CA"],["YUL","Montreal","Montréal–Trudeau","CA"],["YYC","Calgary","Calgary Intl","CA"],
+  ["MEX","Mexico City","Benito Juárez Intl","MX"],["CUN","Cancún","Cancún Intl","MX"],
+  ["GRU","São Paulo","Guarulhos Intl","BR"],["GIG","Rio de Janeiro","Galeão Intl","BR"],["BSB","Brasília","Brasília Intl","BR"],
+  ["EZE","Buenos Aires","Ezeiza Intl","AR"],["SCL","Santiago","Arturo Merino Benítez","CL"],["BOG","Bogotá","El Dorado Intl","CO"],["LIM","Lima","Jorge Chávez Intl","PE"],
+  ["MAD","Madrid","Barajas","ES"],["BCN","Barcelona","El Prat","ES"],["AGP","Málaga","Costa del Sol","ES"],["PMI","Palma","Son Sant Joan","ES"],["TFN","Tenerife","Tenerife North","ES"],
+  ["LIS","Lisbon","Humberto Delgado","ES"],["OPO","Porto","Francisco Sá Carneiro","ES"],
+  ["CDG2","skip","skip","skip"],
+  ["FRA","Frankfurt","Frankfurt am Main","DE"],["MUC","Munich","Franz Josef Strauss","DE"],["BER","Berlin","Brandenburg","DE"],["HAM","Hamburg","Hamburg","DE"],
+  ["AMS","Amsterdam","Schiphol","NL"],["BRU","Brussels","Brussels Intl","BE"],["ZRH","Zurich","Zurich","CH"],["GVA","Geneva","Geneva Cointrin","CH"],
+  ["VIE","Vienna","Vienna Intl","AT"],["PRG","Prague","Václav Havel","CZ"],["BUD","Budapest","Budapest Ferenc Hún","HU"],["WAW","Warsaw","Chopin","PL"],
+  ["OTP","Bucharest","Henri Coandă","RO"],["ATH","Athens","Eleftherios Venizelos","GR"],["IST","Istanbul","Istanbul Airport","TR"],["SAW","Istanbul","Sabiha Gökçen","TR"],
+  ["DUB","Dublin","Dublin","IE"],["CPH","Copenhagen","Kastrup","DK"],["ARN","Stockholm","Arlanda","SE"],["OSL","Oslo","Gardermoen","NO"],["HEL","Helsinki","Helsinki–Vantaa","FI"],
+  ["SVO","Moscow","Sheremetyevo","RU"],["LED","St. Petersburg","Pulkovo","RU"],
+  ["DXB","Dubai","Dubai Intl","AE"],["DOH","Doha","Hamad Intl","QA"],["AUH","Abu Dhabi","Zayed Intl","AE"],["RUH","Riyadh","King Khalid Intl","SA"],["JED","Jeddah","King Abdulaziz Intl","SA"],
+  ["TLV","Tel Aviv","Ben Gurion","IL"],["AMM","Amman","Queen Alia Intl","JO"],["BEY","Beirut","Rafic Hariri Intl","LB"],["CAI","Cairo","Cairo Intl","EG"],
+  ["NBO","Nairobi","Jomo Kenyatta Intl","KE"],["ADD","Addis Ababa","Bole Intl","ET"],["CPT","Cape Town","Cape Town Intl","ZA"],["JNB","Johannesburg","O. R. Tambo Intl","ZA"],["LOS","Lagos","Murtala Muhammed Intl","NG"],["ACC","Accra","Kotoka Intl","GH"],
+  ["DEL","Delhi","Indira Gandhi Intl","IN"],["BOM","Mumbai","Chhatrapati Shivaji Intl","IN"],["BLR","Bengaluru","Kempegowda Intl","IN"],["MAA","Chennai","Chennai Intl","IN"],["HYD","Hyderabad","Rajiv Gandhi Intl","IN"],
+  ["KHI","Karachi","Jinnah Intl","PK"],["ISB","Islamabad","Islamabad Intl","PK"],["DAC","Dhaka","Hazrat Shahjalal Intl","BD"],["CMB","Colombo","Bandaranaike Intl","LK"],["KTM","Kathmandu","Tribhuvan Intl","NP"],
+  ["BKK","Bangkok","Suvarnabhumi","TH"],["HKT","Phuket","Phuket Intl","TH"],["SIN","Singapore","Changi","SG"],["KUL","Kuala Lumpur","Kuala Lumpur Intl","MY"],
+  ["CGK","Jakarta","Soekarno–Hatta","ID"],["DPS","Denpasar (Bali)","Ngurah Rai Intl","ID"],["MNL","Manila","Ninoy Aquino Intl","PH"],
+  ["HKG","Hong Kong","Hong Kong Intl","HK"],["TPE","Taipei","Taoyuan Intl","TW"],["PVG","Shanghai","Pudong Intl","CN"],["PEK","Beijing","Beijing Daxing Intl","CN"],
+  ["CAN","Guangzhou","Baiyun Intl","CN"],["CTU","Chengdu","Tianfu Intl","CN"],["SZX","Shenzhen","Bao'an Intl","CN"],
+  ["ICN","Seoul","Incheon Intl","KR"],["CJU","Jeju","Jeju Intl","KR"],
+  ["SYD","Sydney","Kingsford Smith","AU"],["MEL","Melbourne","Melbourne Intl","AU"],["BNE","Brisbane","Brisbane Intl","AU"],["PER","Perth","Perth Intl","AU"],["AKL","Auckland","Auckland Intl","NZ"],
+  ["SUVA","skip","skip","skip"],
+];
+const AIRPORTS_CLEAN = AIRPORTS.filter(a => a[0] !== "skip");
+
+/* ============================= reverse geocode ============================ */
+
+async function reverseGeocode(lat, lon) {
+  try {
+    const url = "https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=" + encodeURIComponent(lat) + "&lon=" + encodeURIComponent(lon) + "&accept-language=en";
+    const data = await fetchJSON(px(url), 2);
+    if (!data) throw new Error("no data");
+    const a = data.address || {};
+    const name = a.city || a.town || a.village || a.hamlet || a.municipality || a.county || data.name || "Current location";
+    const admin1 = a.state || a.region || "";
+    const country = a.country || "";
+    const country_code = (a.country_code || "").toUpperCase();
+    return { name, admin1, country, country_code, latitude: Number(lat), longitude: Number(lon) };
+  } catch (_) {
+    return { name: "Current location", admin1: "", country: "", country_code: "", latitude: Number(lat), longitude: Number(lon) };
+  }
+}
+
+/* ================================= JS ==================================== */
+
+const state = {
+  place: null,          // { name, admin1, country, latitude, longitude, country_code, population }
+  geo: null,            // open-meteo geocoding result
+  weather: null,
+  country: null,        // Wikidata-derived country facts
+  wiki: null,           // wikipedia summary
+  wv: null,             // wikivoyage mobile-sections
+  tab: "overview",
+  serverStatus: { tokenPresent: false },
+  wvLoading: false,
+  reqId: 0,             // bumped on every new destination; stale loads must not commit
+};
+
+/* ------------------------- search & suggestions -------------------------- */
+const qInput = $("q"), suggEl = $("suggestions");
+let debounce, activeIndex = -1, currentResults = [];
+
+qInput.addEventListener("input", () => {
+  clearTimeout(debounce);
+  const term = qInput.value.trim();
+  if (term.length < 2) return closeSugg();
+  debounce = setTimeout(() => searchPlaces(term), 300);
+});
+qInput.addEventListener("keydown", e => {
+  const buttons = suggEl.querySelectorAll("button");
+  if (!buttons.length) return;
+  if (e.key === "ArrowDown") { e.preventDefault(); activeIndex = (activeIndex + 1) % buttons.length; paintActive(buttons); }
+  else if (e.key === "ArrowUp") { e.preventDefault(); activeIndex = (activeIndex - 1 + buttons.length) % buttons.length; paintActive(buttons); }
+  else if (e.key === "Enter" && activeIndex > -1) { e.preventDefault(); buttons[activeIndex].click(); }
+  else if (e.key === "Escape") closeSugg();
+});
+function paintActive(b) { b.forEach((x, i) => x.classList.toggle("active", i === activeIndex)); }
+function closeSugg() { suggEl.classList.remove("open"); suggEl.innerHTML = ""; activeIndex = -1; }
+document.addEventListener("click", e => { if (!e.target.closest(".search")) closeSugg(); });
+
+async function searchPlaces(term) {
+  try {
+    const data = await fetchJSON(px("https://geocoding-api.open-meteo.com/v1/search?" + new URLSearchParams({ name: term, count: 6, language: "en", format: "json" })), 2);
+    currentResults = (data && data.results) || [];
+    activeIndex = -1;
+    if (!currentResults.length) {
+      suggEl.innerHTML = '<div style="padding:12px 16px;color:var(--muted)">No matches found</div>';
+      return suggEl.classList.add("open");
+    }
+    suggEl.innerHTML = currentResults.map((r, i) =>
+      '<button data-i="' + i + '"><span>' + esc(r.name) + '</span><span class="sub">' + esc([r.admin1, r.country].filter(Boolean).join(", ")) + '</span></button>'
+    ).join("");
+    suggEl.classList.add("open");
+    suggEl.querySelectorAll("button").forEach(btn => btn.addEventListener("click", () => pickPlace(currentResults[+btn.dataset.i])));
+  } catch (err) {
+    suggEl.innerHTML = '<div style="padding:12px 16px;color:var(--danger)">' + esc(err.message) + '</div>';
+    suggEl.classList.add("open");
+  }
+}
+
+function pickPlace(place) {
+  closeSugg();
+  qInput.value = place.name;
+  try { localStorage.setItem("itravel:place", JSON.stringify(place)); } catch (_) {}
+  loadDestination(place);
+}
+
+/* --------------------------- destination loading ------------------------- */
+
+async function loadDestination(place) {
+  const reqId = ++state.reqId;                 // invalidates any in-flight load
+  state.place = place;
+  state.geo = null; state.weather = null; state.country = null; state.wiki = null; state.wv = null;
+  state.wvLoading = true;
+  showBoot('<div class="spinner"></div>Gathering everything about ' + esc(place.name) + '…');
+
+  // The Wikivoyage guide can involve several sequential page fetches (district
+  // subpages), so it runs in the background and re-renders its tabs when ready.
+  loadWikivoyage(place, reqId)
+    .catch(() => {})
+    .finally(() => {
+      if (state.reqId !== reqId) return;       // a newer search superseded this one
+      state.wvLoading = false;
+      if (["highlights", "food", "hotels", "planner"].includes(state.tab) && !$("app").classList.contains("hidden")) setTab(state.tab);
+    });
+
+  const results = await Promise.allSettled([loadWeather(place, reqId), loadCountry(place, reqId), loadWiki(place, reqId)]);
+
+  if (state.reqId !== reqId) return;           // superseded while we were fetching
+
+  if (results.every(r => r.status === "rejected")) {
+    return showBoot("⚠️ Could not reach the data sources. Check your connection and try again.", true);
+  }
+
+  renderHero();
+  setTab(state.tab || "overview");
+}
+
+async function loadWeather(place, reqId) {
+  const params = new URLSearchParams({
+    latitude: place.latitude, longitude: place.longitude,
+    current: "temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m",
+    daily: "weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset",
+    timezone: "auto", forecast_days: 7,
+  });
+  const data = await fetchJSON(px("https://api.open-meteo.com/v1/forecast?" + params), 3);
+  if (state.reqId !== reqId) return;           // a newer search superseded this one
+  state.weather = data;
+}
+
+/* Country facts from Wikidata (keyless). REST Countries v5 now requires an
+   account, but Wikidata stays free & open forever. */
+const WD = "https://www.wikidata.org/w/api.php?";
+const wdApi = params => WD + new URLSearchParams({ format: "json", formatversion: "2", origin: "*", ...params });
+
+async function loadCountry(place, reqId) {
+  if (!place.country) return;
+  try {
+    // 1. Country name -> Wikidata QID
+    const search = await fetchJSON(wdApi({ action: "wbsearchentities", search: place.country, language: "en", limit: 1 }), 2);
+    const qid = search && search.search && search.search[0] && search.search[0].id;
+    if (!qid) return;
+
+    // 2. All statements for the country (one request, cached by the server)
+    const ent = await fetchJSON(wdApi({ action: "wbgetentities", ids: qid, props: "claims" }), 2);
+    const claims = ent && ent.entities && ent.entities[qid] && ent.entities[qid].claims;
+    if (!claims) return;
+
+    // Statements of a property that still hold today. Historic values carry an
+    // end-time (P582) qualifier — e.g. Japan's capital list has 8 historical
+    // capitals before Tokyo, and its flag has a 1870–1999 version.
+    const ended = s => Boolean(s.qualifiers && s.qualifiers.P582);
+    const live = p => {
+      const all = (claims[p] || []).filter(s => s.mainsnak && s.mainsnak.datavalue);
+      const open = all.filter(s => !ended(s));
+      return open.length ? open : all.slice(-1);
+    };
+    const val = s => s.mainsnak.datavalue.value;
+    const ids = p => live(p).map(s => val(s).id).filter(Boolean);
+    const strings = p => live(p).map(val).filter(v => typeof v === "string");
+    const latestQuantity = p => {
+      const list = (claims[p] || []).filter(s => s.mainsnak && s.mainsnak.datavalue);
+      if (!list.length) return null;
+      const dated = list.filter(s => s.qualifiers && s.qualifiers.P585 && s.qualifiers.P585[0].datavalue);
+      dated.sort((a, b) => String(b.qualifiers.P585[0].datavalue.value.time).localeCompare(String(a.qualifiers.P585[0].datavalue.value.time)));
+      const n = Number(val(dated[0] || list[list.length - 1]).amount);
+      return Number.isFinite(n) ? n : null;
+    };
+
+    const capitalIds = ids("P36");
+    const currencyIds = ids("P38");
+    const languageIds = ids("P37");
+    const continentIds = ids("P30");
+    const sideId = ids("P1622")[0];            // driving side
+
+    // 3. Human labels for those referenced entities, in one batched call
+    const wanted = [...new Set([...capitalIds, ...currencyIds, ...languageIds, ...continentIds, sideId].filter(Boolean))];
+    let labels = {};
+    if (wanted.length) {
+      const lab = await fetchJSON(wdApi({ action: "wbgetentities", ids: wanted.slice(0, 40).join("|"), props: "labels", languages: "en" }), 2);
+      labels = Object.fromEntries(Object.values((lab && lab.entities) || {}).map(e => [e.id, e.labels && e.labels.en && e.labels.en.value]));
+    }
+    const named = list => list.map(i => labels[i]).filter(Boolean);
+
+    const sideLabel = sideId ? labels[sideId] || "" : "";
+    const flagFile = live("P41")[0] ? val(live("P41")[0]) : null;
+
+    if (state.reqId !== reqId) return;         // a newer search superseded this one
+
+    state.country = {
+      qid,
+      name: place.country,
+      capitalNames: named(capitalIds),
+      currencyNames: named(currencyIds),
+      languageNames: named(languageIds),
+      continent: named(continentIds),
+      population: latestQuantity("P1082"),
+      area: latestQuantity("P2046"),
+      callingCode: strings("P474")[0] || null,
+      drivingSide: /^left/i.test(sideLabel) ? "left" : /^right/i.test(sideLabel) ? "right" : sideLabel || null,
+      flagUrl: typeof flagFile === "string"
+        ? "https://commons.wikimedia.org/wiki/Special:FilePath/" + encodeURIComponent(flagFile) + "?width=200"
+        : null,
+    };
+  } catch (_) { /* country facts are optional */ }
+}
+
+/* Wikipedia summary + Wikivoyage guide — resolve the best article title */
+function titleCandidates(place) {
+  const c = [place.name];
+  if (place.admin1 && place.admin1 !== place.name) c.push(place.name + " (" + place.admin1 + ")");
+  if (place.country && place.country !== place.name) c.push(place.name + ", " + place.country);
+  if (place.country) c.push(place.country);
+  return [...new Set(c)];
+}
+
+async function loadWiki(place, reqId) {
+  for (const t of titleCandidates(place)) {
+    try {
+      const s = await fetchJSON(px("https://en.wikipedia.org/api/rest_v1/page/summary/" + encodeURIComponent(t) + "?redirect=true"), 2);
+      if (state.reqId !== reqId) return;        // a newer search superseded this one
+      if (s && s.extract && s.type !== "disambiguation") { state.wiki = s; return; }
+    } catch (_) {}
+  }
+}
+
+/* Wikivoyage via the classic MediaWiki Action API. We fetch each guide page's
+   wikitext once, locate the See/Do/Eat/Drink/Sleep sections, and parse the
+   {{see}}/{{eat}}/… listing templates. Big-city guides keep the actual listings
+   in district subpages (e.g. Lisbon/Alfama), so we pull those in too.      */
+
+const WV_GUIDE_TYPES = ["See", "Do", "Eat", "Drink", "Sleep"];
+const LISTING_TPL = new Set(["see", "do", "eat", "drink", "sleep", "buy", "listing", "cityguide", "view"]);
+
+const wvApi = t => "https://en.wikivoyage.org/w/api.php?" + new URLSearchParams({
+  action: "parse", page: t, prop: "sections|wikitext", redirects: "1", format: "json", formatversion: "2", origin: "*",
+});
+
+/* Run fn over items with at most `limit` in flight, returning settled-style
+   results. Keeps the burst of district-page requests polite enough that the
+   free Wikivoyage API doesn't start answering with 429s. */
+async function mapLimit(items, limit, fn) {
+  const out = new Array(items.length);
+  let next = 0;
+  const worker = async () => {
+    while (next < items.length) {
+      const i = next++;
+      try { out[i] = { status: "fulfilled", value: await fn(items[i], i) }; }
+      catch (e) { out[i] = { status: "rejected", reason: e }; }
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+  return out;
+}
+
+async function fetchGuide(title) {
+  const data = await fetchJSON(px(wvApi(title)), 2);
+  if (!data || data.error || !data.parse || !data.parse.wikitext) return null;
+  return { title: data.parse.title, sections: data.parse.sections || [], wikitext: data.parse.wikitext };
+}
+
+/* Map each section index to {start,end} character offsets by rescanning headings.
+   Uses a level stack so a section's range spans its own subsections — e.g. a
+   "Sleep" section whose listings sit under "Budget"/"Mid-range" subheads. */
+function sectionRanges(guide) {
+  const ranges = {}, used = new Set(), stack = [];
+  const re = /^(={1,6})\s*(.+?)\s*\1[ \t]*$/gm;
+  let m;
+  while ((m = re.exec(guide.wikitext))) {
+    const level = m[1].length;
+    const title = m[2].replace(/<!--.*?-->/g, "").trim();
+    while (stack.length && stack[stack.length - 1].level >= level) {
+      ranges[stack.pop().index].end = m.index;      // close every section this heading ends
+    }
+    const sec = guide.sections.find(s => !used.has(s.index) && String(s.line).trim() === title && Number(s.level) === level);
+    if (!sec) continue;
+    used.add(sec.index);
+    ranges[sec.index] = { start: m.index, end: guide.wikitext.length };
+    stack.push({ index: sec.index, level });
+  }
+  return ranges;
+}
+
+function collectGuideListings(guide) {
+  const ranges = sectionRanges(guide);
+  const result = Object.fromEntries(WV_GUIDE_TYPES.map(t => [t, []]));
+  for (const sec of guide.sections) {
+    if (Number(sec.level) !== 2) continue;
+    const type = WV_GUIDE_TYPES.find(t => t.toLowerCase() === String(sec.line).trim().toLowerCase());
+    const r = ranges[sec.index];
+    if (!type || !r) continue;
+    result[type].push(...parseListings(guide.wikitext.slice(r.start, r.end)));
+  }
+  return result;
+}
+
+async function loadWikivoyage(place, reqId) {
+  for (const t of titleCandidates(place)) {
+    try {
+      const guide = await fetchGuide(t);
+      if (state.reqId !== reqId) return;       // a newer search superseded this one
+      if (!guide || guide.sections.length < 3) continue;
+      const listings = collectGuideListings(guide);
+      const totalListings = Object.values(listings).reduce((n, a) => n + a.length, 0);
+      const districtTemplate = /\{\{\s*(See|Do|Eat|Drink|Sleep|Buy)Districts\s*\}\}/i.test(guide.wikitext);
+
+      // Big-city guides keep their listings in district subpages. Either the
+      // guide advertises districts via a {{…Districts}} banner, or the parent
+      // page came back with almost no listings — probe the subpages either way.
+      if (districtTemplate || totalListings < 5) {
+        // Prefer the subpages linked from the parent page itself: the links are
+        // ordered by importance (Shinjuku, Chiyoda, …), whereas an alphabetical
+        // listing would surface the least interesting districts first. Only fall
+        // back to that alphabetical list when the page links no children.
+        let subs = districtLinks(guide.wikitext, guide.title);
+        if (subs.length < 3) subs = subs.concat(await fetchDistrictPages(guide.title));
+        subs = [...new Set(subs)];
+        const settled = await mapLimit(subs.slice(0, 6), 3, fetchGuide);
+        for (const s of settled) {
+          if (s.status !== "fulfilled" || !s.value) continue;   // one bad district must not sink the rest
+          const subListings = collectGuideListings(s.value);
+          for (const k of Object.keys(subListings)) listings[k].push(...subListings[k]);
+        }
+      }
+
+      for (const k of Object.keys(listings)) {
+        const seen = new Set();
+        listings[k] = listings[k].filter(l => l.title && !seen.has(l.title) && seen.add(l.title)).slice(0, 12);
+      }
+      if (state.reqId !== reqId) return;       // a newer search superseded this one
+      state.wv = { title: guide.title, listings };
+      return;
+    } catch (_) { /* try the next candidate title */ }
+  }
+}
+
+async function fetchDistrictPages(title) {
+  const url = "https://en.wikivoyage.org/w/api.php?" + new URLSearchParams({
+    action: "query", list: "allpages", apprefix: title + "/", aplimit: "8",
+    format: "json", formatversion: "2", origin: "*",
+  });
+  const data = await fetchJSON(px(url), 2);
+  return ((data && data.query && data.query.allpages) || []).map(p => p.title);
+}
+
+/* Direct child pages of a guide, in the order the guide links them. Wikivoyage
+   big-city guides embed their district list as [[City/District|Label]] links in
+   the order the authors consider most useful. */
+function districtLinks(wikitext, title) {
+  const prefix = title + "/";
+  const out = [], seen = new Set();
+  const re = /\[\[([^\]|#]+)/g;
+  let m;
+  while ((m = re.exec(wikitext))) {
+    const target = m[1].trim();
+    if (!target.startsWith(prefix)) continue;
+    const rest = target.slice(prefix.length);
+    if (!rest || rest.includes("/")) continue;    // only direct children
+    if (seen.has(target)) continue;
+    seen.add(target); out.push(target);
+  }
+  return out;
+}
+
+/* Strip wiki markup down to readable text */
+function cleanWiki(s) {
+  let out = String(s ?? "");
+  for (let i = 0; i < 4 && /\{\{[^{}]*\}\}/.test(out); i++) out = out.replace(/\{\{[^{}]*\}\}/g, " ");
+  out = out.replace(/<ref[^>]*>[\s\S]*?<\/ref>/gi, " ").replace(/<[^>]+>/g, " ");
+  out = out.replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g, "$2").replace(/\[\[([^\]]+)\]\]/g, "$1");
+  return out.replace(/'{2,5}/g, "").replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
+}
+
+/* Extract every listing template (and legacy '''bold''' bullets) from a chunk */
+function parseListings(wt) {
+  const out = [];
+  const re = /^\s*\*\s*\{\{\s*([a-zA-Z]+)/gm;
+  let m;
+  while ((m = re.exec(wt))) {
+    if (!LISTING_TPL.has(m[1].toLowerCase())) continue;
+    const open = wt.indexOf("{{", m.index);
+    let i = open, depth = 0, end = -1;
+    while (i < wt.length - 1) {                       // brace-count so nested {{md}} etc. survive
+      if (wt[i] === "{" && wt[i + 1] === "{") { depth++; i += 2; continue; }
+      if (wt[i] === "}" && wt[i + 1] === "}") { depth--; i += 2; if (depth === 0) { end = i; break; } continue; }
+      i++;
+    }
+    if (end < 0) { re.lastIndex = open + 2; continue; }
+    re.lastIndex = end;
+    out.push(parseListingTemplate(wt.slice(open + 2, end - 2)));
+  }
+  const re2 = /^\s*\*\s*'''(.+?)'''(.*)$/gm;           // legacy plain listings
+  let b;
+  while ((b = re2.exec(wt))) {
+    const title = cleanWiki(b[1]);
+    if (title) out.push({ title, text: cleanWiki(b[2]), price: "", address: "", phone: "", url: "", lat: null, lon: null, hours: "" });
+  }
+  return out.filter(l => l.title);
+}
+
+function parseListingTemplate(body) {
+  const parts = [];
+  let depth = 0, cur = "";
+  for (let i = 0; i < body.length; i++) {
+    const ch = body[i];
+    if (ch === "{" && body[i + 1] === "{") { depth++; cur += "{{"; i++; continue; }
+    if (ch === "}" && body[i + 1] === "}") { depth = Math.max(0, depth - 1); cur += "}}"; i++; continue; }
+    if (ch === "|" && depth === 0) { parts.push(cur); cur = ""; continue; }
+    cur += ch;
+  }
+  parts.push(cur);
+  const f = {};
+  for (const p of parts.slice(1)) {
+    const eq = p.indexOf("=");
+    if (eq > 0) { const k = p.slice(0, eq).trim().toLowerCase(); if (k) f[k] = p.slice(eq + 1).trim(); }
+  }
+  const lat = parseFloat(f.lat), lon = parseFloat(f.long || f.lon);
+  return {
+    title: cleanWiki(f.name || f.alt || ""),
+    text: cleanWiki(f.content || f.desc || f.description || ""),
+    price: cleanWiki(f.price || ""),
+    address: cleanWiki(f.address || ""),
+    phone: cleanWiki(f.phone || ""),
+    url: (f.url || "").trim(),
+    lat: Number.isFinite(lat) ? lat : null,
+    lon: Number.isFinite(lon) ? lon : null,
+    hours: cleanWiki(f.hours || ""),
+  };
+}
+
+/* Pull listings out of the loaded guide ("See"/"Do"/"Eat"/"Drink"/"Sleep") */
+function wvListings(titles) {
+  if (!state.wv || !state.wv.listings) return [];
+  return titles.flatMap(t => state.wv.listings[t] || []).slice(0, 18);
+}
+
+/* ------------------------------ iTravel Planner --------------------------- */
+function wmoCategory(code) {
+  if (code === undefined || code === null) return "unknown";
+  if (code === 0) return "clear";
+  if ([1,2,3].includes(code)) return "cloudy";
+  if ([45,48].includes(code)) return "fog";
+  if ([51,53,55,56,57].includes(code)) return "drizzle";
+  if ([61,63,65,66,67].includes(code)) return "rain";
+  if ([71,73,75,77].includes(code)) return "snow";
+  if ([80,81,82].includes(code)) return "showers";
+  if ([85,86].includes(code)) return "snowshowers";
+  if ([95,96,99].includes(code)) return "storm";
+  return "unknown";
+}
+function isIndoorPlace(l) {
+  const s = ((l.title||"") + " " + (l.text||"")).toLowerCase();
+  return /museum|gallery|aquarium|library|palace|cathedral|church|temple|mosque|theatre|theater|mall|shopping|indoor|planetarium|cinema|spa|bath/.test(s);
+}
+function isOutdoorPlace(l) {
+  const s = ((l.title||"") + " " + (l.text||"")).toLowerCase();
+  return /park|garden|beach|lake|river|trail|hike|tower|view|zoo|square|plaza|hill|forest|waterfall|bridge|walk/.test(s);
+}
+function parsePriceToNum(p) {
+  if (!p) return null;
+  const m = String(p).replace(/,/g,"").match(/([0-9]+(?:\.[0-9]+)?)/);
+  return m ? Number(m[1]) : null;
+}
+function scoreHotel(h, type) {
+  const t = ((h.title||"") + " " + (h.text||"")).toLowerCase();
+  let s = 0;
+  if (type === "budget") {
+    if (/hostel|dorm|budget/.test(t)) s += 4;
+    if (/guesthouse|pension|b&b/.test(t)) s += 3;
+    const pr = parsePriceToNum(h.price); if (pr && pr < 80) s += 4; else if (pr && pr < 120) s += 2;
+  } else if (type === "business") {
+    if (/hotel/.test(t)) s += 3;
+    if (/central|city center|downtown|station/.test(t)) s += 3;
+    if (/business|conference/.test(t)) s += 2;
+    if (/room/.test(t)) s += 1;
+    const pr = parsePriceToNum(h.price); if (pr && pr > 80) s += 2;
+  } else if (type === "family") {
+    if (/apartment|suite|family/.test(t)) s += 4;
+    if (/hostel|hotel/.test(t)) s += 2;
+    if (/park|zoo|beach/.test(t)) s += 2;
+    const pr = parsePriceToNum(h.price); if (pr && pr >= 60 && pr < 200) s += 2;
+  }
+  return s;
+}
+function renderPlanner() {
+  const p = state.place, w = state.weather, c = state.country;
+  if (!p) { $("panel").innerHTML = '<div class="status">Search a destination first.</div>'; return; }
+  if (state.wvLoading) { $("panel").innerHTML = '<div class="status"><div class="spinner"></div>Reading the travel guide and weather to build plans…</div>'; return; }
+  const sleeps = wvListings(["Sleep"]);
+  const sees = wvListings(["See","Do"]);
+  const eats = wvListings(["Eat","Drink"]);
+  const days = (w && w.daily) ? w.daily.time.slice(0, 5).map((iso, i) => ({
+    iso, code: w.daily.weather_code[i], tmax: w.daily.temperature_2m_max[i], tmin: w.daily.temperature_2m_min[i]
+  })) : [];
+  const types = [
+    { id: "budget", name: "Budget Traveller", icon: "🎒", desc: "Maximise value, hostels, free walks, street food" },
+    { id: "business", name: "Business Traveller", icon: "💼", desc: "Central hotels, efficient routes, reliable meals, downtime" },
+    { id: "family", name: "Family Traveller", icon: "👨‍👩‍👧", desc: "Kid-friendly, parks/museums, safe food, flexible breaks" }
+  ];
+  let html = '<div class="card"><h2>iTravel Planner — combined offers tailored to you</h2>' +
+    '<p class="muted" style="font-size:.9rem;line-height:1.6">Builds integrated plans using live weather, Wikivoyage highlights/food/sleep, and (if connected) Duffel flight &amp; hotel offers. Suggestions adapt by traveller type and forecast.</p>' +
+    '<div class="form" style="margin-top:14px">' +
+      '<div class="field"><label>Traveller type</label><select id="plType"><option value="budget">Budget Traveller (🎒)</option><option value="business">Business Traveller (💼)</option><option value="family">Family Traveller (👨‍👩‍👧)</option></select></div>' +
+      '<div class="field"><label>Origin (IATA)</label><input id="plOrigin" placeholder="e.g. NYC, LON, JFK" value=""></div>' +
+      '<div class="field"><label>Depart</label><input type="date" id="plDep" min="' + todayISO() + '" value="' + todayISO(14) + '"></div>' +
+      '<div class="field"><label>Nights</label><select id="plNights">' + range(2, 14).map(n=>'<option value="'+n+'"'+(n===3?' selected':'')+'>'+n+' nights</option>').join('') + '</select></div>' +
+      '<div class="field"><button class="btn" id="plGen">Generate iTravel plan</button></div>' +
+    '</div></div>';
+  if (days.length) {
+    html += '<div class="card"><h2>Weather forecast for ' + esc(p.name) + '</h2><div class="forecast">' + days.map(d => {
+      const cat = wmoCategory(d.code), [desc, icon] = (WMO[d.code]||["—","🌡️"]);
+      return '<div class="day"><div class="name">' + d.iso.slice(5) + '</div><div class="ico">' + icon + '</div><div class="hi">' + Math.round(d.tmax) + '°</div><div class="lo">' + Math.round(d.tmin) + '°</div><div class="muted" style="font-size:.72rem;margin-top:4px">' + esc(desc) + '</div></div>';
+    }).join('') + '</div></div>';
+  }
+  html += '<div id="plOut"></div>';
+  $("panel").innerHTML = html;
+  $("plGen").onclick = () => generatePlan({types, days, sleeps, sees, eats});
+}
+function generatePlan(ctx) {
+  const out = $("plOut"), p = state.place, type = $("plType").value, origin = ($("plOrigin").value||"").trim().toUpperCase().match(/([A-Z]{3})\b/);
+  const dep = $("plDep").value, nights = Number($("plNights").value), ret = addDays(dep, nights);
+  out.innerHTML = '<div class="status"><div class="spinner"></div>Crafting integrated plans for ' + esc(type) + '…</div>';
+  setTimeout(() => {
+    const sleeps = ctx.sleeps.slice().sort((a,b)=>scoreHotel(b,type)-scoreHotel(a,type)).slice(0,4);
+    const sees = ctx.sees.filter(s=>{ const cat=(ctx.days[0]&&wmoCategory(ctx.days[0].code))||"unknown"; if (cat==="rain"||cat==="showers"||cat==="storm") return isIndoorPlace(s)||!/park|beach|hike|trail|garden/i.test((s.title||"")+s.text||""); if (cat==="snow"||cat==="snowshowers") return isIndoorPlace(s); return true; }).slice(0,8);
+    if (sees.length < 6) sees.push(...ctx.sees.filter(s=>!sees.includes(s)).slice(0,8));
+    const eats = ctx.eats.slice(0,6);
+    const typeInfo = ctx.types.find(t=>t.id===type);
+    let budget = {flight: type==="business"?550:type==="family"?450:250, hotel: type==="business"?150:type==="family"?90:40, food: type==="family"?60:type==="business"?50:25, activities: type==="family"?30:type==="business"?15:10};
+    budget.hotel = Math.round(budget.hotel * nights); budget.food = Math.round(budget.food * nights);
+    budget.total = budget.flight + budget.hotel + budget.food + budget.activities;
+    let html = '<div class="card"><h2>' + typeInfo.icon + ' ' + typeInfo.name + ' plan for ' + esc(p.name) + '</h2>' +
+      '<p class="muted" style="font-size:.88rem">' + typeInfo.desc + ' • ' + nights + ' nights • ' + esc(p.country||'') + '</p>' +
+      '<div class="metrics" style="margin-top:14px">' +
+        metric("Est. flights", origin ? ("from " + origin + " ~ $" + budget.flight) : ("~ $" + budget.flight)) +
+        metric("Hotels ("+nights+"n)", "~ $" + budget.hotel) +
+        metric("Food & drink", "~ $" + budget.food) +
+        metric("Activities/transport", "~ $" + budget.activities) +
+        metric("Total (est.)", "~ $" + budget.total) +
+      '</div></div>';
+    if (origin && state.serverStatus.tokenPresent) {
+      html += '<div class="card"><h2>Live offers (Duffel)</h2><p class="muted" style="font-size:.88rem">Search live flights/hotels using your connected token:</p><div class="btnrow"><button class="btn small" onclick="setTab(\'flights\')">Search flights ↗</button><button class="btn small" onclick="setTab(\'hotels\')">Search hotels ↗</button></div></div>';
+    } else if (origin) {
+      const oc = origin[1], dc = matchAirportCode(p)||p.name.slice(0,3).toUpperCase();
+      html += '<div class="card"><h2>Find bookable offers</h2><div class="btnrow"><a class="btn small" target="_blank" rel="noopener" href="https://www.google.com/travel/flights?q=' + encodeURIComponent("Flights to " + p.name + " from " + oc + " on " + dep + " through " + ret) + '">Google Flights ↗</a><a class="btn secondary small" target="_blank" rel="noopener" href="https://www.kayak.com/flights/' + oc + '-' + dc + '/' + dep + '/' + ret + '?sort=bestflight_a">Kayak ↗</a></div></div>';
+    }
+    if (sleeps.length) {
+      html += '<div class="card"><h2>Where to stay (tailored)</h2><div class="listings">' + sleeps.map(h=>'<div class="listing"><div class="body"><h3>' + esc(h.title) + '</h3>' + (h.text?'<p class="clamp">'+esc(h.text)+'</p>':'') + '<div class="chips">' + (h.price?'<span class="chip">💰 '+esc(h.price)+'</span>':'') + (h.address?'<span class="chip">📍 '+esc(h.address)+'</span>':'') + (h.url?'<a class="chip" target="_blank" rel="noopener" href="'+esc(h.url)+'">↗ details</a>':'') + (h.lat&&h.lon?'<a class="chip" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query='+h.lat+','+h.lon+'">🗺️ map</a>':'') + '</div></div></div>').join('') + '</div></div>';
+    }
+    if (ctx.days.length) {
+      html += '<div class="card"><h2>Weather-aware day plan</h2>' + ctx.days.slice(0,nights).map((d,di)=>{
+        const [desc,icon]=WMO[d.code]||["—","🌡️"], cat=wmoCategory(d.code);
+        const act = sees.filter(s=>{ if (cat==="rain"||cat==="showers"||cat==="storm") return isIndoorPlace(s); if (cat==="clear"||cat==="cloudy") return isOutdoorPlace(s)||!isIndoorPlace(s); return true; });
+        const a1=act[di%Math.max(1,act.length)], a2=act[(di+2)%Math.max(1,act.length)], a3=act[(di+4)%Math.max(1,act.length)];
+        const m = eats[di%Math.max(1,eats.length)];
+        return '<div style="padding:14px 0;border-bottom:1px solid var(--panel-border)"><div style="display:flex;gap:12px;align-items:center;margin-bottom:10px"><strong>Day '+(di+1)+' ('+d.iso+')</strong><span class="muted">'+icon+' '+Math.round(d.tmin)+'–'+Math.round(d.tmax)+'°C '+esc(desc)+'</span><span class="chip">'+cat+'</span></div><div class="grid2"><div class="metric"><div class="label">Morning</div><div class="value" style="font-size:.95rem">'+esc((a1&&a1.title)||"Explore nearby")+'</div></div><div class="metric"><div class="label">Afternoon</div><div class="value" style="font-size:.95rem">'+esc((a2&&a2.title)||"Local highlights")+'</div></div><div class="metric"><div class="label">Evening / Meal</div><div class="value" style="font-size:.95rem">'+esc((a3&&a3.title)||"Relax")+' • '+esc((m&&m.title)||"Local food")+'</div></div></div></div>';
+      }).join('') + '</div>';
+    }
+    html += '<div class="card"><h2>Compare all 3 traveller types for ' + esc(p.name) + '</h2><p class="muted" style="font-size:.88rem">Switch the traveller type above and click Generate iTravel plan to compare budget, stays, and weather-aware activities side by side.</p></div>';
+    out.innerHTML = html;
+  }, 400);
+}
+
+/* ------------------------------- rendering ------------------------------ */
+
+function showBoot(html, isError = false) {
+  $("app").classList.add("hidden");
+  const el = $("boot");
+  el.classList.remove("hidden", "error");
+  if (isError) el.classList.add("error");
+  el.innerHTML = html;
+}
+
+const WMO = {
+  0:["Clear sky","☀️"],1:["Mainly clear","🌤️"],2:["Partly cloudy","⛅"],3:["Overcast","☁️"],45:["Fog","🌫️"],48:["Rime fog","🌫️"],
+  51:["Light drizzle","🌦️"],53:["Drizzle","🌦️"],55:["Dense drizzle","🌧️"],56:["Freezing drizzle","🌧️"],57:["Freezing drizzle","🌧️"],
+  61:["Light rain","🌦️"],63:["Rain","🌧️"],65:["Heavy rain","🌧️"],66:["Freezing rain","🌧️"],67:["Freezing rain","🌧️"],
+  71:["Light snow","🌨️"],73:["Snow","🌨️"],75:["Heavy snow","❄️"],77:["Snow grains","🌨️"],
+  80:["Rain showers","🌦️"],81:["Rain showers","🌧️"],82:["Violent showers","⛈️"],85:["Snow showers","🌨️"],86:["Snow showers","❄️"],
+  95:["Thunderstorm","⛈️"],96:["Thunderstorm + hail","⛈️"],99:["Thunderstorm + hail","⛈️"],
+};
+const weather = code => WMO[code] || ["—","🌡️"];
+
+/* Wikimedia only pre-renders a fixed set of thumbnail widths (330/500/960/1280…),
+   so a made-up width such as 1200px returns HTTP 400. Walk down the known-good
+   sizes and finally fall back to whatever size the API itself returned. */
+function setHeroImage(wiki) {
+  const heroImg = $("heroImg");
+  const thumb = wiki && wiki.thumbnail && wiki.thumbnail.source;
+  if (!thumb) {
+    heroImg.onerror = null;
+    heroImg.removeAttribute("src");
+    heroImg.style.display = "none";
+    return;
+  }
+  const base = thumb.split("?")[0];
+  const at = w => base.replace(/\/\d+px-/, "/" + w + "px-");
+  const candidates = [...new Set([at(1280), at(960), at(500), base])];
+
+  let i = 0;
+  heroImg.onerror = () => {
+    i += 1;
+    if (i < candidates.length) { heroImg.src = candidates[i]; return; }
+    heroImg.onerror = null;
+    heroImg.removeAttribute("src");
+    heroImg.style.display = "none";
+  };
+  heroImg.style.display = "block";
+  heroImg.src = candidates[0];
+}
+
+function renderHero() {
+  const p = state.place;
+  $("boot").classList.add("hidden");
+  $("app").classList.remove("hidden");
+
+  setHeroImage(state.wiki);
+
+  $("placeName").textContent = p.name;
+  $("placeSub").textContent = [p.admin1, p.country].filter(Boolean).join(", ") || "—";
+
+  const chips = [];
+  if (state.weather) {
+    const [desc, icon] = weather(state.weather.current.weather_code);
+    chips.push('<span class="chip green">' + icon + " " + Math.round(state.weather.current.temperature_2m) + "°C · " + esc(desc) + "</span>");
+  }
+  if (state.country) {
+    if (state.country.currencyNames && state.country.currencyNames[0]) chips.push('<span class="chip">💱 ' + esc(state.country.currencyNames[0]) + "</span>");
+    if (state.country.languageNames && state.country.languageNames[0]) chips.push('<span class="chip">🗣️ ' + esc(state.country.languageNames[0]) + "</span>");
+    if (state.country.population) chips.push('<span class="chip">👥 ' + state.country.population.toLocaleString() + "</span>");
+  }
+  $("heroChips").innerHTML = chips.join("");
+
+  const links = [];
+  links.push('<a class="chip" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=' + p.latitude + "," + p.longitude + '">🗺️ Map</a>');
+  if (state.wiki) links.push('<a class="chip" target="_blank" rel="noopener" href="' + esc(state.wiki.content_urls && state.wiki.content_urls.desktop && state.wiki.content_urls.desktop.page) + '">📖 Wikipedia</a>');
+  links.push('<a class="chip" target="_blank" rel="noopener" href="https://en.wikivoyage.org/wiki/' + encodeURIComponent(state.place.name) + '">🧭 Wikivoyage</a>');
+  $("heroLinks").innerHTML = links.join("");
+}
+
+/* ------------------------------ tab routing ------------------------------ */
+
+$("tabs").addEventListener("click", e => {
+  const btn = e.target.closest("button[data-tab]");
+  if (!btn) return;
+  setTab(btn.dataset.tab);
+});
+
+function setTab(tab) {
+  state.tab = tab;
+  document.querySelectorAll("#tabs button").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
+  const panel = $("panel");
+  panel.innerHTML = '<div class="status"><div class="spinner"></div>Loading…</div>';
+  try {
+    ({ overview: renderOverview, highlights: renderHighlights, food: renderFood, planner: renderPlanner, flights: renderFlights, hotels: renderHotels, cars: renderCars })[tab]();
+  } catch (err) {
+    panel.innerHTML = '<div class="status error">⚠️ ' + esc(err.message) + "</div>";
+  }
+}
+
+/* ------------------------------- OVERVIEW -------------------------------- */
+
+function renderOverview() {
+  const p = state.place, w = state.weather, c = state.country;
+  const parts = [];
+
+  if (state.wiki && state.wiki.extract) {
+    parts.push('<div class="card"><h2>About</h2><p style="line-height:1.65">' + esc(state.wiki.extract) +
+      ' <a class="link" target="_blank" rel="noopener" href="' + esc(state.wiki.content_urls.desktop.page) + '">Read more →</a></p></div>');
+  }
+
+  if (c) {
+    parts.push('<div class="card"><h2>Country facts — ' + esc(c.name) + " · " + esc(c.qid) + "</h2>" + (c.flagUrl ?
+      '<img src="' + esc(c.flagUrl) + '" alt="" style="width:84px;border-radius:8px;margin-bottom:14px;border:1px solid var(--panel-border)" onerror="this.remove()">' : "") +
+      '<div class="metrics">' +
+      metric("Capital", c.capitalNames && c.capitalNames.join(", ")) +
+      metric("Currency", c.currencyNames && c.currencyNames.join(", ")) +
+      metric("Languages", c.languageNames && c.languageNames.join(", ")) +
+      metric("Population", c.population ? c.population.toLocaleString() : null) +
+      metric("Area", c.area ? c.area.toLocaleString() + " km²" : null) +
+      metric("Continent", c.continent && c.continent.join(", ")) +
+      metric("Phone code", c.callingCode ? (/^\+/.test(c.callingCode) ? c.callingCode : "+" + c.callingCode) : null) +
+      metric("Driving side", c.drivingSide) +
+      "</div></div>");
+  }
+
+  if (w) {
+    const [desc, icon] = weather(w.current.weather_code);
+    parts.push('<div class="card"><h2>Weather now</h2>' +
+      '<div style="display:flex;gap:22px;align-items:center;flex-wrap:wrap;margin-bottom:16px">' +
+      '<div style="font-size:3.2rem">' + icon + "</div>" +
+      '<div><div style="font-size:2.6rem;font-weight:700">' + Math.round(w.current.temperature_2m) + '°C</div><div class="muted">' + esc(desc) + "</div></div></div>" +
+      '<div class="metrics">' +
+      metric("Feels like", Math.round(w.current.apparent_temperature) + "°C") +
+      metric("Humidity", w.current.relative_humidity_2m + "%") +
+      metric("Wind", Math.round(w.current.wind_speed_10m) + " km/h") +
+      metric("Sunrise", fmtTime(w.daily.sunrise[0])) +
+      metric("Sunset", fmtTime(w.daily.sunset[0])) +
+      "</div></div>" +
+      '<div class="card"><h2>7-day forecast</h2><div class="forecast">' +
+      w.daily.time.map((t, i) => {
+        const [dDesc, dIcon] = weather(w.daily.weather_code[i]);
+        return '<div class="day' + (i === 0 ? " today" : "") + '" title="' + esc(dDesc) + '">' +
+          '<div class="name">' + (i === 0 ? "Today" : new Date(t + "T00:00").toLocaleDateString(undefined, { weekday: "short" })) + "</div>" +
+          '<div class="ico">' + dIcon + '</div><div class="hi">' + Math.round(w.daily.temperature_2m_max[i]) + '°</div><div class="lo">' + Math.round(w.daily.temperature_2m_min[i]) + "°</div></div>";
+      }).join("") + "</div></div>");
+  }
+
+  if (!parts.length) parts.push('<div class="status">No extra data found for this place — but you can still search flights, hotels and cars below.</div>');
+  $("panel").innerHTML = parts.join("");
+}
+
+const metric = (label, value) => '<div class="metric"><div class="label">' + esc(label) + '</div><div class="value">' + (value ? esc(value) : "—") + "</div></div>";
+const fmtTime = iso => iso ? new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—";
+
+/* ------------------------------ HIGHLIGHTS ------------------------------- */
+
+function renderHighlights() {
+  if (state.wvLoading) { $("panel").innerHTML = '<div class="status"><div class="spinner"></div>Reading the travel guide…</div>'; return; }
+  const items = wvListings(["See", "Do"]);
+  if (!items.length) {
+    $("panel").innerHTML = '<div class="status">No sightseeing listings found in Wikivoyage for this place.<br />' +
+      '<a class="link" target="_blank" rel="noopener" href="https://en.wikivoyage.org/wiki/' + encodeURIComponent(state.place.name) + '">Open the full travel guide →</a></div>';
+    return;
+  }
+  $("panel").innerHTML = '<div class="card"><h2>Things to see &amp; do — curated by Wikivoyage contributors</h2>' +
+    '<div class="listings">' + items.map(listingCard).join("") + "</div></div>";
+}
+
+function listingCard(l) {
+  return '<div class="listing">' +
+    (l.image ? '<img loading="lazy" src="' + esc(l.image) + '" alt="" onerror="this.remove()">' : "") +
+    '<div class="body"><h3>' + esc(l.title) + "</h3>" +
+    (l.text ? '<p class="clamp">' + esc(l.text) + "</p>" : "") +
+    '<div class="chips">' +
+    (l.price ? '<span class="chip">💰 ' + esc(l.price) + "</span>" : "") +
+    (l.address ? '<span class="chip">📍 ' + esc(l.address) + "</span>" : "") +
+    (l.phone ? '<span class="chip">📞 ' + esc(l.phone) + "</span>" : "") +
+    (l.hours ? '<span class="chip">🕘 ' + esc(l.hours) + "</span>" : "") +
+    (l.lat && l.lon ? '<a class="chip" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=' + l.lat + "," + l.lon + '">🗺️ map</a>' : "") +
+    (l.url ? '<a class="chip" target="_blank" rel="noopener" href="' + esc(l.url) + '">↗ details</a>' : "") +
+    "</div></div></div>";
+}
+
+/* -------------------------------- FOOD ----------------------------------- */
+
+function renderFood() {
+  if (state.wvLoading) { $("panel").innerHTML = '<div class="status"><div class="spinner"></div>Reading the travel guide…</div>'; return; }
+  const items = wvListings(["Eat", "Drink"]);
+  if (!items.length) {
+    $("panel").innerHTML = '<div class="status">No food &amp; drink listings found for this place.<br />' +
+      '<a class="link" target="_blank" rel="noopener" href="https://en.wikivoyage.org/wiki/' + encodeURIComponent(state.place.name) + '#Eat">Open the guide\'s Eat section →</a></div>';
+    return;
+  }
+  $("panel").innerHTML = '<div class="card"><h2>Where to eat &amp; drink — from the local travel guide</h2>' +
+    '<div class="listings">' + items.map(listingCard).join("") + "</div></div>";
+}
+
+/* ================================ FLIGHTS ================================= */
+
+function renderFlights() {
+  const panel = $("panel");
+  const destCode = matchAirportCode(state.place) || "";
+  const destLabel = destCode ? destCode + " · " + state.place.name : state.place.name;
+
+  panel.innerHTML =
+    (state.serverStatus.tokenPresent ? "" : setupCta()) +
+    '<div class="card"><h2>Search flights — live test offers via Duffel</h2>' +
+    '<div class="form">' +
+      acField("from", "From (airport or city)", "e.g. JFK, LON, CDG") +
+      acField("to", "To", destLabel, destCode) +
+      '<div class="field"><label>Depart</label><input type="date" id="fDepart" min="' + todayISO() + '" value="' + todayISO(14) + '"></div>' +
+      '<div class="field"><label>Return <span class="muted">(optional)</span></label><input type="date" id="fReturn" min="' + todayISO() + '" value="' + addDays(todayISO(14), 7) + '"></div>' +
+      '<div class="field"><label>Passengers</label><select id="fPax">' + range(1, 8).map(n => '<option value="' + n + '">' + n + (n === 1 ? " adult" : " adults") + "</option>").join("") + "</select></div>" +
+      '<div class="field"><label>Cabin</label><select id="fCabin">' +
+        '<option value="economy">Economy</option><option value="premium_economy">Premium economy</option><option value="business">Business</option><option value="first">First</option>' +
+      "</select></div>" +
+      '<div class="field"><button class="btn" id="fSearch">Search flights</button></div>' +
+    "</div>" +
+    '<div class="btnrow">' +
+      '<button class="btn secondary small" id="fClearDates">⇄ Toggle one-way</button>' +
+      '<span class="muted" style="font-size:.82rem;align-self:center">Test mode returns synthetic airline offers — nothing is booked.</span>' +
+    "</div>" +
+    "</div>" +
+    '<div id="fResults"></div>' +
+    '<div class="card"><h2>Compare live prices on real airline inventory</h2>' +
+      '<p class="muted" style="font-size:.9rem">Duffel test mode shows sample data. For real bookable fares use:</p>' +
+      '<div class="btnrow">' +
+        '<a class="btn secondary small" id="gFlights" target="_blank" rel="noopener">Google Flights ↗</a>' +
+        '<a class="btn secondary small" id="kFlights" target="_blank" rel="noopener">Kayak ↗</a>' +
+      "</div></div>";
+
+  setupAc("from");
+  setupAc("to", destCode);
+
+  $("fClearDates").addEventListener("click", () => {
+    const ret = $("fReturn");
+    ret.disabled = !ret.disabled;
+    ret.style.opacity = ret.disabled ? .4 : 1;
+  });
+  $("fSearch").addEventListener("click", searchFlights);
+  ["from", "to", "fDepart", "fReturn"].forEach(id => $(id).addEventListener("input", updateFlightLinks));
+  updateFlightLinks();
+}
+
+function acField(id, label, placeholder, value = "") {
+  return '<div class="field ac"><label>' + esc(label) + '</label>' +
+    '<input id="' + id + '" autocomplete="off" placeholder="' + esc(placeholder) + '" value="' + esc(value) + '">' +
+    '<div class="ac-list" id="' + id + 'List"></div></div>';
+}
+
+function setupAc(id, presetCode = "") {
+  const input = $(id), list = $(id + "List");
+  let idx = -1, items = [];
+
+  const open = arr => {
+    items = arr;
+    if (!arr.length) return close();
+    list.innerHTML = arr.map((a, i) =>
+      '<button type="button" data-i="' + i + '"><span class="code">' + a[0] + "</span><span>" + esc(a[1]) + '</span><span class="sub">' + esc(a[3]) + "</span></button>"
+    ).join("");
+    list.classList.add("open");
+    list.querySelectorAll("button").forEach(b => b.addEventListener("mousedown", () => choose(+b.dataset.i)));
+  };
+  const close = () => { list.classList.remove("open"); list.innerHTML = ""; idx = -1; };
+  const choose = i => { input.value = items[i][0] + " · " + items[i][1]; close(); updateFlightLinks(); };
+
+  if (presetCode) {
+    const a = AIRPORTS_CLEAN.find(x => x[0] === presetCode);
+    if (a) input.value = a[0] + " · " + a[1];
+  }
+
+  input.addEventListener("input", () => {
+    const term = input.value.trim().toLowerCase();
+    const code = term.match(/^([a-z]{3})\b/) && term.match(/^([a-z]{3})\b/)[1].toUpperCase();
+    if (code && IATASET.has(code)) {
+      const a = AIRPORTS_CLEAN.find(x => x[0] === code);
+      return open([a]);
+    }
+    if (term.length < 2) return close();
+    open(AIRPORTS_CLEAN.filter(a => a[1].toLowerCase().includes(term) || a[0].toLowerCase().startsWith(term)).slice(0, 8));
+  });
+  input.addEventListener("keydown", e => {
+    const btns = list.querySelectorAll("button");
+    if (!btns.length) return;
+    if (e.key === "ArrowDown") { e.preventDefault(); idx = (idx + 1) % btns.length; }
+    else if (e.key === "ArrowUp") { e.preventDefault(); idx = (idx - 1 + btns.length) % btns.length; }
+    else if (e.key === "Enter" && idx > -1) { e.preventDefault(); return choose(idx); }
+    else if (e.key === "Escape") return close();
+    else return;
+    btns.forEach((b, i) => b.style.background = i === idx ? "rgba(79,140,255,.18)" : "");
+  });
+  input.addEventListener("blur", () => setTimeout(close, 150));
+}
+const IATASET = new Set(AIRPORTS_CLEAN.map(a => a[0]));
+const range = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => a + i);
+
+/* Match a searched city to the best IATA code (city codes like NYC/LON/Paris are listed first) */
+function matchAirportCode(place) {
+  const name = String(place && place.name || "").toLowerCase();
+  if (!name) return null;
+  const exact = AIRPORTS_CLEAN.find(a => a[1].toLowerCase() === name);
+  if (exact) return exact[0];
+  const partial = AIRPORTS_CLEAN.find(a => a[1].toLowerCase().startsWith(name) && name.length >= 3);
+  if (partial) return partial[0];
+  const contains = AIRPORTS_CLEAN.find(a => name.includes(a[1].toLowerCase()) && a[1].length >= 4);
+  return contains ? contains[0] : null;
+}
+
+function iataFromField(id) {
+  const m = ($(id).value || "").trim().toUpperCase().match(/^([A-Z]{3})\b/);
+  return m ? m[1] : null;
+}
+
+function updateFlightLinks() {
+  const from = iataFromField("from") || "NYC";
+  const to = iataFromField("to") || "";
+  const dep = $("fDepart").value, ret = $("fReturn").disabled ? "" : $("fReturn").value;
+  let gf = "https://www.google.com/travel/flights?q=" + encodeURIComponent("Flights to " + (to || "anywhere") + " from " + from + " on " + dep + (ret ? " through " + ret : ""));
+  $("gFlights").href = gf;
+  $("kFlights").href = "https://www.kayak.com/flights/" + from + "-" + to + "/" + dep + (ret ? "/" + ret : "") + "?sort=bestflight_a";
+}
+
+async function searchFlights() {
+  const out = $("fResults");
+  const origin = iataFromField("from"), destination = iataFromField("to");
+  const departureDate = $("fDepart").value;
+  const returnDate = $("fReturn").disabled ? null : $("fReturn").value;
+  if (!origin || !destination) return setOut(out, '<div class="status error">Pick a 3-letter origin and destination (e.g. JFK → LON).</div>');
+  if (!departureDate) return setOut(out, '<div class="status error">Choose a departure date.</div>');
+
+  setOut(out, '<div class="status"><div class="spinner"></div>Searching flights ' + esc(origin) + " → " + esc(destination) + "…<br><span style='font-size:.82rem'>Duffel gathers offers from many airlines; this can take up to ~25 s.</span></div>");
+
+  try {
+    const res = await postJSON("/api/search/flights", {
+      origin, destination, departureDate,
+      returnDate: returnDate && returnDate > departureDate ? returnDate : null,
+      adults: Number($("fPax").value), cabin: $("fCabin").value,
+    });
+    renderOffers(out, res.offers || [], origin, destination);
+  } catch (err) {
+    setOut(out, '<div class="status error">⚠️ ' + esc(err.message) + "</div>");
+  }
+}
+
+function setOut(el, html) { el.innerHTML = html; }
+
+function renderOffers(out, offers, origin, destination) {
+  if (!offers.length) {
+    return setOut(out, '<div class="card"><div class="status">No offers found for this search. Try different dates or nearby airports.</div></div>');
+  }
+  offers.sort((a, b) => Number(a.total_amount) - Number(b.total_amount));
+  const currency = offers[0].total_currency;
+
+  const rows = offers.slice(0, 15).map(o => {
+    const legs = (o.slices || []).map(slice => {
+      const segs = (slice.segments || []);
+      if (!segs.length) return "";
+      const dep = segs[0], arr = segs[segs.length - 1];
+      const stops = segs.length - 1;
+      const carriers = [...new Set(segs.map(s => (s.operating_carrier && s.operating_carrier.name) || (s.marketing_carrier && s.marketing_carrier.name)).filter(Boolean))];
+      return "<b>" + esc(dep.departure_airport.iata_code) + " " + fmtTime(dep.departure_at) + " → " +
+        esc(arr.arrival_airport.iata_code) + " " + fmtTime(arr.arrival_at) + "</b> · " +
+        '<span class="' + (stops ? "stopN" : "stop0") + '">' + (stops === 0 ? "Direct" : stops + " stop" + (stops > 1 ? "s" : "")) + "</span>" +
+        " · " + esc(fmtDur(slice.duration)) + " · " + esc(carriers.join(", ")) +
+        (stops ? " · via " + esc(segs.slice(0, -1).map(s => s.arrival_airport.iata_code).join(", ")) : "");
+    }).join("<br>");
+
+    const seg = o.slices && o.slices[0] && (o.slices[0].segments || [])[0];
+    const bagTxt = [];
+    if (seg && seg.included_cabin_baggage) bagTxt.push("cabin bag " + (seg.included_cabin_baggage.max_weight ? seg.included_cabin_baggage.max_weight + " " + seg.included_cabin_baggage.max_weight_unit : "included"));
+    if (seg && seg.included_checked_baggage) bagTxt.push("checked bag " + (seg.included_checked_baggage.max_weight ? seg.included_checked_baggage.max_weight + " " + seg.included_checked_baggage.max_weight_unit : "included"));
+
+    const cond = [];
+    if (o.conditions && o.conditions.refundable !== undefined) cond.push(o.conditions.refundable ? "✓ refundable" : "✗ non-refundable");
+    if (o.conditions && o.conditions.changeable !== undefined) cond.push(o.conditions.changeable ? "✓ changeable" : "✗ no changes");
+
+    return '<div class="offer"><div><div class="route">' + legs + "</div>" +
+      ((bagTxt.length || cond.length) ? '<div class="chips">' + bagTxt.map(t => '<span class="chip">🧳 ' + esc(t) + "</span>").join("") + cond.map(t => '<span class="chip">' + esc(t) + "</span>").join("") + "</div>" : "") +
+      '</div><div class="price">' + esc(o.total_amount) + " " + esc(o.total_currency) + "<small>total, all passengers</small></div></div>";
+  }).join("");
+
+  setOut(out, '<div class="card"><h2>' + offers.length + " offer" + (offers.length > 1 ? "s" : "") + " · " + esc(origin) + " → " + esc(destination) +
+    ' <span class="chip" style="float:right">' + esc(currency) + "</span></h2>" + rows + "</div>");
+}
+
+function fmtDur(isoDur) {
+  if (!isoDur) return "";
+  const m = /^PT(?:(\d+)H)?(?:(\d+)M)?$/.exec(isoDur);
+  if (!m) return isoDur;
+  const h = +m[1] || 0, min = +m[2] || 0;
+  return (h ? h + "h " : "") + (min ? min + "m" : "");
+}
+
+/* ================================= HOTELS ================================= */
+
+function renderHotels() {
+  const p = state.place;
+  const sleep = wvListings(["Sleep"]).slice(0, 6);
+
+  $("panel").innerHTML =
+    (state.serverStatus.tokenPresent ? "" : setupCta()) +
+    '<div class="card"><h2>Find stays near ' + esc(p.name) + " — via Duffel Stays (test mode)</h2>" +
+    '<div class="form">' +
+      '<div class="field"><label>Check-in</label><input type="date" id="hIn" min="' + todayISO() + '" value="' + todayISO(14) + '"></div>' +
+      '<div class="field"><label>Check-out</label><input type="date" id="hOut" min="' + todayISO() + '" value="' + addDays(todayISO(14), 3) + '"></div>' +
+      '<div class="field"><label>Guests</label><select id="hGuests">' + range(1, 8).map(n => '<option value="' + n + '"' + (n === 2 ? " selected" : "") + ">" + n + "</option>").join("") + "</select></div>" +
+      '<div class="field"><label>Search radius</label><select id="hRadius"><option value="2">2 km</option><option value="5" selected>5 km</option><option value="10">10 km</option><option value="20">20 km</option></select></div>' +
+      '<div class="field"><button class="btn" id="hSearch">Search hotels</button></div>' +
+    "</div></div>" +
+    '<div id="hResults"></div>' +
+    (sleep.length ? '<div class="card"><h2>Local picks from the travel guide</h2><div class="listings">' + sleep.map(listingCard).join("") + "</div></div>" : "") +
+    '<div class="card"><h2>Compare live hotel prices</h2>' +
+      '<p class="muted" style="font-size:.9rem">Test mode only includes Duffel\'s test properties. For real hotels with reviews and instant confirmation:</p>' +
+      '<div class="btnrow"><a class="btn secondary small" id="bkLink" target="_blank" rel="noopener">Search Booking.com ↗</a>' +
+      '<a class="btn secondary small" id="kHotels" target="_blank" rel="noopener">Kayak hotels ↗</a></div></div>';
+
+  $("hSearch").addEventListener("click", searchHotels);
+  const checkin = $("hIn").value, checkout = $("hOut").value;
+  $("bkLink").href = "https://www.booking.com/searchresults.html?" + new URLSearchParams({ ss: p.name, checkin, checkout, group_adults: $("hGuests").value, no_rooms: "1", group_children: "0" });
+  $("kHotels").href = "https://www.kayak.com/hotels/" + encodeURIComponent(p.name) + "," + encodeURIComponent(p.country || "") + "/" + checkin + "/" + checkout + "/" + $("hGuests").value + "adults";
+}
+
+async function searchHotels() {
+  const out = $("hResults");
+  const checkIn = $("hIn").value, checkOut = $("hOut").value;
+  if (!checkIn || !checkOut || checkOut <= checkIn) return setOut(out, '<div class="status error">Pick valid check-in / check-out dates.</div>');
+
+  setOut(out, '<div class="status"><div class="spinner"></div>Searching stays around ' + esc(state.place.name) + "…</div>");
+  try {
+    const res = await postJSON("/api/search/hotels", {
+      latitude: state.place.latitude, longitude: state.place.longitude,
+      radiusKm: Number($("hRadius").value), adults: Number($("hGuests").value), rooms: 1,
+      checkIn, checkOut,
+    });
+    renderHotelsResults(out, res.results || [], checkIn, checkOut);
+  } catch (err) {
+    setOut(out, '<div class="status error">⚠️ ' + esc(err.message) + "</div>");
+  }
+}
+
+function renderHotelsResults(out, results, checkIn, checkOut) {
+  if (!results.length) return setOut(out, '<div class="card"><div class="status">No stays available for these dates. Try a bigger radius or different dates.</div></div>');
+
+  const rows = results.slice(0, 12).map(r => {
+    const a = r.accommodation || {};
+    const photo = a.photos && a.photos[0] && a.photos[0].url;
+    const addr = a.location && a.location.address ? [a.location.address.line_one, a.location.address.city_name].filter(Boolean).join(", ") : "";
+    const nights = Math.max(1, Math.round((Date.parse(checkOut) - Date.parse(checkIn)) / 864e5));
+    const rate = a.rooms && a.rooms[0] && a.rooms[0].rates && a.rooms[0].rates[0];
+    const board = rate && rate.board_type ? rate.board_type.replace(/_/g, " ") : "";
+    const pay = rate ? (rate.payment_type === "pay_now" ? "💳 pay now" : "🏨 pay at hotel") : "";
+
+    return '<div class="hotel">' +
+      (photo ? '<img loading="lazy" src="' + esc(photo) + '" alt="" onerror="this.style.visibility=\'hidden\'">' : '<div></div>') +
+      "<div><h3>" + esc(a.name || "Hotel") + (a.rating ? ' <span class="stars">' + "★".repeat(Math.min(5, a.rating)) + "</span>" : "") +
+      (a.review_score ? '<span class="score">' + esc(a.review_score) + (a.review_count ? " · " + esc(a.review_count) + " reviews" : "") + "</span>" : "") + "</h3>" +
+      '<div class="addr">' + esc(addr) + "</div>" +
+      '<div class="chips">' + (board ? '<span class="chip">' + esc(board) + "</span>" : "") + (pay ? '<span class="chip">' + esc(pay) + "</span>" : "") +
+      (a.amenities ? '<span class="chip">' + esc(a.amenities.slice(0, 3).map(x => x.type.replace(/_/g, " ")).join(" · ")) + "</span>" : "") + "</div></div>" +
+      '<div class="price">' + esc(r.cheapest_rate_total_amount || "—") + " " + esc(r.cheapest_rate_public_currency || "") +
+      "<small>total for " + nights + " night" + (nights > 1 ? "s" : "") + "</small></div></div>";
+  }).join("");
+
+  setOut(out, '<div class="card"><h2>' + results.length + " stay" + (results.length > 1 ? "s" : "") + " available</h2>" + rows + "</div>");
+}
+
+/* ================================== CARS ================================== */
+
+function renderCars() {
+  const p = state.place;
+  const placeSlug = p.name.replace(/\s+/g, "-");
+  const from = todayISO(14), to = addDays(todayISO(14), 3);
+
+  $("panel").innerHTML =
+    '<div class="card"><h2>Rental cars in ' + esc(p.name) + "</h2>" +
+    '<p class="muted" style="font-size:.9rem;line-height:1.6">There is no free car-rental API anymore (Amadeus shut theirs down in July 2026), so iTravel opens these comparison sites with your destination and dates pre-filled — they search live inventory from hundreds of rental suppliers.</p>' +
+    '<div class="form" style="margin-top:14px">' +
+      '<div class="field"><label>Pick-up</label><input type="date" id="cIn" min="' + todayISO() + '" value="' + from + '"></div>' +
+      '<div class="field"><label>Drop-off</label><input type="date" id="cOut" min="' + todayISO() + '" value="' + to + '"></div>' +
+    "</div>" +
+    '<div class="btnrow">' +
+      '<a class="btn small" id="kCars" target="_blank" rel="noopener">Kayak cars ↗</a>' +
+      '<a class="btn secondary small" id="dcCars" target="_blank" rel="noopener">Discovercars ↗</a>' +
+      '<a class="btn secondary small" id="rcCars" target="_blank" rel="noopener">Rentalcars.com ↗</a>' +
+    "</div></div>" +
+    '<div class="card"><h2>Getting around ' + esc(p.name) + "</h2>" +
+    '<p class="muted" style="font-size:.9rem;line-height:1.7">Tip: city centres in ' + esc(p.name) + " are often easiest by public transport — check the Wikivoyage guide's “Get around” section for local transit advice, fares and metro maps." +
+    ' <a class="link" target="_blank" rel="noopener" href="https://en.wikivoyage.org/wiki/' + encodeURIComponent(p.name) + '#Get_around">Open guide →</a></p></div>';
+
+  const update = () => {
+    const i = $("cIn").value, o = $("cOut").value;
+    $("kCars").href = "https://www.kayak.com/cars/" + placeSlug + "/" + i + "/" + o;
+    $("dcCars").href = "https://www.discovercars.com/search?" + new URLSearchParams({ location: p.name, pick_up_date: i, drop_off_date: o });
+    $("rcCars").href = "https://www.rentalcars.com/search-results?" + new URLSearchParams({ pickUpLocation: p.name, pickUpDate: i, dropOffDate: o });
+  };
+  $("cIn").addEventListener("change", update);
+  $("cOut").addEventListener("change", update);
+  update();
+}
+
+/* ================================ chatbot ================================= */
+
+const chatFab = $("chatFab"), chatPanel = $("chatPanel"), chatClose = $("chatClose");
+const chatMessages = $("chatMessages"), chatInput = $("chatInput"), chatSend = $("chatSend"), chatSuggestions = $("chatSuggestions");
+
+const CHAT_DESTINATIONS = [
+  { name: "Cancún", country: "Mexico", type: ["warm","sun","beach"], temp: 28, weather: "sunny", desc: "Year-round sunshine and beautiful Caribbean beaches." },
+  { name: "Costa del Sol", country: "Spain", type: ["warm","sun","beach","city breaks"], temp: 22, weather: "sunny", desc: "Beach time plus vibrant city life around Málaga." },
+  { name: "Dubai", country: "UAE", type: ["warm","sun","city breaks","luxury"], temp: 35, weather: "sunny", desc: "Hot and sunny; ideal for winter sun (Nov–Mar), with indoor attractions for peak heat." },
+  { name: "Phuket", country: "Thailand", type: ["warm","sun","beach","adventure"], temp: 30, weather: "sunny", desc: "Tropical island with water sports, island hopping and great food." },
+  { name: "Chamonix", country: "France", type: ["skiing","snow","winter","adventure"], temp: -2, weather: "snowy", desc: "World-class skiing and snowboarding beneath Mont Blanc." },
+  { name: "Aspen", country: "USA", type: ["skiing","snow","winter","luxury"], temp: -5, weather: "snowy", desc: "Premier ski resort with excellent infrastructure and après-ski." },
+  { name: "St. Anton am Arlberg", country: "Austria", type: ["skiing","snow","winter","adventure"], temp: -3, weather: "snowy", desc: "Famous for powder skiing and lively alpine culture." },
+  { name: "Barcelona", country: "Spain", type: ["city breaks","warm","culture","food"], temp: 18, weather: "sunny", desc: "Architecture, beaches and amazing food all year round." },
+  { name: "Amsterdam", country: "Netherlands", type: ["city breaks","culture"], temp: 12, weather: "cloudy", desc: "Walkable canals and world-class museums; great spring/autumn." },
+  { name: "Prague", country: "Czech Republic", type: ["city breaks","culture","winter"], temp: 8, weather: "cloudy", desc: "Historic city, magical in winter with Christmas markets." },
+  { name: "Tenerife", country: "Spain", type: ["winter sun","warm","beach","sun"], temp: 21, weather: "sunny", desc: "The best winter sun in Europe with mild temperatures year-round." },
+  { name: "Malta", country: "Malta", type: ["winter sun","warm","city breaks","culture"], temp: 17, weather: "sunny", desc: "Mediterranean winter sun with compact, historic cities." }
+];
+
+function addChatMsg(html, who = "bot") {
+  const el = document.createElement("div");
+  el.className = "chat-msg " + who;
+  el.innerHTML = html;
+  chatMessages.appendChild(el);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+/* Exposed for the inline "Plan trip to …" links */
+window.searchAndGo = function (city) {
+  chatPanel.classList.remove("open");
+  closeSugg();
+  searchPlaces(city).then(() => {
+    if (currentResults && currentResults.length) {
+      pickPlace(currentResults[0]);
+      setTimeout(() => setTab("planner"), 600);
+    }
+  });
+};
+
+function chatList(items, heading, footer) {
+  let html = "<strong>" + heading + "</strong><br><br>";
+  items.slice(0, 4).forEach(d => {
+    html += "• <strong>" + d.name + ", " + d.country + "</strong> (" + d.temp + "°C, " + d.weather + ")<br>" +
+      "&nbsp;&nbsp;" + d.desc + "<br>" +
+      '&nbsp;&nbsp;<a onclick="searchAndGo(\'' + d.name.replace(/'/g, "\\'") + '\')">Plan trip to ' + d.name + "</a><br><br>";
+  });
+  return html + footer;
+}
+
+function handleChatQuery(query) {
+  const q = query.toLowerCase();
+  addChatMsg(esc(query), "user");
+
+  setTimeout(() => {
+    const has = (...words) => words.some(w => q.includes(w));
+    if (has("ski", "snowboard", "powder", "slope")) {
+      addChatMsg(chatList(
+        CHAT_DESTINATIONS.filter(d => d.type.includes("skiing")),
+        "⛷️ Skiing & snow destinations:", "Best season is December–March. Want a luxury resort or a budget-friendly base?"
+      ));
+    } else if (has("winter sun", "winter-sun")) {
+      addChatMsg(chatList(
+        CHAT_DESTINATIONS.filter(d => d.type.includes("winter sun")),
+        "☀️ Winter sun destinations:", "Escape the cold from November to March with these warm-weather spots."
+      ));
+    } else if (has("warm", "hot") && has("sun", "sunny", "sunshine")) {
+      addChatMsg(chatList(
+        CHAT_DESTINATIONS.filter(d => d.type.includes("warm") && d.type.includes("sun")),
+        "☀️ Warm & sunny destinations:", "Want me to narrow this down by budget, month, or beach vs city?"
+      ));
+    } else if (has("beach", "coast", "sea")) {
+      addChatMsg(chatList(
+        CHAT_DESTINATIONS.filter(d => d.type.includes("beach")),
+        "🏖️ Beach destinations:", "May–September is prime beach weather for most of these."
+      ));
+    } else if (has("city break", "citybreak", "city trip", "weekend")) {
+      addChatMsg(chatList(
+        CHAT_DESTINATIONS.filter(d => d.type.includes("city breaks")),
+        "🏙️ City break ideas:", "Great for 2–4 day trips. Want culture, food, or nightlife focus?"
+      ));
+    } else if (has("adventure", "hike", "hiking", "thrill")) {
+      addChatMsg(chatList(
+        CHAT_DESTINATIONS.filter(d => d.type.includes("adventure")),
+        "🧗 Adventure travel:", "Tell me your thrill level and I'll tailor the activities."
+      ));
+    } else {
+      addChatMsg("I can help you find a destination based on weather. Try:<br><br>" +
+        '• <strong>"warm places with sun"</strong> — beach & tropical<br>' +
+        '• <strong>"skiing"</strong> — snow & slopes<br>' +
+        '• <strong>"city breaks"</strong> — urban getaways<br>' +
+        '• <strong>"beach vacation"</strong> — coastal escapes<br>' +
+        '• <strong>"winter sun"</strong> — escape the cold<br>' +
+        '• <strong>"adventure travel"</strong> — thrills & exploration<br><br>' +
+        "Or type any destination above to open its full plan.");
+    }
+  }, 450);
+}
+
+if (chatFab) chatFab.addEventListener("click", () => {
+  chatPanel.classList.toggle("open");
+  if (chatPanel.classList.contains("open") && !chatMessages.children.length) {
+    addChatMsg("Hi! I'm your <strong>iTravel Weather Advisor</strong>. Tell me what kind of trip you want — warm & sunny, skiing, city breaks, beach vacation, winter sun, or adventure — and I'll suggest places that fit the weather.");
+  }
+});
+if (chatClose) chatClose.addEventListener("click", () => chatPanel.classList.remove("open"));
+const sendChat = () => {
+  const v = chatInput.value.trim();
+  if (!v) return;
+  handleChatQuery(v);
+  chatInput.value = "";
+};
+if (chatSend) chatSend.addEventListener("click", sendChat);
+if (chatInput) chatInput.addEventListener("keydown", e => { if (e.key === "Enter") sendChat(); });
+if (chatSuggestions) chatSuggestions.querySelectorAll(".chat-sug").forEach(b =>
+  b.addEventListener("click", () => handleChatQuery(b.dataset.msg)));
+
+/* =============================== setup CTA ================================ */
+
+function setupCta() {
+  return '<div class="note" style="margin-bottom:16px"><b>✈ Flights &amp; hotels need your free Duffel test token.</b><br>' +
+    'Everything else on this page works with zero keys. To enable live flight &amp; hotel search: sign up at ' +
+    '<a class="link" href="https://app.duffel.com/join" target="_blank" rel="noopener">app.duffel.com</a> → ' +
+    '<b>More → Developers → Access tokens</b> → create a <i>test</i> token, then paste it in Settings (⚙). ' +
+    '<button class="btn small" style="margin-top:10px" onclick="openSettings()">Add token now</button></div>';
+}
+
+/* ============================== settings modal ============================ */
+
+const overlay = $("overlay");
+function openSettings() { overlay.classList.add("open"); $("tokenMsg").textContent = ""; $("tokenMsg").className = "msg"; }
+$("settingsBtn").addEventListener("click", openSettings);
+$("closeModalBtn").addEventListener("click", () => overlay.classList.remove("open"));
+overlay.addEventListener("click", e => { if (e.target === overlay) overlay.classList.remove("open"); });
+
+$("saveTokenBtn").addEventListener("click", async () => {
+  const msg = $("tokenMsg");
+  msg.className = "msg"; msg.textContent = "Verifying with Duffel…";
+  try {
+    const res = await postJSON("/api/token", { token: $("tokenInput").value.trim() });
+    state.serverStatus = res;
+    msg.className = "msg ok";
+    msg.textContent = "✓ Connected (" + res.mode + " mode, " + res.tokenHint + "). Flight & hotel search is ready.";
+    $("tokenInput").value = "";
+    $("settingsBtn").classList.add("configured");
+    setTimeout(() => { overlay.classList.remove("open"); setTab(state.tab); }, 1400);
+  } catch (err) {
+    msg.className = "msg err";
+    msg.textContent = "⚠ " + err.message;
+  }
+});
+
+$("clearTokenBtn").addEventListener("click", async () => {
+  try {
+    state.serverStatus = await postJSON("/api/token", { action: "clear" });
+    $("tokenMsg").className = "msg ok";
+    $("tokenMsg").textContent = "✓ Token removed.";
+    $("settingsBtn").classList.remove("configured");
+    setTab(state.tab);
+  } catch (err) {
+    $("tokenMsg").className = "msg err";
+    $("tokenMsg").textContent = "⚠ " + err.message;
+  }
+});
+
+/* ================================== boot ================================== */
+
+(async function init() {
+  try { state.serverStatus = await fetchJSON("/api/status", 1) || { tokenPresent: false }; } catch { state.serverStatus = { tokenPresent: false }; }
+  if (state.serverStatus.tokenPresent) $("settingsBtn").classList.add("configured");
+
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem("itravel:place") || localStorage.getItem("voyago:place") || "null"); } catch (_) {}
+
+  if (saved && saved.latitude && saved.longitude) {
+    qInput.value = saved.name;
+    return loadDestination(saved);
+  }
+
+  if (!navigator.geolocation) {
+    return loadDestination({ name: "Tokyo", admin1: "Tokyo", country: "Japan", latitude: 35.6895, longitude: 139.6917 });
+  }
+  navigator.geolocation.getCurrentPosition(
+    async pos => {
+      const place = await reverseGeocode(pos.coords.latitude, pos.coords.longitude);
+      try { localStorage.setItem("itravel:place", JSON.stringify(place)); } catch (_) {}
+      qInput.value = place.name;
+      loadDestination(place);
+    },
+    () => loadDestination({ name: "Tokyo", admin1: "Tokyo", country: "Japan", latitude: 35.6895, longitude: 139.6917 }),
+    { timeout: 8000 }
+  );
+})();
+</script>
+</body>
+</html>
