@@ -1,0 +1,6 @@
+{
+  "name": "itravel-tools",
+  "private": true,
+  "type": "commonjs",
+  "description": "Doc and slide build scripts (CommonJS). Scoped here so they keep working inside the ESM root package."
+}

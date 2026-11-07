@@ -1,0 +1,9 @@
+{
+  "name": "itravel-app",
+  "private": true,
+  "type": "commonjs",
+  "description": "iTravel zero-dependency Node server. Scoped to CommonJS so it keeps working inside the ESM root package.",
+  "scripts": {
+    "start": "node server.js"
+  }
+}
